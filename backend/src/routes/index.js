@@ -3,6 +3,7 @@
 const express = require('express');
 const router = express.Router();
 const Document = require('../models/Document');
+const User = require('../models/User');
 
 // GET /api/health - Check if server and database are working
 router.get('/health', (req, res) => {
@@ -53,6 +54,49 @@ router.post('/documents', async (req, res) => {
   }
 });
 
+// POST /api/login - login user
+// req must contain user login info in JSON (name, email, password)
+router.post('/login', async (req, res) => {
+  try {
+    /** 
+     * validate user creds here
+     * may require something like 'express-session'
+    **/
+    const user = await User.findOne(req.body)
+    if (user) {
+      // found user, proceed to login
+      // set session information here
+      // redirect users to home page of application/dashboard
+      res.redirect('/dashboard')
+    } else {
+      // todo: make more descriptive res depending on if password wrong, user doesn't exist, etc.
+      res.send('Login failed')
+    }
+  } catch (err) {
+    console.error('Error during user search: ', err)
+    res.status(400).json({ error: err.message });
+  } 
+})
+
+// POST /api/create_user - create user
+// req must contain user login info in JSON (name, email, password)
+router.post('/createUser', async (req, res) => {
+  try {
+    const user = await User.findOne(req.body.email)
+    // might not need this logic if unique property of email is accounted for in User.create()
+    if (!user) {
+      await User.create(req.body)
+      res.status(201);
+    } else {
+      res.send('User already exists!')
+    }
+
+  } catch (err) {
+    console.error('Error during user creation: ', err)
+    res.status(400).json({ error: err.message });
+  } 
+})
+
 // GET /api - Show available endpoints
 router.get('/', (req, res) => {
   res.json({
@@ -61,7 +105,9 @@ router.get('/', (req, res) => {
       health: 'GET /api/health - Check server status',
       documents: 'GET /api/documents - Get all documents',
       document: 'GET /api/documents/:id - Get a document by ID',
-      createDocument: 'POST /api/documents - Create a new document'
+      createDocument: 'POST /api/documents - Create a new document',
+      login: 'POST /api/login - Login a user and get current session',
+      createUser: 'POST /api/createUser - Create a new user'
     }
   });
 });
