@@ -67,10 +67,12 @@ router.post('/login', async (req, res) => {
       // found user, proceed to login
       // set session information here
       // redirect users to home page of application/dashboard
+      console.log("Logging in user")
       res.redirect('/dashboard')
     } else {
       // todo: make more descriptive res depending on if password wrong, user doesn't exist, etc.
-      res.send('Login failed')
+      console.error('User doesn\'t exist, login failed')
+      res.status(401).send("Login failed")
     }
   } catch (err) {
     console.error('Error during user search: ', err)
@@ -88,7 +90,8 @@ router.post('/createUser', async (req, res) => {
       await User.create(req.body)
       res.status(201);
     } else {
-      res.send('User already exists!')
+      console.error('Create user failed, user already exists')
+      res.status(409).send('User already exists!')
     }
 
   } catch (err) {
