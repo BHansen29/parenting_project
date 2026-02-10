@@ -1,35 +1,9 @@
 // This file defines our API endpoints (URLs the frontend can call)
 
 const express = require('express');
-const session = require('express-session');
-const MongoStore = require('connect-mongo')(session);
 const router = express.Router();
-const app = express()
 const Document = require('../models/Document');
 const User = require('../models/User');
-
-app.use(session({
-  // TODO: change this to be more secure (env variable, random generation, etc.)
-  secret: 'our-secret-key',
-  resave: true,
-  saveUninitialized: false,
-  // cookies store the session id
-  cookie: {
-    secure: true,
-    // Enable only for HTTPS
-    httpOnly: true,
-    // Prevent client-side access to cookies
-    sameSite: 'strict'
-    // Mitigate CSRF attacks
-  },
-  // this is where the session is saved in memory
-  store: new MongoStore(
-    {
-      // not sure if this url is correct, will need to verify
-      url: 'mongodb://localhost/session-store'
-    }
-  )
-}))
 
 /* Middleware to check if a user is authenticated
  * This gets used like the following
