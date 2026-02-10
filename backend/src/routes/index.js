@@ -1,9 +1,48 @@
 // This file defines our API endpoints (URLs the frontend can call)
 
 const express = require('express');
+const session = require('express-session');
+const MongoStore = require('connect-mongo')(session);
 const router = express.Router();
+const app = express()
 const Document = require('../models/Document');
 const User = require('../models/User');
+
+app.use(session({
+  // TODO: change this to be more secure (env variable, random generation, etc.)
+  secret: 'our-secret-key',
+  resave: true,
+  saveUninitialized: false,
+  // cookies store the session id
+  cookie: {
+    secure: true,
+    // Enable only for HTTPS
+    httpOnly: true,
+    // Prevent client-side access to cookies
+    sameSite: 'strict'
+    // Mitigate CSRF attacks
+  },
+  // this is where the session is saved in memory
+  store: new MongoStore(
+    {
+      // not sure if this url is correct, will need to verify
+      url: 'mongodb://localhost/session-store'
+    }
+  )
+}))
+
+/* Middleware to check if a user is authenticated
+ * This gets used like the following
+ * router.get('/dashboard', isAuthenticated, (req, res) =>{...})
+**/
+const isAuthenticated = (req, res, next) => {
+    if (req.session.user) {
+        next(); // User is authenticated, proceed to the next middleware or route handler
+    } else {
+        res.status(401).json({ message: 'Unauthorized, please log in' });
+    }
+};
+
 
 // GET /api/health - Check if server and database are working
 router.get('/health', (req, res) => {
@@ -58,25 +97,42 @@ router.post('/documents', async (req, res) => {
 // req must contain user login info in JSON (name, email, password)
 router.post('/login', async (req, res) => {
   try {
-    /** 
-     * validate user creds here
-     * may require something like 'express-session'
-    **/
-    const user = await User.findOne(req.body)
+    const { name, email, password } = req.body
+    // database check for user
+    const user = await User.findOne({email, password})
     if (user) {
+      req.session.user = {
+        id: '1', // generate id?
+        username: name,
+        role: 'user'
+      }
       // found user, proceed to login
       // set session information here
       // redirect users to home page of application/dashboard
-      res.redirect('/dashboard')
+      console.log("Logging in user")
+      res.status(200).json({ message: 'Login success', authenticated: true});
     } else {
       // todo: make more descriptive res depending on if password wrong, user doesn't exist, etc.
-      res.send('Login failed')
+      console.error('User doesn\'t exist, login failed')
+      res.status(401).send("Login failed")
     }
   } catch (err) {
     console.error('Error during user search: ', err)
     res.status(400).json({ error: err.message });
   } 
 })
+
+router.post('/logout', (req, res) => {
+    req.session.destroy(err => {
+        console.log('Logging out')
+        if (err) {
+            console.error('Failed to log out')
+            return res.status(500).json({ message: 'Could not log out, please try again' });
+        }
+        res.status(200).json({ message: 'Successfully logged out' });
+    });
+});
+
 
 // POST /api/create_user - create user
 // req must contain user login info in JSON (name, email, password)
@@ -88,7 +144,8 @@ router.post('/createUser', async (req, res) => {
       await User.create(req.body)
       res.status(201);
     } else {
-      res.send('User already exists!')
+      console.error('Create user failed, user already exists')
+      res.status(409).send('User already exists!')
     }
 
   } catch (err) {
