@@ -26,7 +26,7 @@ const questionSchema = new mongoose.Schema({
   type: {
     // this specifies if question is multiple choice, integer input, checkbox, etc.
     type: String,
-    enum: ["multple choice", "integer input", "checkbox"], // this restricts our types to the strings listed (will likely grow)
+    enum: ["multiple choice", "integer input", "checkbox"], // this restricts our types to the strings listed (will likely grow)
     required: true
   },
   qText: {
