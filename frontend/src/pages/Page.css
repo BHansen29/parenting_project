@@ -1,0 +1,65 @@
+/* Page layout with centered card */
+.page-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.page-content {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 2rem;
+}
+
+.page-card {
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 3rem;
+  max-width: 600px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.page-card h1 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-size: 2rem;
+  text-align: left;
+}
+
+.page-card > p {
+  margin-top: 0;
+  margin-bottom: 2rem;
+  color: #666;
+  text-align: left;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .page-card {
+    background-color: #2a2a2a;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  .page-card > p {
+    color: #aaa;
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .page-content {
+    padding: 1rem;
+  }
+
+  .page-card {
+    padding: 2rem 1.5rem;
+  }
+
+  .page-card h1 {
+    font-size: 1.5rem;
+  }
+}

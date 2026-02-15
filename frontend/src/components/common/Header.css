@@ -1,0 +1,165 @@
+/* Block - header */
+.header {
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  background-color: #f9fafb;
+  border-bottom: 1px solid var(--input-border);
+  padding: 10px 0;
+  margin: 0;
+  margin-bottom: 2rem;
+  width: 100vw;
+  margin-left: 50%;
+  transform: translateX(-50%);
+}
+
+.header__container {
+  margin: 1rem auto;
+  padding: 10px 20px;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 4rem;
+  align-items: center;
+}
+
+.header__logo {
+  height: 60px;
+  width: auto;
+  margin: 0;
+  display: block;
+  flex-shrink: 0;
+}
+
+/* Navigation breadcrumbs */
+.header__nav {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.header__steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.header__step {
+  flex: 1;
+  min-width: 120px;
+}
+
+.header__step-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--input-border);
+  border-radius: var(--input-border-radius);
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s ease;
+  background-color: transparent;
+}
+
+.header__step-link:hover {
+  border-color: var(--input-border-focus);
+  background-color: rgba(73, 85, 165, 0.05);
+}
+
+.header__step-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.1);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.header__step-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* Active step */
+.header__step--active .header__step-link {
+  border-color: var(--input-border-focus);
+  background-color: rgba(73, 85, 165, 0.1);
+}
+
+.header__step--active .header__step-number {
+  background-color: var(--input-border-focus);
+  color: white;
+}
+
+/* Completed step */
+.header__step--completed .header__step-number {
+  background-color: #41b776;
+  color: white;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .header {
+    padding: 1rem;
+  }
+
+  .header__container {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .header__logo {
+    height: 50px;
+  }
+
+  .header__nav {
+    width: 100%;
+  }
+
+  .header__steps {
+    flex-direction: column;
+  }
+
+  .header__step {
+    min-width: 100%;
+  }
+
+  .header__step-link {
+    justify-content: flex-start;
+  }
+}
+
+/* Light mode */
+@media (prefers-color-scheme: light) {
+  .header__step-number {
+    background-color: rgba(0, 0, 0, 0.08);
+  }
+
+  .header__step-link:hover {
+    background-color: rgba(73, 85, 165, 0.08);
+  }
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .header {
+    background-color: #242424;
+  }
+
+  .header__step-number {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .header__step-link:hover {
+    background-color: rgba(73, 85, 165, 0.15);
+  }
+}

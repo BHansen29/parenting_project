@@ -1,0 +1,84 @@
+/* Block - container */
+.date-picker {
+  margin-bottom: var(--form-field-spacing);
+  width: 100%;
+}
+
+/* Element - label */
+.date-picker__label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: inherit;
+  text-align: left;
+}
+
+.date-picker__label-required {
+  color: var(--error-color);
+  margin-left: 0.25rem;
+}
+
+/* Element - date input field */
+.date-picker__field {
+  width: 100%;
+  padding: var(--input-padding);
+  font-size: 1rem;
+  font-family: inherit;
+  border: 1px solid var(--input-border);
+  border-radius: var(--input-border-radius);
+  background-color: var(--input-background);
+  color: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box;
+}
+
+.date-picker__field:focus {
+  outline: none;
+  border-color: var(--input-border-focus);
+  box-shadow: 0 0 0 3px rgba(73, 85, 165, 0.1);
+}
+
+/* Modifier - error state */
+.date-picker--error .date-picker__field {
+  border-color: var(--error-color);
+}
+
+.date-picker--error .date-picker__field:focus {
+  box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+}
+
+.date-picker__error-message {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--error-color);
+}
+
+/* Modifier - disabled state */
+.date-picker--disabled .date-picker__field {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Element - help text */
+.date-picker__help-text {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  color: var(--help-text-color);
+}
+
+/* Light mode specific styles */
+@media (prefers-color-scheme: light) {
+  .date-picker--disabled .date-picker__field {
+    background-color: #f5f5f5;
+  }
+}
+
+/* Dark mode specific styles */
+@media (prefers-color-scheme: dark) {
+  .date-picker--disabled .date-picker__field {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+}
