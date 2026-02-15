@@ -1,0 +1,65 @@
+/* Block - footer */
+.footer {
+  position: static;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: #f9fafb;
+  border-top: 1px solid var(--input-border);
+  padding: 1rem 1rem;
+  margin-top: 3rem;
+  width: 100vw;
+  margin-left: 50%;
+  transform: translateX(-50%);
+}
+
+.footer__container {
+  width: 100%;
+  margin-bottom: 0;
+  padding: 0 2rem;
+}
+
+.footer__actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.footer__button {
+  min-width: 120px;
+  padding: 0.75rem 1.2rem;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.footer__button--next {
+  margin-left: auto;
+  margin-right: 50px;
+}
+
+.footer__button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .footer__container {
+    padding: 0 1rem;
+  }
+
+  .footer__actions {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .footer__button {
+    width: 100%;
+    min-width: auto;
+  }
+
+  .footer__button--next {
+    margin-left: 0;
+  }
+}
