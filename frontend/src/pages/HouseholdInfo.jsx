@@ -144,106 +144,105 @@ export default function HouseholdInfo() {
                 </form>
               </CardContent>
             </Card>
-          </CardContent>
-        </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Children</CardTitle>
+                <CardDescription>The children covered by this parenting agreement.</CardDescription>
+              </CardHeader>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Children</CardTitle>
-            <CardDescription>The children covered by this parenting agreement.</CardDescription>
-          </CardHeader>
-
-          <CardContent>
-            {children.map((child, index) => (
-              <Card key={child.id}>
-                <CardHeader>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <CardTitle>Child {index + 1}</CardTitle>
-                    {children.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeChild(child.id)}
-                        className="remove-child-btn"
-                        aria-label={`Remove Child ${index + 1}`}
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </div>
-                </CardHeader>
-
-                <CardContent>
-                  <form noValidate>
-                    <div className="form-row">
-                      <TextInput
-                        id={`child-${child.id}-firstName`}
-                        label="First Name"
-                        type="text"
-                        value={child.firstName}
-                        onChange={handleChildChange(child.id, 'firstName')}
-                        required
-                        placeholder="First Name"
-                        autoComplete="given-name"
-                      />
-
-                      <TextInput
-                        id={`child-${child.id}-lastName`}
-                        label="Last Name"
-                        type="text"
-                        value={child.lastName}
-                        onChange={handleChildChange(child.id, 'lastName')}
-                        placeholder="Last Name"
-                        autoComplete="family-name"
-                      />
-                    </div>
-
-                    <DatePicker
-                      id={`child-${child.id}-dateOfBirth`}
-                      label="Date of Birth"
-                      value={child.dateOfBirth}
-                      onChange={handleChildChange(child.id, 'dateOfBirth')}
-                      required
-                      max={new Date().toISOString().split('T')[0]}
-                    />
-
-                    <div className="child-classification">
-                      <label className="classification-label">Child Classification</label>
-                      <div className="radio-group">
-                        <label className="radio-option">
-                          <input
-                            type="radio"
-                            name={`child-${child.id}-classification`}
-                            value="minor"
-                            checked={child.classification === 'minor'}
-                            onChange={(e) => handleChildChange(child.id, 'classification')(e.target.value)}
-                          />
-                          <span>The child is a minor and/or mentally or physically disabled incapable of supporting or maintaining themselves</span>
-                        </label>
-
-                        <label className="radio-option">
-                          <input
-                            type="radio"
-                            name={`child-${child.id}-classification`}
-                            value="emancipated"
-                            checked={child.classification === 'emancipated'}
-                            onChange={(e) => handleChildChange(child.id, 'classification')(e.target.value)}
-                          />
-                          <span>The child is an emancipated adult</span>
-                        </label>
+              <CardContent>
+                {children.map((child, index) => (
+                  <Card key={child.id}>
+                    <CardHeader>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <CardTitle>Child {index + 1}</CardTitle>
+                        {children.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeChild(child.id)}
+                            className="remove-child-btn"
+                            aria-label={`Remove Child ${index + 1}`}
+                          >
+                            Remove
+                          </button>
+                        )}
                       </div>
-                    </div>
-                  </form>
-                </CardContent>
-              </Card>
-            ))}
+                    </CardHeader>
 
-            <button
-              type="button"
-              onClick={addChild}
-              className="add-child-btn"
-            >
-              + Add Another Child
-            </button>
+                    <CardContent>
+                      <form noValidate>
+                        <div className="form-row">
+                          <TextInput
+                            id={`child-${child.id}-firstName`}
+                            label="First Name"
+                            type="text"
+                            value={child.firstName}
+                            onChange={handleChildChange(child.id, 'firstName')}
+                            required
+                            placeholder="First Name"
+                            autoComplete="given-name"
+                          />
+
+                          <TextInput
+                            id={`child-${child.id}-lastName`}
+                            label="Last Name"
+                            type="text"
+                            value={child.lastName}
+                            onChange={handleChildChange(child.id, 'lastName')}
+                            placeholder="Last Name"
+                            autoComplete="family-name"
+                          />
+                        </div>
+
+                        <DatePicker
+                          id={`child-${child.id}-dateOfBirth`}
+                          label="Date of Birth"
+                          value={child.dateOfBirth}
+                          onChange={handleChildChange(child.id, 'dateOfBirth')}
+                          required
+                          max={new Date().toISOString().split('T')[0]}
+                        />
+
+                        <div className="child-classification">
+                          <label className="classification-label">Child Classification</label>
+                          <div className="radio-group">
+                            <label className="radio-option">
+                              <input
+                                type="radio"
+                                name={`child-${child.id}-classification`}
+                                value="minor"
+                                checked={child.classification === 'minor'}
+                                onChange={(e) => handleChildChange(child.id, 'classification')(e.target.value)}
+                              />
+                              <span>The child is a minor and/or mentally or physically disabled incapable of supporting or maintaining themselves</span>
+                            </label>
+
+                            <label className="radio-option">
+                              <input
+                                type="radio"
+                                name={`child-${child.id}-classification`}
+                                value="emancipated"
+                                checked={child.classification === 'emancipated'}
+                                onChange={(e) => handleChildChange(child.id, 'classification')(e.target.value)}
+                              />
+                              <span>The child is an emancipated adult</span>
+                            </label>
+                          </div>
+                        </div>
+                      </form>
+                    </CardContent>
+                  </Card>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={addChild}
+                  className="add-child-btn"
+                >
+                  + Add Another Child
+                </button>
+              </CardContent>
+            </Card>
           </CardContent>
         </Card>
       </div>
