@@ -1,8 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
-import ParentInfo from './pages/ParentInfo';
-import ChildInfo from './pages/ChildInfo';
-import Schedule from './pages/Schedule';
+import HouseholdInfo from './pages/HouseholdInfo';
+import CustodySchedule from './pages/CustodySchedule';
+import Transportation from './pages/Transportation';
 import Review from './pages/Review';
 import './App.css';
 
@@ -15,9 +15,9 @@ function App() {
         <Route path="/" element={<LandingPage />} />
 
         {/* Form routes */}
-        <Route path="/parent-info" element={<ParentInfo />} />
-        <Route path="/child-info" element={<ChildInfo />} />
-        <Route path="/schedule" element={<Schedule />} />
+        <Route path="/household-info" element={<HouseholdInfo />} />
+        <Route path="/custody-schedule" element={<CustodySchedule />} />
+        <Route path="/transportation" element={<Transportation />} />
         <Route path="/review" element={<Review />} />
 
         {/* Catch all - redirect unknown routes to home */}

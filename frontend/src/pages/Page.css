@@ -10,42 +10,177 @@
   display: flex;
   justify-content: center;
   align-items: flex-start;
+  flex-direction: column;
   padding: 2rem;
 }
 
-.page-card {
+/* Card component styling */
+[data-slot="card"] {
   background-color: #ffffff;
-  border-radius: 12px;
+  border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  padding: 3rem;
-  max-width: 600px;
+  border: 1px solid #e5e7eb;
+  max-width: 1000px;
   width: 100%;
-  margin: 0 auto;
+  margin: 10px auto;
+  display: flex;
+  flex-direction: column;
 }
 
-.page-card h1 {
-  margin-top: 0;
-  margin-bottom: 0.5rem;
+[data-slot="card-header"] {
+  padding: 2rem 2rem 0 2rem;
+  margin-bottom: 1.5rem;
+}
+
+[data-slot="card-title"] {
+  margin: 0 0 0.5rem 0;
   font-size: 2rem;
   text-align: left;
+  font-weight: 600;
 }
 
-.page-card > p {
-  margin-top: 0;
-  margin-bottom: 2rem;
+[data-slot="card-description"] {
+  margin: 0;
   color: #666;
   text-align: left;
 }
 
+[data-slot="card-content"] {
+  padding: 0 2rem 2rem 2rem;
+}
+
+/* Form row - for inputs that should appear side by side */
+.form-row {
+  display: flex;
+  gap: 1rem;
+  width: 100%;
+}
+
+.form-row > * {
+  flex: 1;
+}
+
+/* Add child button */
+.add-child-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  margin-top: 1rem;
+  background-color: #ffffff;
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+  color: #6b7280;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.add-child-btn:hover {
+  border-color: #14abdd;
+  color: #14abdd;
+  background-color: rgba(20, 171, 221, 0.05);
+}
+
+/* Remove child button */
+.remove-child-btn {
+  padding: 0.5rem 1rem;
+  background-color: transparent;
+  border: 1px solid #ef4444;
+  border-radius: 6px;
+  color: #ef4444;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.remove-child-btn:hover {
+  background-color: #ef4444;
+  color: #ffffff;
+}
+
+/* Child classification radio buttons */
+.child-classification {
+  margin-top: 1.5rem;
+}
+
+.classification-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.radio-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.radio-option:hover {
+  border-color: #14abdd;
+  background-color: rgba(20, 171, 221, 0.05);
+}
+
+.radio-option input[type="radio"] {
+  margin-top: 0.25rem;
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+  accent-color: #14abdd;
+}
+
+.radio-option span {
+  flex: 1;
+  font-size: 0.875rem;
+  color: #374151;
+  line-height: 1.5;
+}
+
+.radio-option:has(input:checked) {
+  border-color: #14abdd;
+  background-color: rgba(20, 171, 221, 0.1);
+}
+
 /* Dark mode */
 @media (prefers-color-scheme: dark) {
+  [data-slot="card"],
   .page-card {
     background-color: #2a2a2a;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    border: 1px solid #444;
   }
 
+  [data-slot="card-description"],
   .page-card > p {
     color: #aaa;
+  }
+
+  .add-child-btn {
+    background-color: #2a2a2a;
+    border-color: #4b5563;
+    color: #9ca3af;
+  }
+
+  .add-child-btn:hover {
+    border-color: #14abdd;
+    color: #14abdd;
+    background-color: rgba(20, 171, 221, 0.1);
   }
 }
 
@@ -55,11 +190,29 @@
     padding: 1rem;
   }
 
+  [data-slot="card-header"] {
+    padding: 1.5rem 1.5rem 0 1.5rem;
+  }
+
+  [data-slot="card-content"] {
+    padding: 0 1.5rem 1.5rem 1.5rem;
+  }
+
+  [data-slot="card-title"] {
+    font-size: 1.5rem;
+  }
+
   .page-card {
     padding: 2rem 1.5rem;
   }
 
   .page-card h1 {
     font-size: 1.5rem;
+  }
+
+  /* Stack form rows vertically on mobile */
+  .form-row {
+    flex-direction: column;
+    gap: 0;
   }
 }
