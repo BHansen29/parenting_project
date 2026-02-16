@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { FileText, Heart, Users, ArrowRight, Shield, CheckCircle2 } from 'lucide-react';
 import './LandingPage.css';
 import logo from '../assets/logos/ShareCare_Symmetrical Diamond Logo (1120 x 310 px).png';
 
@@ -6,7 +7,11 @@ export default function LandingPage() {
   const navigate = useNavigate();
 
   const handleGetStarted = () => {
-    navigate('/household-info');
+    navigate('/signup');
+  };
+
+  const handleSignIn = () => {
+    navigate('/signin');
   };
 
   return (
@@ -14,6 +19,9 @@ export default function LandingPage() {
       {/* Safety Resource Banner */}
       <div className="safety-banner">
         <div className="safety-banner__content">
+            <div className="safety-banner__icon safety-banner__icon--red">
+              <Shield size={24} />
+            </div>
           <span>
             <strong>Safety Resources:</strong> If you or your children are experiencing domestic violence or abuse,
             please consult with an attorney or contact the National Domestic Violence Hotline at 1-800-799-7233.
@@ -29,7 +37,7 @@ export default function LandingPage() {
           </div>
           <div className="landing-header__actions">
             <button className="landing-header__link">How it works</button>
-            <button className="landing-header__sign-in">Sign In</button>
+            <button onClick={handleSignIn} className="landing-header__sign-in">Sign In</button>
             <button onClick={handleGetStarted} className="landing-header__cta">
               Get Started
             </button>
@@ -51,59 +59,32 @@ export default function LandingPage() {
 
           {/* Feature Cards */}
           <div className="feature-cards">
-            <div className="feature-card">
-              <svg className="feature-card__icon-bg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14 2 14 8 20 8"/>
-                <line x1="16" y1="13" x2="8" y2="13"/>
-                <line x1="16" y1="17" x2="8" y2="17"/>
-                <polyline points="10 9 9 9 8 9"/>
-              </svg>
-              <svg className="feature-card__icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14 2 14 8 20 8"/>
-                <line x1="16" y1="13" x2="8" y2="13"/>
-                <line x1="16" y1="17" x2="8" y2="17"/>
-                <polyline points="10 9 9 9 8 9"/>
-              </svg>
+            <div className="feature-card_left">
+              <FileText className="feature-card_left__icon-bg" size={80} />
+              <FileText className="feature-card_left__icon" size={32} />
               <h3 className="feature-card__title">Guided Process</h3>
               <p className="feature-card__description">Simple questions walk you through each section.</p>
             </div>
 
-            <div className="feature-card">
-              <svg className="feature-card__icon-bg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-              </svg>
-              <svg className="feature-card__icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-              </svg>
+            <div className="feature-card_center">
+              <Heart className="feature-card_center__icon-bg" size={80} />
+              <Heart className="feature-card_center__icon" size={32} />
               <h3 className="feature-card__title">Child-Focused</h3>
               <p className="feature-card__description">Designed to prioritize your child's well-being.</p>
             </div>
 
-            <div className="feature-card">
-              <svg className="feature-card__icon-bg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-                <polyline points="17 21 17 13 7 13 7 21"/>
-                <polyline points="7 3 7 8 15 8"/>
-              </svg>
-              <svg className="feature-card__icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-                <polyline points="17 21 17 13 7 13 7 21"/>
-                <polyline points="7 3 7 8 15 8"/>
-              </svg>
-              <h3 className="feature-card__title">Save Progress</h3>
-              <p className="feature-card__description">Continue anytime - your work is saved.</p>
+            <div className="feature-card_right">
+              <Users className="feature-card_right__icon-bg" size={80} />
+              <Users className="feature-card_right__icon" size={32} />
+              <h3 className="feature-card__title">Work Together</h3>
+              <p className="feature-card__description">Invite the other parent to collaborate and agree.</p>
             </div>
           </div>
 
           <div className="hero__cta-section">
             <button onClick={handleGetStarted} className="hero__cta-button">
               Begin Your Plan
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="5" y1="12" x2="19" y2="12"/>
-                <polyline points="12 5 19 12 12 19"/>
-              </svg>
+              <ArrowRight size={24} />
             </button>
 
             {/* Important Notice Box */}
@@ -128,9 +109,7 @@ export default function LandingPage() {
               <div className="value-props__list">
                 <div className="value-prop">
                   <div className="value-prop__icon value-prop__icon--blue">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                    </svg>
+                    <Shield size={24} />
                   </div>
                   <div>
                     <h3 className="value-prop__title">Court Ready Format</h3>
@@ -142,10 +121,7 @@ export default function LandingPage() {
 
                 <div className="value-prop">
                   <div className="value-prop__icon value-prop__icon--green">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                      <polyline points="22 4 12 14.01 9 11.01"/>
-                    </svg>
+                    <CheckCircle2 size={24} />
                   </div>
                   <div>
                     <h3 className="value-prop__title">Free & Accessible</h3>
@@ -168,12 +144,7 @@ export default function LandingPage() {
                   <div className="mockup__line mockup__line--75"></div>
                   <div className="mockup__line mockup__line--100"></div>
                   <div className="mockup__document">
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                      <polyline points="14 2 14 8 20 8"/>
-                      <line x1="16" y1="13" x2="8" y2="13"/>
-                      <line x1="16" y1="17" x2="8" y2="17"/>
-                    </svg>
+                    <FileText size={48} />
                   </div>
                   <div className="mockup__line mockup__line--66"></div>
                 </div>

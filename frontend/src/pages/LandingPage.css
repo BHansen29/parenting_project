@@ -21,7 +21,7 @@
   font-size: 0.875rem;
   top: 0;
   margin: 0;
-  color: #c92a2a;
+  color: #ed1c24;
   width: 100vw;
   margin-left: 50%;
   transform: translateX(-50%);
@@ -140,7 +140,7 @@
 }
 
 .hero__title-accent {
-  color: #425057;
+  color: #000000;
 }
 
 .hero__description {
@@ -164,8 +164,9 @@
   margin-right: auto;
 }
 
-.feature-card {
-  background-color: #55c77e;
+.feature-card_left,
+.feature-card_center,
+.feature-card_right {
   padding: 2rem;
   border-radius: 1.5rem;
   color: #ffffff;
@@ -176,11 +177,25 @@
   transition: transform 0.3s;
 }
 
-.feature-card:hover {
+.feature-card_left {
+  background-color: #ffaa45;
+}
+.feature-card_center {
+  background-color: #69cf8b;
+}
+.feature-card_right {
+  background-color: #6570b5;
+}
+
+.feature-card_left:hover,
+.feature-card_center:hover,
+.feature-card_right:hover {
   transform: translateY(-4px);
 }
 
-.feature-card__icon-bg {
+.feature-card_left__icon-bg,
+.feature-card_center__icon-bg,
+.feature-card_right__icon-bg {
   position: absolute;
   top: 0;
   right: 0;
@@ -189,11 +204,15 @@
   transition: transform 0.3s;
 }
 
-.feature-card:hover .feature-card__icon-bg {
+.feature-card:hover .feature-card_left__icon-bg,
+.feature-card:hover .feature-card_center__icon-bg,
+.feature-card:hover .feature-card_right__icon-bg {
   transform: scale(1.1);
 }
 
-.feature-card__icon {
+.feature-card_left__icon,
+.feature-card_center__icon,
+.feature-card_right__icon {
   margin-bottom: 1rem;
   position: relative;
   z-index: 10;
@@ -251,18 +270,13 @@
 .notice-box {
   background-color: #fff8e1;
   border-left: 4px solid #ff9c27;
-  padding: 1.5rem;
+  padding: 0rem 1rem 1rem 1rem;
   max-width: 800px;
   border-radius: 0 0.75rem 0.75rem 0;
   text-align: left;
   display: flex;
   gap: 1rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-.notice-box__icon {
-  color: #ff9c27;
-  flex-shrink: 0;
 }
 
 .notice-box__title {
@@ -380,15 +394,15 @@
 }
 
 .mockup__dot--red {
-  background-color: #ef4444;
+  background-color: #ed1c24;
 }
 
 .mockup__dot--yellow {
-  background-color: #facc15;
+  background-color: #ffde00;
 }
 
 .mockup__dot--green {
-  background-color: #22c55e;
+  background-color: #41b776;
 }
 
 .mockup__content {
@@ -423,7 +437,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #60a5fa;
+  color: #14abdd;
 }
 
 /* Footer */
@@ -466,7 +480,8 @@
 }
 
 .landing-footer__link:hover {
-  color: #1bb0dd;
+  color: #14abdd;
+  background-color: transparent;
 }
 
 /* Responsive Design */
