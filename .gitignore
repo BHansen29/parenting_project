@@ -21,7 +21,6 @@ coverage/
 Thumbs.db
 
 # Editor settings
-.idea/
-.vscode/
+.*/
 *.swp
 *.swo
