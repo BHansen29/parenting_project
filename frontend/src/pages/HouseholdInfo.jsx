@@ -248,10 +248,10 @@ export default function HouseholdInfo() {
       </div>
 
       <Footer
-        showBackButton={false}
+        showBackButton={true}
         showNextButton={true}
         onNext={handleNext}
-        nextButtonText="Next"
+        onBack={() => navigate('/landing-page')}
       />
     </div>
   );

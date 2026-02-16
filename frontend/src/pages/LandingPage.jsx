@@ -14,6 +14,11 @@ export default function LandingPage() {
       {/* Safety Resource Banner */}
       <div className="safety-banner">
         <div className="safety-banner__content">
+            <div className="safety-banner__icon safety-banner__icon--red">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+            </div>
           <span>
             <strong>Safety Resources:</strong> If you or your children are experiencing domestic violence or abuse,
             please consult with an attorney or contact the National Domestic Violence Hotline at 1-800-799-7233.
