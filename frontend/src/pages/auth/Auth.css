@@ -47,6 +47,7 @@
   cursor: pointer;
   transition: all 0.2s ease;
   margin-bottom: 1rem;
+  border-radius: 50px;
 }
 
 .auth-button:hover:not(:disabled) {
