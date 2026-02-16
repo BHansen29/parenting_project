@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
+import SignIn from './pages/auth/SignIn';
+import SignUp from './pages/auth/SignUp';
 import HouseholdInfo from './pages/HouseholdInfo';
 import CustodySchedule from './pages/CustodySchedule';
 import Transportation from './pages/Transportation';
@@ -13,6 +15,10 @@ function App() {
       <Routes>
         {/* Landing page */}
         <Route path="/" element={<LandingPage />} />
+
+        {/* Auth routes */}
+        <Route path="/signin" element={<SignIn />} />
+        <Route path="/signup" element={<SignUp />} />
 
         {/* Form routes */}
         <Route path="/household-info" element={<HouseholdInfo />} />

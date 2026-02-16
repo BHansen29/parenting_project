@@ -6,7 +6,11 @@ export default function LandingPage() {
   const navigate = useNavigate();
 
   const handleGetStarted = () => {
-    navigate('/household-info');
+    navigate('/signup');
+  };
+
+  const handleSignIn = () => {
+    navigate('/signin');
   };
 
   return (
@@ -34,7 +38,7 @@ export default function LandingPage() {
           </div>
           <div className="landing-header__actions">
             <button className="landing-header__link">How it works</button>
-            <button className="landing-header__sign-in">Sign In</button>
+            <button onClick={handleSignIn} className="landing-header__sign-in">Sign In</button>
             <button onClick={handleGetStarted} className="landing-header__cta">
               Get Started
             </button>
