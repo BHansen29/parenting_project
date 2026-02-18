@@ -39,6 +39,7 @@ Before you begin, ensure you have the following installed:
 ---
 
 ## Verify Installation
+
 ```bash
 # Check Node.js version (should be v18+)
 node --version
@@ -54,9 +55,10 @@ If any of these commands fail, install the missing software before proceeding.
 
 ---
 
-# Initial Setup
+## Initial Setup
 
 ## Step 1: Clone the Repository
+
 ```bash
 # Navigate to your desired projects directory
 cd ~/Desktop  # Or wherever you want the project
@@ -74,6 +76,7 @@ cd frontend
 ---
 
 ## Step 2: Install Dependencies
+
 ```bash
 npm install
 ```
@@ -91,6 +94,7 @@ This will install:
 ---
 
 ## Step 3: Verify Setup
+
 ```bash
 npm run dev
 ```
@@ -112,9 +116,10 @@ You should see the ShareCare application.
 
 ---
 
-# Project Structure
+## Project Structure
 
 ## Key Directories Explained
+
 ```bash
 src/
 ├── components/     # Reusable UI components
@@ -133,9 +138,10 @@ Each page represents a step in the questionnaire flow.
 
 ---
 
-# Running the Application
+## Running the Application
 
 Start the development server with hot module replacement:
+
 ```bash
 npm run dev
 ```
@@ -152,9 +158,10 @@ npm run dev
 
 ---
 
-# Preview Production Build
+## Preview Production Build
 
 Test the production build locally:
+
 ```bash
 # Build the app
 npm run build
@@ -164,6 +171,7 @@ npm run preview
 ```
 
 Preview opens at:
+
 ```
 http://localhost:4173
 ```
@@ -172,7 +180,7 @@ by default.
 
 ---
 
-# Available Scripts
+## Available Scripts
 
 | Command | Description |
 |----------|------------|
@@ -188,9 +196,10 @@ by default.
 
 ---
 
-# Code Quality Checks
+## Code Quality Checks
 
 Before committing code, always run:
+
 ```bash
 npm run lint
 npm run lint:fix
@@ -200,9 +209,10 @@ npm run test
 
 ---
 
-# Building for Production
+## Building for Production
 
 ## Create Production Build
+
 ```bash
 npm run build
 ```
@@ -221,7 +231,8 @@ frontend/dist/
 
 ---
 
-# Build Verification
+## Build Verification
+
 ```bash
 npm run preview
 ```
@@ -230,7 +241,7 @@ Thoroughly test the application in preview mode before deployment.
 
 ---
 
-# Testing
+## Testing
 
 This project uses [Vitest](https://vitest.dev/) and [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/) for unit and component testing.
 
@@ -238,6 +249,7 @@ This project uses [Vitest](https://vitest.dev/) and [React Testing Library](http
 **Note:** Testing dependencies are included in `package.json`. Running `npm install` is sufficient — do not run the project with a globally installed version of Vitest as version mismatches will cause errors.
 
 ## Running Tests
+
 ```bash
 # Run tests in watch mode
 npm run test
@@ -255,6 +267,7 @@ npm run test:ui
 ## Where Tests Live
 
 Test files should be organized in the tests folder within frontend/, grouped by type:
+
 ```
 frontend/
   tests/
@@ -266,7 +279,9 @@ frontend/
 
 Test user-visible behavior rather than internal implementation details.
 Find elements the way a user would — by label, role, or visible text.
+
 ```jsx
+
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import ParentInfoForm from '../components/ParentInfoForm'
@@ -286,5 +301,27 @@ it('shows an error if the name field is left empty', async () => {
 - Avoid testing internal state directly
 
 ---
+
+### Shared Test Utilities
+
+A shared render helper is available at `src/test/utils.jsx`. Use this instead of setting up router wrappers manually in each test file.
+
+```jsx
+import { renderWithRouter } from '../test/utils'
+it('renders the form', () => {
+  renderWithRouter()
+})
+
+```
+
+### What to Test
+
+Each form section should have tests covering:
+
+- Renders without crashing
+- Validation catches empty required fields
+- Valid input is accepted
+- Next/Back navigation works correctly
+
 
 _Last Updated: February 17, 2026_
