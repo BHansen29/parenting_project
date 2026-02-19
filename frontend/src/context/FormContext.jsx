@@ -16,6 +16,7 @@ const initialState = {
   decisionMaking: { errors: {} },
   communication: { errors: {} },
   education: { errors: {} },
+  transportation: { errors: {} }, 
 };
 
 function formReducer(state, action) {
