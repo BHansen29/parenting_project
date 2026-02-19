@@ -2,7 +2,6 @@
 
 const mongoose = require('mongoose');
 
-// A schema is like a blueprint - it describes the structure of our data
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
