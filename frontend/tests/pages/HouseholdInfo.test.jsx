@@ -291,4 +291,44 @@ describe('HouseholdInfo', () => {
     fireEvent.click(screen.getByRole('button', { name: /next/i }))
     expect(mockNavigate).toHaveBeenCalledWith('/custody-schedule')
   })
+
+  // Global State Management
+
+  it('saves parent data to context on valid form submission', async () => {
+    renderWithRouter(<HouseholdInfo />)
+    await userEvent.type(screen.getByLabelText(/parent 1/i), 'Jane Smith')
+    await userEvent.type(screen.getByLabelText(/parent 2/i), 'John Smith')
+    await userEvent.type(screen.getByLabelText(/first name/i), 'Baby')
+    fireEvent.change(screen.getByLabelText(/date of birth/i), {
+      target: { value: '2020-01-01' }
+    })
+    fireEvent.click(screen.getByRole('button', { name: /next/i }))
+    expect(mockNavigate).toHaveBeenCalledWith('/custody-schedule')
+  })
+
+  it('persists parent data when returning to the page', async () => {
+    const { unmount } = renderWithRouter(<HouseholdInfo />)
+    await userEvent.type(screen.getByLabelText(/parent 1/i), 'Jane Smith')
+    await userEvent.type(screen.getByLabelText(/parent 2/i), 'John Smith')
+    unmount()
+
+    renderWithRouter(<HouseholdInfo />)
+    expect(screen.getByLabelText(/parent 1/i)).toHaveValue('Jane Smith')
+    expect(screen.getByLabelText(/parent 2/i)).toHaveValue('John Smith')
+  })
+
+  it('persists child data to context when Next is clicked', async () => {
+    const { unmount } = renderWithRouter(<HouseholdInfo />)
+    await userEvent.type(screen.getByLabelText(/parent 1/i), 'Jane Smith')
+    await userEvent.type(screen.getByLabelText(/parent 2/i), 'John Smith')
+    await userEvent.type(screen.getByLabelText(/first name/i), 'Baby')
+    fireEvent.change(screen.getByLabelText(/date of birth/i), {
+      target: { value: '2020-01-01' }
+    })
+    fireEvent.click(screen.getByRole('button', { name: /next/i }))
+    unmount()
+
+    renderWithRouter(<HouseholdInfo />)
+    expect(screen.getByLabelText(/first name/i)).toHaveValue('Baby')
+  })
 })

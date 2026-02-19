@@ -17,9 +17,11 @@ export default function HouseholdInfo() {
   const errors = state.parents?.errors ?? {};
 
   // Children use local state 
-  const [children, setChildren] = useState([
-    { id: 1, firstName: '', lastName: '', dateOfBirth: '', classification: 'minor', errors: {} }
-  ]);
+  const [children, setChildren] = useState(() => {
+    return state.children?.length > 0
+      ? state.children
+      : [{ id: 1, firstName: '', lastName: '', dateOfBirth: '', classification: 'minor', errors: {} }];
+  });
 
   const handleChange = (field) => (value) => {
     dispatch({
