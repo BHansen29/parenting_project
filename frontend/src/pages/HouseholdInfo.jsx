@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/common/Header';
 import Footer from '../components/common/Footer';
@@ -22,6 +22,11 @@ export default function HouseholdInfo() {
       ? state.children
       : [{ id: 1, firstName: '', lastName: '', dateOfBirth: '', classification: 'minor', errors: {} }];
   });
+
+  // Syncs children to global context whenever local state changes
+  useEffect(() => {
+    dispatch({ type: 'UPDATE_CHILDREN', payload: children });
+  }, [children]);
 
   const handleChange = (field) => (value) => {
     dispatch({
@@ -66,14 +71,20 @@ export default function HouseholdInfo() {
 
   const validateForm = () => {
     const parentErrors = {};
-    if (!formData.name?.trim()) parentErrors.name = 'Parent 1 name is required';
-    if (!formData.secondParentName?.trim()) parentErrors.secondParentName = 'Parent 2 name is required';
+    if (!formData.firstName?.trim()) parentErrors.firstName = 'Parent 1 first name is required';
+    if (!formData.lastName?.trim()) parentErrors.lastName = 'Parent 1 last name is required';
+    if (!formData.secondParentFirstName?.trim()) parentErrors.secondParentFirstName = 'Parent 2 first name is required';
+    if (!formData.secondParentLastName?.trim()) parentErrors.secondParentLastName = 'Parent 2 last name is required';
 
     let childrenValid = true;
     const updatedChildren = children.map((child, index) => {
       const childErrors = {};
       if (!child.firstName.trim()) {
         childErrors.firstName = `Child ${index + 1} first name is required`;
+        childrenValid = false;
+      }
+      if (!child.lastName.trim()) {
+        childErrors.lastName = `Child ${index + 1} last name is required`;
         childrenValid = false;
       }
       if (!child.dateOfBirth) {
@@ -94,13 +105,43 @@ export default function HouseholdInfo() {
     return Object.keys(parentErrors).length === 0 && childrenValid;
   };
 
+  // Tracks when a failed submission happens
+  const [submitAttempted, setSubmitAttempted] = useState(false);
+
+  // Runs after React re-renders with new errors
+  useEffect(() => {
+    if (submitAttempted) {
+      const firstError = document.querySelector(
+        '.text-input__error-message, .date-picker__error-message'
+      );
+      if (firstError) {
+        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      setSubmitAttempted(false);
+    }
+  }, [children, submitAttempted]);
+
   const handleNext = () => {
     if (validateForm()) {
       // Save children to global context before navigating
       dispatch({ type: 'UPDATE_CHILDREN', payload: children });
       navigate('/custody-schedule');
+    } else {
+      setSubmitAttempted(true);
     }
   };
+
+  const handleBack = () => {
+    dispatch({ type: 'UPDATE_CHILDREN', payload: children });
+    dispatch({
+      type: 'UPDATE_SECTION',
+      section: 'parents',
+      payload: { errors: {} }
+    });
+    navigate('/landing-page');
+  };
+
+  
 
   return (
     <div className="page-container">
@@ -126,29 +167,55 @@ export default function HouseholdInfo() {
 
               <CardContent>
                 <form noValidate>
+                  <p className="parent-label">Parent 1</p>
                   <div className="form-row">
                     <TextInput
-                      id="firstParentName"
-                      label="Parent 1"
+                      id="firstParentFirstName"
+                      label="Parent 1 First Name"
                       type="text"
-                      value={formData.name ?? ''}
-                      onChange={handleChange('name')}
+                      value={formData.firstName ?? ''}
+                      onChange={handleChange('firstName')}
                       required
-                      error={errors.name}
-                      placeholder="Full Name"
-                      autoComplete="name"
+                      error={errors.firstName}
+                      placeholder="First Name"
+                      autoComplete="given-name"
                     />
-
                     <TextInput
-                      id="secondParentName"
-                      label="Parent 2"
+                      id="firstParentLastName"
+                      label="Parent 1 Last Name"
                       type="text"
-                      value={formData.secondParentName ?? ''}
-                      onChange={handleChange('secondParentName')}
+                      value={formData.lastName ?? ''}
+                      onChange={handleChange('lastName')}
                       required
-                      error={errors.secondParentName}
-                      placeholder="Full Name"
-                      autoComplete="name"
+                      error={errors.lastName}
+                      placeholder="Last Name"
+                      autoComplete="family-name"
+                    />
+                  </div>
+
+                  <p className="parent-label">Parent 2</p>
+                  <div className="form-row">
+                    <TextInput
+                      id="secondParentFirstName"
+                      label="Parent 2 First Name"
+                      type="text"
+                      value={formData.secondParentFirstName ?? ''}
+                      onChange={handleChange('secondParentFirstName')}
+                      required
+                      error={errors.secondParentFirstName}
+                      placeholder="First Name"
+                      autoComplete="given-name"
+                    />
+                    <TextInput
+                      id="secondParentLastName"
+                      label="Parent 2 Last Name"
+                      type="text"
+                      value={formData.secondParentLastName ?? ''}
+                      onChange={handleChange('secondParentLastName')}
+                      required
+                      error={errors.secondParentLastName}
+                      placeholder="Last Name"
+                      autoComplete="family-name"
                     />
                   </div>
                 </form>
@@ -203,6 +270,7 @@ export default function HouseholdInfo() {
                             type="text"
                             value={child.lastName}
                             onChange={handleChildChange(child.id, 'lastName')}
+                            required
                             placeholder="Last Name"
                             autoComplete="family-name"
                             error={child.errors?.lastName}
@@ -270,7 +338,7 @@ export default function HouseholdInfo() {
         showBackButton={true}
         showNextButton={true}
         onNext={handleNext}
-        onBack={() => navigate('/landing-page')}
+        onBack={handleBack}
       />
     </div>
   );

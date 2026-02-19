@@ -4,8 +4,10 @@ export const FormContext = createContext(null);
 
 const initialState = {
   parents: {
-    name: '',
-    secondParentName: '',
+    firstName: '',
+    lastName: '',
+    secondParentFirstName: '',
+    secondParentLastName: '',
     errors: {}
   },
   children: [],
@@ -14,6 +16,7 @@ const initialState = {
   decisionMaking: { errors: {} },
   communication: { errors: {} },
   education: { errors: {} },
+  transportation: { errors: {} }, 
 };
 
 function formReducer(state, action) {

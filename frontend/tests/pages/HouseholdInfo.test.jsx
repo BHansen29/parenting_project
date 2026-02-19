@@ -1,4 +1,4 @@
-import { screen, fireEvent, within } from '@testing-library/react'
+import { screen, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { vi } from 'vitest'
 import HouseholdInfo from '../../src/pages/HouseholdInfo'
@@ -14,13 +14,16 @@ vi.mock('react-router-dom', async () => {
   }
 })
 
+// Mock scrollIntoView — not implemented in jsdom
+window.HTMLElement.prototype.scrollIntoView = vi.fn()
+
 describe('HouseholdInfo', () => {
   beforeEach(() => {
     mockNavigate.mockReset()
     localStorage.clear()
   })
 
-  // Render
+  // ─── Render ───────────────────────────────────────────────────────────────
 
   it('renders without crashing', () => {
     renderWithRouter(<HouseholdInfo />)
@@ -46,7 +49,7 @@ describe('HouseholdInfo', () => {
     expect(screen.getByText(/step \d+ of \d+/i)).toBeInTheDocument()
   })
 
-  // Parents Section
+  // ─── Parents Section ──────────────────────────────────────────────────────
 
   it('displays the Parents section heading and description', () => {
     renderWithRouter(<HouseholdInfo />)
@@ -54,25 +57,43 @@ describe('HouseholdInfo', () => {
     expect(screen.getByText(/individuals entering into this parenting agreement/i)).toBeInTheDocument()
   })
 
-  it('renders Parent 1 and Parent 2 input fields', () => {
+  it('renders Parent 1 first and last name fields', () => {
     renderWithRouter(<HouseholdInfo />)
-    expect(screen.getByLabelText(/parent 1/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/parent 2/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/parent 1 first name/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/parent 1 last name/i)).toBeInTheDocument()
   })
 
-  it('accepts input in Parent 1 field', async () => {
+  it('renders Parent 2 first and last name fields', () => {
     renderWithRouter(<HouseholdInfo />)
-    await userEvent.type(screen.getByLabelText(/parent 1/i), 'Jane Smith')
-    expect(screen.getByLabelText(/parent 1/i)).toHaveValue('Jane Smith')
+    expect(screen.getByLabelText(/parent 2 first name/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/parent 2 last name/i)).toBeInTheDocument()
   })
 
-  it('accepts input in Parent 2 field', async () => {
+  it('accepts input in Parent 1 first name field', async () => {
     renderWithRouter(<HouseholdInfo />)
-    await userEvent.type(screen.getByLabelText(/parent 2/i), 'John Smith')
-    expect(screen.getByLabelText(/parent 2/i)).toHaveValue('John Smith')
+    await userEvent.type(document.getElementById('firstParentFirstName'), 'Jane')
+    expect(document.getElementById('firstParentFirstName')).toHaveValue('Jane')
   })
 
-  // Children Section
+  it('accepts input in Parent 1 last name field', async () => {
+    renderWithRouter(<HouseholdInfo />)
+    await userEvent.type(document.getElementById('firstParentLastName'), 'Smith')
+    expect(document.getElementById('firstParentLastName')).toHaveValue('Smith')
+  })
+
+  it('accepts input in Parent 2 first name field', async () => {
+    renderWithRouter(<HouseholdInfo />)
+    await userEvent.type(document.getElementById('secondParentFirstName'), 'John')
+    expect(document.getElementById('secondParentFirstName')).toHaveValue('John')
+  })
+
+  it('accepts input in Parent 2 last name field', async () => {
+    renderWithRouter(<HouseholdInfo />)
+    await userEvent.type(document.getElementById('secondParentLastName'), 'Smith')
+    expect(document.getElementById('secondParentLastName')).toHaveValue('Smith')
+  })
+
+  // ─── Children Section ─────────────────────────────────────────────────────
 
   it('displays the Children section heading and description', () => {
     renderWithRouter(<HouseholdInfo />)
@@ -88,32 +109,32 @@ describe('HouseholdInfo', () => {
 
   it('renders first name, last name, and date of birth fields for the default child', () => {
     renderWithRouter(<HouseholdInfo />)
-    expect(screen.getByLabelText(/first name/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/last name/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/date of birth/i)).toBeInTheDocument()
+    expect(document.getElementById('child-1-firstName')).toBeInTheDocument()
+    expect(document.getElementById('child-1-lastName')).toBeInTheDocument()
+    expect(document.getElementById('child-1-dateOfBirth')).toBeInTheDocument()
   })
 
   it('accepts input in child first name field', async () => {
     renderWithRouter(<HouseholdInfo />)
-    await userEvent.type(screen.getByLabelText(/first name/i), 'Baby')
-    expect(screen.getByLabelText(/first name/i)).toHaveValue('Baby')
+    await userEvent.type(document.getElementById('child-1-firstName'), 'Baby')
+    expect(document.getElementById('child-1-firstName')).toHaveValue('Baby')
   })
 
   it('accepts input in child last name field', async () => {
     renderWithRouter(<HouseholdInfo />)
-    await userEvent.type(screen.getByLabelText(/last name/i), 'Smith')
-    expect(screen.getByLabelText(/last name/i)).toHaveValue('Smith')
+    await userEvent.type(document.getElementById('child-1-lastName'), 'Smith')
+    expect(document.getElementById('child-1-lastName')).toHaveValue('Smith')
   })
 
   it('accepts a date of birth value', () => {
     renderWithRouter(<HouseholdInfo />)
-    fireEvent.change(screen.getByLabelText(/date of birth/i), {
+    fireEvent.change(document.getElementById('child-1-dateOfBirth'), {
       target: { value: '2020-01-01' }
     })
-    expect(screen.getByLabelText(/date of birth/i)).toHaveValue('2020-01-01')
+    expect(document.getElementById('child-1-dateOfBirth')).toHaveValue('2020-01-01')
   })
 
-  // Child Classification
+  // ─── Child Classification ─────────────────────────────────────────────────
 
   it('renders both child classification radio options', () => {
     renderWithRouter(<HouseholdInfo />)
@@ -155,7 +176,7 @@ describe('HouseholdInfo', () => {
     expect(emancipatedRadio).not.toBeChecked()
   })
 
-  // Add/Remove Children
+  // ─── Add / Remove Children ────────────────────────────────────────────────
 
   it('renders the Add Another Child button', () => {
     renderWithRouter(<HouseholdInfo />)
@@ -172,9 +193,12 @@ describe('HouseholdInfo', () => {
   it('adds independent fields for each child', async () => {
     renderWithRouter(<HouseholdInfo />)
     await userEvent.click(screen.getByRole('button', { name: /add another child/i }))
-    expect(screen.getAllByLabelText(/first name/i)).toHaveLength(2)
-    expect(screen.getAllByLabelText(/last name/i)).toHaveLength(2)
-    expect(screen.getAllByLabelText(/date of birth/i)).toHaveLength(2)
+    expect(document.getElementById('child-1-firstName')).toBeInTheDocument()
+    expect(document.getElementById('child-2-firstName')).toBeInTheDocument()
+    expect(document.getElementById('child-1-lastName')).toBeInTheDocument()
+    expect(document.getElementById('child-2-lastName')).toBeInTheDocument()
+    expect(document.getElementById('child-1-dateOfBirth')).toBeInTheDocument()
+    expect(document.getElementById('child-2-dateOfBirth')).toBeInTheDocument()
   })
 
   it('each child gets their own independent classification radio buttons', async () => {
@@ -219,46 +243,121 @@ describe('HouseholdInfo', () => {
     expect(screen.getByText('Child 3')).toBeInTheDocument()
   })
 
-  // Validation
+  // ─── Validation ───────────────────────────────────────────────────────────
 
-  /* THIS TEST FAILS, need to implement this
   it('shows all required field errors when submitting empty form', async () => {
     renderWithRouter(<HouseholdInfo />)
     fireEvent.click(screen.getByRole('button', { name: /next/i }))
-    expect(await screen.findByText('Parent 1 name is required')).toBeInTheDocument()
-    expect(await screen.findByText('Parent 2 name is required')).toBeInTheDocument()
+    expect(await screen.findByText('Parent 1 first name is required')).toBeInTheDocument()
+    expect(await screen.findByText('Parent 1 last name is required')).toBeInTheDocument()
+    expect(await screen.findByText('Parent 2 first name is required')).toBeInTheDocument()
+    expect(await screen.findByText('Parent 2 last name is required')).toBeInTheDocument()
     expect(await screen.findByText('Child 1 first name is required')).toBeInTheDocument()
+    expect(await screen.findByText('Child 1 last name is required')).toBeInTheDocument()
     expect(await screen.findByText('Child 1 date of birth is required')).toBeInTheDocument()
   })
-  */
 
-  it('clears Parent 1 error when user starts typing', async () => {
+  it('shows error when Parent 1 first name is missing', async () => {
     renderWithRouter(<HouseholdInfo />)
     fireEvent.click(screen.getByRole('button', { name: /next/i }))
-    await screen.findByText('Parent 1 name is required')
-    await userEvent.type(screen.getByLabelText(/parent 1/i), 'Jane Smith')
-    expect(screen.queryByText('Parent 1 name is required')).not.toBeInTheDocument()
+    expect(await screen.findByText('Parent 1 first name is required')).toBeInTheDocument()
   })
 
-  it('clears Parent 2 error when user starts typing', async () => {
+  it('shows error when Parent 1 last name is missing', async () => {
     renderWithRouter(<HouseholdInfo />)
     fireEvent.click(screen.getByRole('button', { name: /next/i }))
-    await screen.findByText('Parent 2 name is required')
-    await userEvent.type(screen.getByLabelText(/parent 2/i), 'John Smith')
-    expect(screen.queryByText('Parent 2 name is required')).not.toBeInTheDocument()
+    expect(await screen.findByText('Parent 1 last name is required')).toBeInTheDocument()
   })
 
-  /* THIS TEST FAILS, need to implement this
+  it('shows error when Parent 2 first name is missing', async () => {
+    renderWithRouter(<HouseholdInfo />)
+    fireEvent.click(screen.getByRole('button', { name: /next/i }))
+    expect(await screen.findByText('Parent 2 first name is required')).toBeInTheDocument()
+  })
+
+  it('shows error when Parent 2 last name is missing', async () => {
+    renderWithRouter(<HouseholdInfo />)
+    fireEvent.click(screen.getByRole('button', { name: /next/i }))
+    expect(await screen.findByText('Parent 2 last name is required')).toBeInTheDocument()
+  })
+
+  it('shows error when child first name is missing', async () => {
+    renderWithRouter(<HouseholdInfo />)
+    fireEvent.click(screen.getByRole('button', { name: /next/i }))
+    expect(await screen.findByText('Child 1 first name is required')).toBeInTheDocument()
+  })
+
+  it('shows error when child last name is missing', async () => {
+    renderWithRouter(<HouseholdInfo />)
+    fireEvent.click(screen.getByRole('button', { name: /next/i }))
+    expect(await screen.findByText('Child 1 last name is required')).toBeInTheDocument()
+  })
+
+  it('shows error when child date of birth is missing', async () => {
+    renderWithRouter(<HouseholdInfo />)
+    fireEvent.click(screen.getByRole('button', { name: /next/i }))
+    expect(await screen.findByText('Child 1 date of birth is required')).toBeInTheDocument()
+  })
+
+  it('clears Parent 1 first name error when user starts typing', async () => {
+    renderWithRouter(<HouseholdInfo />)
+    fireEvent.click(screen.getByRole('button', { name: /next/i }))
+    await screen.findByText('Parent 1 first name is required')
+    await userEvent.type(document.getElementById('firstParentFirstName'), 'Jane')
+    expect(screen.queryByText('Parent 1 first name is required')).not.toBeInTheDocument()
+  })
+
+  it('clears Parent 1 last name error when user starts typing', async () => {
+    renderWithRouter(<HouseholdInfo />)
+    fireEvent.click(screen.getByRole('button', { name: /next/i }))
+    await screen.findByText('Parent 1 last name is required')
+    await userEvent.type(document.getElementById('firstParentLastName'), 'Smith')
+    expect(screen.queryByText('Parent 1 last name is required')).not.toBeInTheDocument()
+  })
+
+  it('clears Parent 2 first name error when user starts typing', async () => {
+    renderWithRouter(<HouseholdInfo />)
+    fireEvent.click(screen.getByRole('button', { name: /next/i }))
+    await screen.findByText('Parent 2 first name is required')
+    await userEvent.type(document.getElementById('secondParentFirstName'), 'John')
+    expect(screen.queryByText('Parent 2 first name is required')).not.toBeInTheDocument()
+  })
+
+  it('clears Parent 2 last name error when user starts typing', async () => {
+    renderWithRouter(<HouseholdInfo />)
+    fireEvent.click(screen.getByRole('button', { name: /next/i }))
+    await screen.findByText('Parent 2 last name is required')
+    await userEvent.type(document.getElementById('secondParentLastName'), 'Smith')
+    expect(screen.queryByText('Parent 2 last name is required')).not.toBeInTheDocument()
+  })
+
+  it('clears child first name error when user starts typing', async () => {
+    renderWithRouter(<HouseholdInfo />)
+    fireEvent.click(screen.getByRole('button', { name: /next/i }))
+    await screen.findByText('Child 1 first name is required')
+    await userEvent.type(document.getElementById('child-1-firstName'), 'Baby')
+    expect(screen.queryByText('Child 1 first name is required')).not.toBeInTheDocument()
+  })
+
+  it('clears child last name error when user starts typing', async () => {
+    renderWithRouter(<HouseholdInfo />)
+    fireEvent.click(screen.getByRole('button', { name: /next/i }))
+    await screen.findByText('Child 1 last name is required')
+    await userEvent.type(document.getElementById('child-1-lastName'), 'Smith')
+    expect(screen.queryByText('Child 1 last name is required')).not.toBeInTheDocument()
+  })
+
   it('shows validation errors for all children on empty submit', async () => {
     renderWithRouter(<HouseholdInfo />)
     await userEvent.click(screen.getByRole('button', { name: /add another child/i }))
     fireEvent.click(screen.getByRole('button', { name: /next/i }))
     expect(await screen.findByText('Child 1 first name is required')).toBeInTheDocument()
     expect(await screen.findByText('Child 2 first name is required')).toBeInTheDocument()
+    expect(await screen.findByText('Child 1 last name is required')).toBeInTheDocument()
+    expect(await screen.findByText('Child 2 last name is required')).toBeInTheDocument()
     expect(await screen.findByText('Child 1 date of birth is required')).toBeInTheDocument()
     expect(await screen.findByText('Child 2 date of birth is required')).toBeInTheDocument()
   })
-  */
 
   it('does not navigate when Next is clicked with empty form', async () => {
     renderWithRouter(<HouseholdInfo />)
@@ -266,7 +365,7 @@ describe('HouseholdInfo', () => {
     expect(mockNavigate).not.toHaveBeenCalled()
   })
 
-  //  Footer Navigation 
+  // ─── Footer Navigation ────────────────────────────────────────────────────
 
   it('renders the Next and Back buttons in the footer', () => {
     renderWithRouter(<HouseholdInfo />)
@@ -282,24 +381,30 @@ describe('HouseholdInfo', () => {
 
   it('navigates to /custody-schedule on valid form submission', async () => {
     renderWithRouter(<HouseholdInfo />)
-    await userEvent.type(screen.getByLabelText(/parent 1/i), 'Jane Smith')
-    await userEvent.type(screen.getByLabelText(/parent 2/i), 'John Smith')
-    await userEvent.type(screen.getByLabelText(/first name/i), 'Baby')
-    fireEvent.change(screen.getByLabelText(/date of birth/i), {
+    await userEvent.type(document.getElementById('firstParentFirstName'), 'Jane')
+    await userEvent.type(document.getElementById('firstParentLastName'), 'Smith')
+    await userEvent.type(document.getElementById('secondParentFirstName'), 'John')
+    await userEvent.type(document.getElementById('secondParentLastName'), 'Smith')
+    await userEvent.type(document.getElementById('child-1-firstName'), 'Baby')
+    await userEvent.type(document.getElementById('child-1-lastName'), 'Smith')
+    fireEvent.change(document.getElementById('child-1-dateOfBirth'), {
       target: { value: '2020-01-01' }
     })
     fireEvent.click(screen.getByRole('button', { name: /next/i }))
     expect(mockNavigate).toHaveBeenCalledWith('/custody-schedule')
   })
 
-  // Global State Management
+  // ─── Global State Management ──────────────────────────────────────────────
 
   it('saves parent data to context on valid form submission', async () => {
     renderWithRouter(<HouseholdInfo />)
-    await userEvent.type(screen.getByLabelText(/parent 1/i), 'Jane Smith')
-    await userEvent.type(screen.getByLabelText(/parent 2/i), 'John Smith')
-    await userEvent.type(screen.getByLabelText(/first name/i), 'Baby')
-    fireEvent.change(screen.getByLabelText(/date of birth/i), {
+    await userEvent.type(document.getElementById('firstParentFirstName'), 'Jane')
+    await userEvent.type(document.getElementById('firstParentLastName'), 'Smith')
+    await userEvent.type(document.getElementById('secondParentFirstName'), 'John')
+    await userEvent.type(document.getElementById('secondParentLastName'), 'Smith')
+    await userEvent.type(document.getElementById('child-1-firstName'), 'Baby')
+    await userEvent.type(document.getElementById('child-1-lastName'), 'Smith')
+    fireEvent.change(document.getElementById('child-1-dateOfBirth'), {
       target: { value: '2020-01-01' }
     })
     fireEvent.click(screen.getByRole('button', { name: /next/i }))
@@ -308,27 +413,28 @@ describe('HouseholdInfo', () => {
 
   it('persists parent data when returning to the page', async () => {
     const { unmount } = renderWithRouter(<HouseholdInfo />)
-    await userEvent.type(screen.getByLabelText(/parent 1/i), 'Jane Smith')
-    await userEvent.type(screen.getByLabelText(/parent 2/i), 'John Smith')
+    await userEvent.type(document.getElementById('firstParentFirstName'), 'Jane')
+    await userEvent.type(document.getElementById('firstParentLastName'), 'Smith')
     unmount()
-
     renderWithRouter(<HouseholdInfo />)
-    expect(screen.getByLabelText(/parent 1/i)).toHaveValue('Jane Smith')
-    expect(screen.getByLabelText(/parent 2/i)).toHaveValue('John Smith')
+    expect(document.getElementById('firstParentFirstName')).toHaveValue('Jane')
+    expect(document.getElementById('firstParentLastName')).toHaveValue('Smith')
   })
 
   it('persists child data to context when Next is clicked', async () => {
     const { unmount } = renderWithRouter(<HouseholdInfo />)
-    await userEvent.type(screen.getByLabelText(/parent 1/i), 'Jane Smith')
-    await userEvent.type(screen.getByLabelText(/parent 2/i), 'John Smith')
-    await userEvent.type(screen.getByLabelText(/first name/i), 'Baby')
-    fireEvent.change(screen.getByLabelText(/date of birth/i), {
+    await userEvent.type(document.getElementById('firstParentFirstName'), 'Jane')
+    await userEvent.type(document.getElementById('firstParentLastName'), 'Smith')
+    await userEvent.type(document.getElementById('secondParentFirstName'), 'John')
+    await userEvent.type(document.getElementById('secondParentLastName'), 'Smith')
+    await userEvent.type(document.getElementById('child-1-firstName'), 'Baby')
+    await userEvent.type(document.getElementById('child-1-lastName'), 'Smith')
+    fireEvent.change(document.getElementById('child-1-dateOfBirth'), {
       target: { value: '2020-01-01' }
     })
     fireEvent.click(screen.getByRole('button', { name: /next/i }))
     unmount()
-
     renderWithRouter(<HouseholdInfo />)
-    expect(screen.getByLabelText(/first name/i)).toHaveValue('Baby')
+    expect(document.getElementById('child-1-firstName')).toHaveValue('Baby')
   })
 })
