@@ -171,7 +171,7 @@ export default function HouseholdInfo() {
                   <div className="form-row">
                     <TextInput
                       id="firstParentFirstName"
-                      label="First Name"
+                      label="Parent 1 First Name"
                       type="text"
                       value={formData.firstName ?? ''}
                       onChange={handleChange('firstName')}
@@ -182,7 +182,7 @@ export default function HouseholdInfo() {
                     />
                     <TextInput
                       id="firstParentLastName"
-                      label="Last Name"
+                      label="Parent 1 Last Name"
                       type="text"
                       value={formData.lastName ?? ''}
                       onChange={handleChange('lastName')}
@@ -197,7 +197,7 @@ export default function HouseholdInfo() {
                   <div className="form-row">
                     <TextInput
                       id="secondParentFirstName"
-                      label="First Name"
+                      label="Parent 2 First Name"
                       type="text"
                       value={formData.secondParentFirstName ?? ''}
                       onChange={handleChange('secondParentFirstName')}
@@ -208,7 +208,7 @@ export default function HouseholdInfo() {
                     />
                     <TextInput
                       id="secondParentLastName"
-                      label="Last Name"
+                      label="Parent 2 Last Name"
                       type="text"
                       value={formData.secondParentLastName ?? ''}
                       onChange={handleChange('secondParentLastName')}
