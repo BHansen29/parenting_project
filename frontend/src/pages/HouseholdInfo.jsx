@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/common/Header';
 import Footer from '../components/common/Footer';
@@ -94,11 +94,29 @@ export default function HouseholdInfo() {
     return Object.keys(parentErrors).length === 0 && childrenValid;
   };
 
+  // Tracks when a failed submission happens
+  const [submitAttempted, setSubmitAttempted] = useState(false);
+
+  // Runs after React re-renders with new errors
+  useEffect(() => {
+    if (submitAttempted) {
+      const firstError = document.querySelector(
+        '.text-input__error-message, .date-picker__error-message'
+      );
+      if (firstError) {
+        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      setSubmitAttempted(false);
+    }
+  }, [children, submitAttempted]);
+
   const handleNext = () => {
     if (validateForm()) {
       // Save children to global context before navigating
       dispatch({ type: 'UPDATE_CHILDREN', payload: children });
       navigate('/custody-schedule');
+    } else {
+      setSubmitAttempted(true);
     }
   };
 

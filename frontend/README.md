@@ -130,7 +130,7 @@ src/
 ├── context/        # Global state management
 │   └── FormContext # Shared questionnaire data
 ├── hooks/          # Custom React hooks
-├── utils/          # Helper functions (validation, formatting, storage)
+├── utils/          # Helper functions (validation, formatting, storage)5
 ├── services/       # API integration (backend communication)
 ```
 
