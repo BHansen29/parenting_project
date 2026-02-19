@@ -120,6 +120,15 @@ export default function HouseholdInfo() {
     }
   };
 
+  const handleBack = () => {
+    dispatch({
+      type: 'UPDATE_SECTION',
+      section: 'parents',
+      payload: { errors: {} }
+    });
+    navigate('/landing-page');
+  };
+
   return (
     <div className="page-container">
       <Header />
@@ -288,7 +297,7 @@ export default function HouseholdInfo() {
         showBackButton={true}
         showNextButton={true}
         onNext={handleNext}
-        onBack={() => navigate('/landing-page')}
+        onBack={handleBack}
       />
     </div>
   );
