@@ -1,10 +1,12 @@
 import Header from '../components/common/Header';
 import Footer from '../components/common/Footer';
 import { useNavigate } from 'react-router-dom';
+import { useForm } from '../hooks/useForm';
 import './Page.css';  
 
 export default function Review() {
   const navigate = useNavigate();
+  const { state } = useForm();
 
   return (
     <div className="page-container">

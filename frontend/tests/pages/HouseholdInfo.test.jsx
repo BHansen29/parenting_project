@@ -17,6 +17,7 @@ vi.mock('react-router-dom', async () => {
 describe('HouseholdInfo', () => {
   beforeEach(() => {
     mockNavigate.mockReset()
+    localStorage.clear()
   })
 
   // Render

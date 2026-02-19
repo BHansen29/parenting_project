@@ -1,11 +1,13 @@
 import Footer from '../components/common/Footer';
 import Header from '../components/common/Header';
 import { useNavigate } from 'react-router-dom';
+import { useForm } from '../hooks/useForm';
 import './Page.css';
 
 
 export default function Transportation() {
   const navigate = useNavigate();
+  const { state, dispatch } = useForm();
 
   return (
     <div className="page-container">
