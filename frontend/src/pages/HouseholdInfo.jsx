@@ -5,93 +5,99 @@ import Footer from '../components/common/Footer';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/card';
 import TextInput from '../components/forms/TextInput';
 import DatePicker from '../components/forms/DatePicker';
+import { useForm } from '../hooks/useForm';
 import './Page.css';
 
 export default function HouseholdInfo() {
   const navigate = useNavigate();
+  const { state, dispatch } = useForm();
 
-  const [formData, setFormData] = useState({
-    name: '',
-    secondParentName: '',
+  // Parents stay in global context
+  const formData = state.parents ?? { name: '', secondParentName: '', errors: {} };
+  const errors = state.parents?.errors ?? {};
+
+  // Children use local state 
+  const [children, setChildren] = useState(() => {
+    return state.children?.length > 0
+      ? state.children
+      : [{ id: 1, firstName: '', lastName: '', dateOfBirth: '', classification: 'minor', errors: {} }];
   });
 
-  const [children, setChildren] = useState([
-    { id: 1, firstName: '', lastName: '', dateOfBirth: '', classification: 'minor' }
-  ]);
-
-  const [errors, setErrors] = useState({});
-
-  // Reusable change handler
   const handleChange = (field) => (value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
+    dispatch({
+      type: 'UPDATE_SECTION',
+      section: 'parents',
+      payload: { [field]: value }
+    });
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
+      dispatch({
+        type: 'UPDATE_SECTION',
+        section: 'parents',
+        payload: { errors: { ...errors, [field]: '' } }
+      });
     }
   };
 
-  // Child change handler
   const handleChildChange = (childId, field) => (value) => {
     setChildren(prev => prev.map(child =>
-      child.id === childId ? { ...child, [field]: value } : child
+      child.id === childId
+        ? { ...child, [field]: value, errors: { ...(child.errors ?? {}), [field]: '' } }
+        : child
     ));
   };
 
-  // Add new child
   const addChild = () => {
     const newId = Math.max(...children.map(c => c.id), 0) + 1;
-    setChildren(prev => [...prev, { id: newId, firstName: '', lastName: '', dateOfBirth: '', classification: 'minor' }]);
+    setChildren(prev => [...prev, {
+      id: newId,
+      firstName: '',
+      lastName: '',
+      dateOfBirth: '',
+      classification: 'minor',
+      errors: {}
+    }]);
   };
 
-  // Remove child
   const removeChild = (childId) => {
     if (children.length > 1) {
       setChildren(prev => prev.filter(child => child.id !== childId));
     }
   };
 
-  // Calculate age from birth date
-  const calculateAge = (birthDate) => {
-    if (!birthDate) return null;
-    const today = new Date();
-    const birth = new Date(birthDate);
-    let age = today.getFullYear() - birth.getFullYear();
-    const monthDiff = today.getMonth() - birth.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-      age--;
-    }
-    return age;
-  };
-
-  // Basic validation
   const validateForm = () => {
-    const newErrors = {};
+    const parentErrors = {};
+    if (!formData.name?.trim()) parentErrors.name = 'Parent 1 name is required';
+    if (!formData.secondParentName?.trim()) parentErrors.secondParentName = 'Parent 2 name is required';
 
-    if (!formData.name.trim()) {
-      newErrors.name = 'Parent 1 name is required';
-    }
-
-    if (!formData.secondParentName.trim()) {
-      newErrors.secondParentName = 'Parent 2 name is required';
-    }
-
-    children.forEach((child, index) => {
+    let childrenValid = true;
+    const updatedChildren = children.map((child, index) => {
+      const childErrors = {};
       if (!child.firstName.trim()) {
-        newErrors[`childFirstName_${child.id}`] = `Child ${index + 1} first name is required`;
+        childErrors.firstName = `Child ${index + 1} first name is required`;
+        childrenValid = false;
       }
       if (!child.dateOfBirth) {
-        newErrors[`childDateOfBirth_${child.id}`] = `Child ${index + 1} date of birth is required`;
+        childErrors.dateOfBirth = `Child ${index + 1} date of birth is required`;
+        childrenValid = false;
       }
+      return { ...child, errors: childErrors };
     });
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    setChildren(updatedChildren);
+
+    dispatch({
+      type: 'UPDATE_SECTION',
+      section: 'parents',
+      payload: { errors: parentErrors }
+    });
+
+    return Object.keys(parentErrors).length === 0 && childrenValid;
   };
 
   const handleNext = () => {
     if (validateForm()) {
-      // TODO: Save to context or state management
-      console.log('Form data:', formData);
+      // Save children to global context before navigating
+      dispatch({ type: 'UPDATE_CHILDREN', payload: children });
       navigate('/custody-schedule');
     }
   };
@@ -104,14 +110,18 @@ export default function HouseholdInfo() {
         <Card>
           <CardHeader>
             <CardTitle>Household Information</CardTitle>
-            <CardDescription>Enter the details of the parents and children covered by this agreement.</CardDescription>
+            <CardDescription>
+              Enter the details of the parents and children covered by this agreement.
+            </CardDescription>
           </CardHeader>
 
           <CardContent>
             <Card>
               <CardHeader>
                 <CardTitle>Parents</CardTitle>
-                <CardDescription>The individuals entering into this parenting agreement.</CardDescription>
+                <CardDescription>
+                  The individuals entering into this parenting agreement.
+                </CardDescription>
               </CardHeader>
 
               <CardContent>
@@ -121,7 +131,7 @@ export default function HouseholdInfo() {
                       id="firstParentName"
                       label="Parent 1"
                       type="text"
-                      value={formData.name}
+                      value={formData.name ?? ''}
                       onChange={handleChange('name')}
                       required
                       error={errors.name}
@@ -133,7 +143,7 @@ export default function HouseholdInfo() {
                       id="secondParentName"
                       label="Parent 2"
                       type="text"
-                      value={formData.secondParentName}
+                      value={formData.secondParentName ?? ''}
                       onChange={handleChange('secondParentName')}
                       required
                       error={errors.secondParentName}
@@ -144,10 +154,13 @@ export default function HouseholdInfo() {
                 </form>
               </CardContent>
             </Card>
+
             <Card>
               <CardHeader>
                 <CardTitle>Children</CardTitle>
-                <CardDescription>The children covered by this parenting agreement.</CardDescription>
+                <CardDescription>
+                  The children covered by this parenting agreement.
+                </CardDescription>
               </CardHeader>
 
               <CardContent>
@@ -155,7 +168,7 @@ export default function HouseholdInfo() {
                   <Card key={child.id}>
                     <CardHeader>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <CardTitle>Child {index + 1}</CardTitle>
+                        <CardTitle>{`Child ${index + 1}`}</CardTitle>
                         {children.length > 1 && (
                           <button
                             type="button"
@@ -181,6 +194,7 @@ export default function HouseholdInfo() {
                             required
                             placeholder="First Name"
                             autoComplete="given-name"
+                            error={child.errors?.firstName}
                           />
 
                           <TextInput
@@ -191,6 +205,7 @@ export default function HouseholdInfo() {
                             onChange={handleChildChange(child.id, 'lastName')}
                             placeholder="Last Name"
                             autoComplete="family-name"
+                            error={child.errors?.lastName}
                           />
                         </div>
 
@@ -201,6 +216,7 @@ export default function HouseholdInfo() {
                           onChange={handleChildChange(child.id, 'dateOfBirth')}
                           required
                           max={new Date().toISOString().split('T')[0]}
+                          error={child.errors?.dateOfBirth}
                         />
 
                         <div className="child-classification">
@@ -214,7 +230,10 @@ export default function HouseholdInfo() {
                                 checked={child.classification === 'minor'}
                                 onChange={(e) => handleChildChange(child.id, 'classification')(e.target.value)}
                               />
-                              <span>The child is a minor and/or mentally or physically disabled incapable of supporting or maintaining themselves</span>
+                              <span>
+                                The child is a minor and/or mentally or physically disabled
+                                incapable of supporting or maintaining themselves
+                              </span>
                             </label>
 
                             <label className="radio-option">
