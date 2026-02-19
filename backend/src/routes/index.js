@@ -112,7 +112,7 @@ router.post('/logout', (req, res) => {
 // req must contain user login info in JSON (name, email, password)
 router.post('/createUser', async (req, res) => {
   try {
-    const user = await User.findOne(req.body.email)
+    const user = await User.findOne({ email: req.body.email })
     // might not need this logic if unique property of email is accounted for in User.create()
     if (!user) {
       await User.create(req.body)
