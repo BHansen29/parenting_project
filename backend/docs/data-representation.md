@@ -5,9 +5,7 @@ This document outlines the data representation for a user's active session in th
 
 Instead of creating separate database rows for every answer a user gives, we maintain a single root `Plan` object. This object contains an embedded array of `children` representing the questions the user has answered so far, along with their specific responses.
 
-It is easiest to think of this Plan Data Structure as a Tree, where the root is the Plan with is specifier attributes (PlanID, UserId), and the children of the Plan are a list of Questions. **Pending Future Documentation**
-
-
+It is easiest to think of this Plan Data Structure as a Tree, where the root is the Plan with is specifier attributes (PlanID, UserId), and the children of the Plan are a list of question responses. **Pending Future Documentation**
 
 
 ## Schema Definition
@@ -18,13 +16,16 @@ The `Plan` object acts as the primary wrapper for a user's session. It tracks wh
 * **`planID`** *(String)*: The unique identifier for this specific form session/draft.
 * **`userID`** *(String)*: The unique identifier (from Firebase Auth) of the parent filling out the form.
 * **`status`** *(String)*: The current state of the plan (e.g., `in_progress`, `completed`, `ready_for_review`).
+* **`currentQuestion`** *(ObjectId)*: The unique ID linking back to the last question a user has answered. Used in resuming in_progress plans.
 * **`children`** *(Array of Objects)*: An ordered list of the question nodes the user has traversed and answered.
 
-### 2. The Embedded Array: `Question` Object
+### 2. The Embedded Array: `QuestionResponse` Object
 Each object inside the `children` array represents a resolved node in our decision tree. 
 
-* **`questionID`** *(String)*: The unique ID linking back to the static administrative graph (e.g., `Q1`, `Q2`).
+* **`questionID`** *(ObjectId)*: The unique ID linking back to the static administrative graph (e.g., `Q1`, `Q2`).
 * **`answer`** *(Mixed)*: The user's submitted response to this specific question. The data type depends on the question (String for multiple-choice, Boolean for toggles, Number for financial inputs).
+* **`isFlagged`** *(Boolean)*: True if a user flagged an answer for review later, false if not (false is default)
+* **`isDeferred`** *(Boolean)*: True if a user deferred an answer to another parent, false if not (false is default)
 * **`timestamp`** *(Date)*: When the user answered this specific question, useful for analytics and state recovery.
 
 ## Visual Representation 
@@ -45,12 +46,17 @@ Plan (Root Document)
 ├── planID: String
 ├── userID: String
 ├── status: String
+├── currentQuestion: ObjectId
 └── children: Array of Objects
     ├── [0] Question Object
     │   ├── questionID: "Q1"
+    │   ├── isFlagged: False
+    │   ├── isDeferred: False
     │   └── answer: "yes"
     └── [1] Question Object
         ├── questionID: "Q2"
+        ├── isFlagged: True
+        ├── isDeferred: False
         └── answer: "Parent 1"
 ```
 
@@ -62,15 +68,20 @@ Plan (Root Document)
   "planID": "plan1",
   "userID": "user_2",
   "status": "in_progress",
+  "currentQuestion": "Q2",
   "children": [
     {
       "questionID": "Q1",
       "answer": "yes",
+      "isFlagged": False,
+      "isDeferred": False,
       "timestamp": "2026-02-19T14:22:10Z"
     },
     {
       "questionID": "Q2",
       "answer": "Parent 1",
+      "isFlagged": True,
+      "isDeferred": True,
       "timestamp": "2026-02-19T14:23:05Z"
     }
   ]

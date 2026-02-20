@@ -58,7 +58,7 @@ const questionSchema = new mongoose.Schema({
     default: true
   },
 
-  // the followings fields are dependant on the type of question
+  // the followings field is dependant on the type of question
   // options will contain different multiple choice/checkbox options a user can select
   options: [
     {
@@ -66,10 +66,6 @@ const questionSchema = new mongoose.Schema({
       value: mongoose.Schema.Types.Mixed
     }
   ],
-  // additional text a question might need (explanation, disclaimer, etc.)
-  qBodyText: {
-    type: String
-  }
 }, { timestamps: true});
 
 module.exports = mongoose.model('Question', questionSchema);
