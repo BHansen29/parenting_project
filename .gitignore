@@ -24,3 +24,5 @@ Thumbs.db
 .*/
 *.swp
 *.swo
+
+backend/docs/decision-tree-design.md

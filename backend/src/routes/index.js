@@ -4,6 +4,7 @@ const express = require('express');
 const router = express.Router();
 const Document = require('../models/Document');
 const User = require('../models/User');
+const planRoutes = require('./plan');
 
 /* Middleware to check if a user is authenticated
  * This gets used like the following
@@ -142,5 +143,7 @@ router.get('/', (req, res) => {
     }
   });
 });
+
+router.use('/plan', planRoutes);
 
 module.exports = router;
