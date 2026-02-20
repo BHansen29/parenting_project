@@ -4,6 +4,7 @@ const express = require('express');
 const router = express.Router();
 const Document = require('../models/Document');
 const User = require('../models/User');
+const planRoutes = require('./plan');
 
 /* Middleware to check if a user is authenticated
  * This gets used like the following
@@ -112,7 +113,7 @@ router.post('/logout', (req, res) => {
 // req must contain user login info in JSON (name, email, password)
 router.post('/createUser', async (req, res) => {
   try {
-    const user = await User.findOne(req.body.email)
+    const user = await User.findOne({ email: req.body.email })
     // might not need this logic if unique property of email is accounted for in User.create()
     if (!user) {
       await User.create(req.body)
@@ -142,5 +143,7 @@ router.get('/', (req, res) => {
     }
   });
 });
+
+router.use('/plan', planRoutes);
 
 module.exports = router;
