@@ -30,6 +30,18 @@ npm run dev
 ### Verify it works
 Visit http://localhost:3000/api/health - should show `"database": "connected"`
 
+## Environment Contract (Firebase Ready)
+
+When Firebase auth is enabled, the backend uses the following environment variables:
+
+- Server secrets: `SESSION_SECRET`, `FIREBASE_SERVICE_ACCOUNT_PATH`, `FIREBASE_SERVICE_ACCOUNT_JSON`
+- Web config (safe for frontend use): `FIREBASE_API_KEY`, `FIREBASE_AUTH_DOMAIN`, `FIREBASE_PROJECT_ID`, `FIREBASE_STORAGE_BUCKET`, `FIREBASE_MESSAGING_SENDER_ID`, `FIREBASE_APP_ID`, `FIREBASE_MEASUREMENT_ID`
+
+Notes:
+- Never commit real service account JSON or private keys to git.
+- Keep `SESSION_SECRET` unique per deployed environment.
+- Use `backend/.env.example` as the required key contract.
+
 ## Project Structure
 
 ```
