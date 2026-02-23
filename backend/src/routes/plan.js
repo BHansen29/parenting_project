@@ -35,4 +35,23 @@ router.post('/:planId/answer', async (req, res) => {
   }
 });
 
+//Retrieve a plan
+// GET/api/plan/:planId
+router.get('/:planId', async (req, res) => {
+  try {
+    const planID = req.params.planId;
+    //Retrieve plan and fetch from Mongo
+    const plan = await Plan.findById(planID);
+
+    //If the planId was not found
+    if (!plan) {
+      res.status(400).json({ error: 'Plan not found' });
+    }
+    //Send plan back
+    res.json(plan);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 module.exports = router;
