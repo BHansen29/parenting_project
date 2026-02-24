@@ -17,6 +17,7 @@ const initialState = {
   communication: { errors: {} },
   education: { errors: {} },
   transportation: { errors: {} }, 
+  informationSharing: { errors: {} },
 };
 
 function formReducer(state, action) {

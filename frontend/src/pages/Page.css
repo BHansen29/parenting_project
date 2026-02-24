@@ -216,3 +216,57 @@
     gap: 0;
   }
 }
+
+/* ── InformationSharing section headers ─────────────────────────────── */
+.info-section {
+  margin-bottom: 2rem;
+}
+
+.info-section__header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.info-section__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.info-section__title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.info-section__description {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+/* Dark mode overrides for info-section */
+@media (prefers-color-scheme: dark) {
+  .info-section__description {
+    color: #9ca3af;
+  }
+}
+
+/* ── Question text and answer labels ────────────────────────────────── */
+.parent-label {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #374151;
+  margin: 1.5rem 0 1rem 0;
+  line-height: 1.5;
+}
+
+.radio-option span {
+  font-weight: 700;
+}

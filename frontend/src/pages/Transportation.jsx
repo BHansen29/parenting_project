@@ -60,7 +60,7 @@ export default function Transportation() {
 
   const handleNext = () => {
     if (validateForm()) {
-      navigate('/review');
+      navigate('/informationsharing');
     } else {
       setSubmitAttempted(true);
     }

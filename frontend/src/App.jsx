@@ -5,6 +5,7 @@ import SignUp from './pages/auth/SignUp';
 import HouseholdInfo from './pages/HouseholdInfo';
 import CustodySchedule from './pages/CustodySchedule';
 import Transportation from './pages/Transportation';
+import InformationSharing from './pages/InformationSharing';
 import Review from './pages/Review';
 import './App.css';
 
@@ -24,6 +25,7 @@ function App() {
         <Route path="/household-info" element={<HouseholdInfo />} />
         <Route path="/custody-schedule" element={<CustodySchedule />} />
         <Route path="/transportation" element={<Transportation />} />
+        <Route path="/informationsharing" element={<InformationSharing />} />
         <Route path="/review" element={<Review />} />
 
         {/* Catch all - redirect unknown routes to home */}
