@@ -6,11 +6,10 @@
   right: 0;
   background-color: #f9fafb;
   border-bottom: 1px solid #e5e7eb;
-  padding: 0 0 1rem;
   z-index: 100;
 }
 
-/* Top bar with logo, step indicator, and saved status */
+/* Top bar with logo and saved status */
 .header__top-bar {
   display: flex;
   background-color: #ffffff;
@@ -24,15 +23,6 @@
 .header__logo {
   height: 50px;
   width: auto;
-}
-
-.header__step-indicator {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 0.875rem;
-  color: #6b7280;
-  font-weight: 500;
 }
 
 .header__saved {
@@ -49,178 +39,21 @@
   height: 16px;
 }
 
-/* Progress navigation */
-.header__progress {
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 1rem 0;
-}
-
-.header__steps {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  position: relative;
-}
-
-.header__step {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  position: relative;
-  flex: 1;
-}
-
-/* Connecting line between steps */
-.header__step-line {
-  position: absolute;
-  top: 20px;
-  right: 50%;
-  width: 100%;
-  height: 2px;
-  background-color: #e5e7eb;
-  z-index: -1;
-}
-
-/* Step circle */
-.header__step-circle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background-color: #ffffff;
-  border: 2px solid #d1d5db;
-  color: #9ca3af;
-  font-size: 0.875rem;
-  font-weight: 600;
-  text-decoration: none;
-  transition: all 0.2s ease;
-  cursor: pointer;
-  position: relative;
-  z-index: 1;
-}
-
-.header__step-circle:hover {
-  border-color: #9ca3af;
-}
-
-/* Active step - blue */
-.header__step-circle--active {
-  background-color: #14abdd;
-  border-color: #14abdd;
-  color: #ffffff;
-}
-
-.header__step-circle--active:hover {
-  background-color: #14abdd;
-  border-color: #14abdd;
-}
-
-/* Completed step - green with checkmark */
-.header__step-circle--completed {
-  background-color: #41b776;
-  border-color: #41b776;
-  color: #ffffff;
-}
-
-.header__step-circle--completed:hover {
-  background-color: #059669;
-  border-color: #059669;
-}
-
-.header__step-checkmark {
-  width: 20px;
-  height: 20px;
-}
-
-/* Step label - only shown for active step */
-.header__step-label {
-  position: absolute;
-  top: 48px;
-  white-space: nowrap;
-  color: #14abdd;
-  font-size: 0.875rem;
-  font-weight: 500;
-  margin-top: 0.5rem;
-}
-
 /* Dark mode */
 @media (prefers-color-scheme: dark) {
   .header {
     background-color: #1f2937;
     border-bottom-color: #374151;
   }
-
-  .header__step-circle {
-    background-color: #1f2937;
-    border-color: #4b5563;
-    color: #6b7280;
-  }
-
-  .header__step-line {
-    background-color: #374151;
-  }
-
-  .header__step-indicator {
-    color: #9ca3af;
-  }
 }
 
 /* Responsive */
 @media (max-width: 768px) {
-  .header {
-    padding: 1rem;
-  }
-
   .header__top-bar {
-    flex-wrap: wrap;
-    margin-bottom: 1rem;
+    padding: 0.5rem 1rem;
   }
 
   .header__logo {
     height: 32px;
-  }
-
-  .header__step-indicator {
-    position: static;
-    transform: none;
-    flex: 1;
-    text-align: center;
-    order: 3;
-    width: 100%;
-    margin-top: 0.5rem;
-  }
-
-  .header__saved {
-    margin-left: auto;
-  }
-
-  .header__progress {
-    padding: 0.5rem 0;
-  }
-
-  .header__step-circle {
-    width: 32px;
-    height: 32px;
-    font-size: 0.75rem;
-  }
-
-  .header__step-line {
-    top: 16px;
-  }
-
-  .header__step-checkmark {
-    width: 16px;
-    height: 16px;
-  }
-
-  .header__step-label {
-    top: 38px;
-    font-size: 0.75rem;
   }
 }
