@@ -12,6 +12,7 @@ export default function Header({
     { path: '/household-info', label: 'Household Info' },
     { path: '/custody-schedule', label: 'Custody Schedule' },
     { path: '/transportation', label: 'Transportation' },
+    { path: '/informationsharing', label: 'Information Sharing' }, 
     { path: '/review', label: 'Review' },
   ];
 
