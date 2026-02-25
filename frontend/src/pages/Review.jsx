@@ -21,7 +21,7 @@ export default function Review() {
             <Footer 
               showBackButton={true}
               showNextButton={false}
-              onBack={() => navigate('/informationsharing')}
+              onBack={() => navigate('/tax-exemptions')}
               /> 
     </div>
   )

@@ -153,7 +153,7 @@ export default function InformationSharing() {
 
   const handleNext = () => {
     if (validateForm()) {
-      navigate('/review'); 
+      navigate('/tax-exemptions'); 
     }
   };
 

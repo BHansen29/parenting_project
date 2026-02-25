@@ -13,6 +13,7 @@ export default function Header({
     { path: '/custody-schedule', label: 'Custody Schedule' },
     { path: '/transportation', label: 'Transportation' },
     { path: '/informationsharing', label: 'Information Sharing' }, 
+    { path: '/tax-exemptions', label: 'Tax Exemptions' }, 
     { path: '/review', label: 'Review' },
   ];
 

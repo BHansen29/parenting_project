@@ -18,6 +18,7 @@ const initialState = {
   education: { errors: {} },
   transportation: { errors: {} }, 
   informationSharing: { errors: {} },
+  taxExemptions: { errors: {} },
 };
 
 function formReducer(state, action) {
