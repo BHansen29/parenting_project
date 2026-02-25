@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import MainLayout from './layouts/MainLayout';
 import LandingPage from './pages/LandingPage';
 import SignIn from './pages/auth/SignIn';
 import SignUp from './pages/auth/SignUp';
@@ -15,20 +16,43 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Landing page */}
+        {/* Landing page (no sidebar) */}
         <Route path="/" element={<LandingPage />} />
 
-        {/* Auth routes */}
+        {/* Auth routes without sidebar */}
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
 
-        {/* Form routes */}
-        <Route path="/getting-started" element={<GettingStarted />} />
-        <Route path="/parental-rights" element={<ParentalRights />} />
-        <Route path="/parenting-time" element={<ParentingTimeAndCommunication />} />
-        <Route path="/custody-schedule" element={<CustodySchedule />} />
-        <Route path="/transportation" element={<Transportation />} />
-        <Route path="/review" element={<Review />} />
+        {/* Form routes with sidebar */}
+        <Route path="/getting-started" element={
+          <MainLayout>
+            <GettingStarted />
+          </MainLayout>
+        } />
+        <Route path="/parental-rights" element={
+          <MainLayout>
+            <ParentalRights />
+          </MainLayout>
+        } />
+        <Route path="/parenting-time-communication" element={
+          <MainLayout>
+            <ParentingTimeAndCommunication />
+          </MainLayout>
+        } />
+          <MainLayout>
+            <CustodySchedule />
+          </MainLayout>
+        } />
+        <Route path="/transportation" element={
+          <MainLayout>
+            <Transportation />
+          </MainLayout>
+        } />
+        <Route path="/review" element={
+          <MainLayout>
+            <Review />
+          </MainLayout>
+        } />
 
         {/* Catch all - redirect unknown routes to home */}
         <Route path="*" element={<Navigate to="/" replace />} />
