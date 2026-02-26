@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../../lib/firebase';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/common/card';
 import TextInput from '../../components/forms/TextInput';
 import '../Page.css';
@@ -48,14 +50,16 @@ export default function SignIn() {
 
     if (validateForm()) {
       setIsLoading(true);
-      // TODO: Implement actual authentication
-      console.log('Sign in:', formData);
-
-      // Simulate API call
-      setTimeout(() => {
+      try {
+        // Sign in the user in Firebase Auth with email + password
+        await signInWithEmailAndPassword(auth, formData.email, formData.password);
+        // Next Step
+        navigate('/household-info');
+      } catch (err) {
+        // Show Firebase error in the form
+        setErrors({ general: err.message });
         setIsLoading(false);
-        navigate('/getting-started');
-      }, 1000);
+      }
     }
   };
 
