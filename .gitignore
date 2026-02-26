@@ -5,6 +5,7 @@ node_modules/
 .env
 .env.local
 .env.*.local
+backend/sharecare-e7dee-firebase-adminsdk-fbsvc-3917c7a61a.json
 
 # Logs
 logs/
