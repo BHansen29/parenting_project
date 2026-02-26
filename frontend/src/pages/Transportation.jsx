@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import Footer from '../components/common/Footer';
+import Header from '../components/common/Header';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from '../hooks/useForm';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/card';
@@ -76,6 +77,8 @@ export default function Transportation() {
 
   return (
     <div className="page-container">
+      <Header />
+
       <div className="page-content">
         <Card>
           <CardHeader>

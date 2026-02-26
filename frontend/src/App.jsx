@@ -1,5 +1,4 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import MainLayout from './layouts/MainLayout';
 import LandingPage from './pages/LandingPage';
 import SignIn from './pages/auth/SignIn';
 import SignUp from './pages/auth/SignUp';
@@ -14,34 +13,18 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Landing page (no sidebar) */}
+        {/* Landing page */}
         <Route path="/" element={<LandingPage />} />
 
-        {/* Auth routes without sidebar */}
+        {/* Auth routes */}
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
 
-        {/* Form routes with sidebar */}
-        <Route path="/household-info" element={
-          <MainLayout>
-            <HouseholdInfo />
-          </MainLayout>
-        } />
-        <Route path="/custody-schedule" element={
-          <MainLayout>
-            <CustodySchedule />
-          </MainLayout>
-        } />
-        <Route path="/transportation" element={
-          <MainLayout>
-            <Transportation />
-          </MainLayout>
-        } />
-        <Route path="/review" element={
-          <MainLayout>
-            <Review />
-          </MainLayout>
-        } />
+        {/* Form routes */}
+        <Route path="/household-info" element={<HouseholdInfo />} />
+        <Route path="/custody-schedule" element={<CustodySchedule />} />
+        <Route path="/transportation" element={<Transportation />} />
+        <Route path="/review" element={<Review />} />
 
         {/* Catch all - redirect unknown routes to home */}
         <Route path="*" element={<Navigate to="/" replace />} />

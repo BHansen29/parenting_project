@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Header from '../components/common/Header';
 import Footer from '../components/common/Footer';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/card';
 import TextInput from '../components/forms/TextInput';
@@ -144,6 +145,8 @@ export default function HouseholdInfo() {
 
   return (
     <div className="page-container">
+      <Header />
+
       <div className="page-content">
         <Card>
           <CardHeader>
