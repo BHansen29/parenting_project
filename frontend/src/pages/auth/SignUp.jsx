@@ -54,7 +54,7 @@ export default function SignUp() {
       // Simulate API call
       setTimeout(() => {
         setIsLoading(false);
-        navigate('/household-info');
+        navigate('/getting-started');
       }, 1000);
     }
   };

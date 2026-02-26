@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
 import SignIn from './pages/auth/SignIn';
 import SignUp from './pages/auth/SignUp';
-import HouseholdInfo from './pages/HouseholdInfo';
+import GettingStarted from './pages/GettingStarted';
 import CustodySchedule from './pages/CustodySchedule';
 import Transportation from './pages/Transportation';
 import Review from './pages/Review';
@@ -21,7 +21,7 @@ function App() {
         <Route path="/signup" element={<SignUp />} />
 
         {/* Form routes */}
-        <Route path="/household-info" element={<HouseholdInfo />} />
+        <Route path="/getting-started" element={<GettingStarted />} />
         <Route path="/custody-schedule" element={<CustodySchedule />} />
         <Route path="/transportation" element={<Transportation />} />
         <Route path="/review" element={<Review />} />

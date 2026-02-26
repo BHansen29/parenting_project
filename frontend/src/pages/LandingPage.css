@@ -5,26 +5,22 @@
   display: flex;
   flex-direction: column;
   color: #425057;
-  width: 100vw;
   margin: 0;
   padding: 0;
-  margin-left: 50%;
-  transform: translateX(-50%);
+  width:100%;
 }
 
 /* Safety Banner */
 .safety-banner {
   background-color: #fff1f1;
   border-bottom: 1px solid #ffdcdc;
-  padding: 1rem;
+  padding: 1rem 2rem;
   text-align: center;
   font-size: 0.875rem;
   top: 0;
   margin: 0;
   color: #ed1c24;
-  width: 100vw;
-  margin-left: 50%;
-  transform: translateX(-50%);
+  width: 100%;
 }
 
 .safety-banner__content {
@@ -44,14 +40,15 @@
 .landing-header {
   background-color: #ffffff;
   border-bottom: 1px solid #f0f0f0;
-  width: 100vw;
-  margin-left: 50%;
-  transform: translateX(-50%);
+  width: 100%;
+  margin: 0;
+  padding:0 2rem;
 }
 
 .landing-header__container {
   width: 100%;
-  padding: 0 2rem;
+  padding: 0;
+  margin:0;
   height: 80px;
   display: flex;
   align-items: center;
@@ -119,9 +116,8 @@
 /* Main Content */
 .landing-main {
   flex-grow: 1;
-  width: 100vw;
-  margin-left: 50%;
-  transform: translateX(-50%);
+  width: 100%;
+  margin: 0;
 }
 
 /* Hero Section */
@@ -445,16 +441,15 @@
   background-color: #ffffff;
   border-top: 1px solid #e5e7eb;
   padding: 3rem 2rem;
-  width: 100vw;
+  width: 100%;
   margin: 0;
-  margin-left: 50%;
-  transform: translateX(-50%);
 }
 
 .landing-footer__container {
   width: 100%;
-  margin: 0 auto;
+  margin: 0;
   text-align: center;
+  padding:0;
 }
 
 .landing-footer__copyright {

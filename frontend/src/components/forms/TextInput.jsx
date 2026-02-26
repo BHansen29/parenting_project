@@ -1,5 +1,9 @@
 import './TextInput.css';
 
+/**
+  TextInput component that can render either an input or textarea based on the 'type'.
+  It handles error display, help text, and dynamic class names for styling.
+*/
 export default function TextInput({
   id,
   label,

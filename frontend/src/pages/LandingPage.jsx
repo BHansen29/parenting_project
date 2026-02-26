@@ -24,7 +24,7 @@ export default function LandingPage() {
             </div>
           <span>
             <strong>Safety Resources:</strong> If you or your children are experiencing domestic violence or abuse,
-            please consult with an attorney or contact the National Domestic Violence Hotline at 1-800-799-7233.
+            please contact the National Domestic Violence Hotline at 1-800-799-7233.
           </span>
         </div>
       </div>
