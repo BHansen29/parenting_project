@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import Header from '../components/common/Header';
+//import Header from '../components/common/Header';
 import Footer from '../components/common/Footer';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/card';
 import { useForm } from '../hooks/useForm';
@@ -168,7 +168,6 @@ export default function InformationSharing() {
 
   return (
     <div className="page-container">
-      <Header />
 
       <div className="page-content">
         <Card>

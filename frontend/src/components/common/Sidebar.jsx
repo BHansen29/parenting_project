@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ChevronLeftIcon, ChevronRightIcon, UserIcon, CalendarIcon, CarIcon, CheckCircleIcon } from 'lucide-react';
+import { ChevronLeftIcon, ChevronRightIcon, UserIcon, CalendarIcon, CarIcon, CheckCircleIcon, ShareIcon, ReceiptIcon } from 'lucide-react';
 import './Sidebar.css';
 
 export default function Sidebar({ isCollapsed, onToggle }) {
@@ -10,6 +10,8 @@ export default function Sidebar({ isCollapsed, onToggle }) {
     { path: '/household-info', label: 'Household Info', icon: UserIcon },
     { path: '/custody-schedule', label: 'Custody Schedule', icon: CalendarIcon },
     { path: '/transportation', label: 'Transportation', icon: CarIcon },
+    { path: '/informationsharing',label: 'Information Sharing', icon: ShareIcon },    
+  { path: '/tax-exemptions',    label: 'Tax Exemptions',      icon: ReceiptIcon }, 
     { path: '/review', label: 'Review', icon: CheckCircleIcon },
   ];
 

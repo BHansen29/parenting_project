@@ -22,7 +22,7 @@ export default function Layout({ children }) {
   }, []);
 
   // Determine if current page should show navigation
-  const shouldShowNavigation = ['/household-info', '/custody-schedule', '/transportation', '/review'].includes(location.pathname);
+  const shouldShowNavigation = ['/household-info', '/custody-schedule', '/transportation', '/informationsharing', '/tax-exemptions', '/review'].includes(location.pathname);
 
   // Determine if current page should show header (not landing page)
   const shouldShowHeader = location.pathname !== '/';
