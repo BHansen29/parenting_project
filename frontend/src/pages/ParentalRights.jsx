@@ -75,7 +75,7 @@ export default function ParentalRights() {
 
     const handleNext = () => {
     if (validateForm()) {
-      navigate('/custody-schedule');
+      navigate('/parenting-time');
     } else {
       setSubmitAttempted(true);
     }

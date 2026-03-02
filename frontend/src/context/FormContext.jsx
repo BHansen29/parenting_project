@@ -26,6 +26,16 @@ const initialState = {
     decisionMaking: '',
     errors: {} 
   },
+  timeAndCommunication: {
+    agreeToTransportationPolicy: false,
+    transportationArrangementDescription: '',
+    agreeToActivityPolicy: false,
+    activityPolicyDescription: '',
+    communicationWithCoParentOnPhone: '',
+    communicationWithCoParentOnPhoneDescription: '',
+    notifyCoParentOfChildRelatedEvents: '',
+    errors: {}
+  }
 };
 
 function formReducer(state, action) {

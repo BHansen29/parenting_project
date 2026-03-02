@@ -4,6 +4,7 @@ import SignIn from './pages/auth/SignIn';
 import SignUp from './pages/auth/SignUp';
 import GettingStarted from './pages/GettingStarted';
 import ParentalRights from './pages/ParentalRights';
+import ParentingTimeAndCommunication from './pages/ParentingTimeAndCommunication';
 import CustodySchedule from './pages/CustodySchedule';
 import Transportation from './pages/Transportation';
 import Review from './pages/Review';
@@ -24,6 +25,7 @@ function App() {
         {/* Form routes */}
         <Route path="/getting-started" element={<GettingStarted />} />
         <Route path="/parental-rights" element={<ParentalRights />} />
+        <Route path="/parenting-time" element={<ParentingTimeAndCommunication />} />
         <Route path="/custody-schedule" element={<CustodySchedule />} />
         <Route path="/transportation" element={<Transportation />} />
         <Route path="/review" element={<Review />} />

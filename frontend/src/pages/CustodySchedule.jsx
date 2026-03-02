@@ -72,7 +72,7 @@ export default function CustodySchedule() {
       section: 'parentingTime',
       payload: { errors: {} }
     });
-    navigate('/household-info');
+    navigate('/parenting-time');
   };
 
   return (
