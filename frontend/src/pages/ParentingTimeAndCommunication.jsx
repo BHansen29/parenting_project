@@ -11,6 +11,7 @@ import FlagButton from '../components/forms/FlagButton';
 import RadioButton from '../components/forms/RadioButton';
 import Checkbox from '../components/forms/Checkbox';
 import TextInput from '../components/forms/TextInput';
+import ScheduleBuilder from '../components/forms/ScheduleBuilder';
 
 export default function ParentingTimeAndCommunication() {
     const navigate = useNavigate();
@@ -19,6 +20,7 @@ export default function ParentingTimeAndCommunication() {
     //section flags
     const transportationAgreementFlag = useSectionFlag('transportationAgreement');
     const activitiesAndSchedulingFlag = useSectionFlag('activitiesAndScheduling');
+    const parentingScheduleFlag = useSectionFlag('parentingSchedule');
     const communicationWithCoParentOnPhoneFlag = useSectionFlag('communicationWithCoParentOnPhone');
     const notifyCoParentOfChildRelatedEventsFlag = useSectionFlag('notifyCoParentOfChildRelatedEvents');
 
@@ -27,10 +29,11 @@ export default function ParentingTimeAndCommunication() {
         transportationArrangementDescription: '',
         agreeToActivityPolicy: false,
         activityPolicyDescription: '',
+        parentingSchedule: {},
         communicationWithCoParentOnPhone: '',
         communicationWithCoParentOnPhoneDescription: '',
         notifyCoParentOfChildRelatedEvents: '',
-        errors: {} 
+        errors: {}
     };
     const errors = state.timeAndCommunication?.errors ?? {};
 
@@ -92,7 +95,22 @@ export default function ParentingTimeAndCommunication() {
             }
         }
     }
-    
+
+    const handleScheduleChange = (schedule) => {
+        dispatch({
+            type: 'UPDATE_SECTION',
+            section: 'timeAndCommunication',
+            payload: { parentingSchedule: schedule }
+        });
+        if (errors.parentingSchedule) {
+            dispatch({
+                type: 'UPDATE_SECTION',
+                section: 'timeAndCommunication',
+                payload: { errors: { ...errors, parentingSchedule: '' } }
+            });
+        }
+    };
+
     const validateForm = () => {
         const formErrors = {};
         if (!formData.agreeToTransportationPolicy && !formData.transportationArrangementDescription.trim()) {
@@ -272,6 +290,46 @@ export default function ParentingTimeAndCommunication() {
                                         placeholder="Describe how you would like activities and scheduling to be handled if you do not agree to the standard policy"
                                     />
                                 </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* ScheduleBuilder component -- just put here to show what having a schedule form
+                        attached could look like, we can get rid of this after discussing */}
+                        <hr className="section-divider" />
+                        <section className="parenting-schedule-section">
+                            <div className="section-header-with-flag">
+                                <div className="section-header">
+                                    <div className="car-icon">
+                                        <Calendar size={25} />
+                                    </div>
+                                    <div className="section-title-group">
+                                        <h2 className="section-title">Parenting Schedule</h2>
+                                        <p className="section-intro">Create your monthly parenting schedule</p>
+                                    </div>
+                                </div>
+                                <div className="section-flag">
+                                    <FlagButton
+                                        isFlagged={parentingScheduleFlag.isFlagged}
+                                        onClick={() => parentingScheduleFlag.toggleFlag()}
+                                    />
+                                </div>
+                            </div>
+                        </section>
+                        <Card>
+                            <CardHeader>
+                                <CardDescription>
+                                    Create a typical week schedule that repeats. Click on any day to set up time slots with specific time frames (e.g., "Until noon", "4:00 PM - 7:30 PM").
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <ScheduleBuilder
+                                    value={formData.parentingSchedule}
+                                    onChange={handleScheduleChange}
+                                    parent1Label="You"
+                                    parent2Label="Co-Parent"
+                                    helpText="Click on a day to add time slots. You can specify exact time frames or mark whole days. The schedule shows 4 weeks to help visualize the pattern."
+                                    error={errors.parentingSchedule}
+                                />
                             </CardContent>
                         </Card>
 
