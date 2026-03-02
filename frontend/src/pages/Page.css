@@ -37,7 +37,7 @@
   justify-content: center;
 }
 
-.user-icon, .info-icon, .users-icon {
+.user-icon, .info-icon, .users-icon, .house-icon, .scale-icon {
   width: 3rem;
   height: 3rem;
   background-color: #14abdd29;

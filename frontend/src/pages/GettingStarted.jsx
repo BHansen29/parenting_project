@@ -153,7 +153,7 @@ export default function GettingStarted() {
     if (validateForm()) {
       // Save children to global context before navigating
       dispatch({ type: 'UPDATE_CHILDREN', payload: children });
-      navigate('/custody-schedule');
+      navigate('/parental-rights');
     } else {
       setSubmitAttempted(true);
     }

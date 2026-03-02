@@ -20,6 +20,12 @@ const initialState = {
   communication: { errors: {} },
   education: { errors: {} },
   transportation: { errors: {} },
+  parentalRights: { 
+    appliesToAllChildren: '',
+    livingArrangement: '',
+    decisionMaking: '',
+    errors: {} 
+  },
 };
 
 function formReducer(state, action) {
