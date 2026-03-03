@@ -11,8 +11,15 @@ class QuestionLogicHandler {
         'nin': (a, b) => Array.isArray(b) && !b.includes(a), // is not in array of values
     };
 
-    // takes in a two values and an operator and returns a boolean of the parameters' evaluation
-    evaluate(leftVal, opCode, rightVal) {
+    /**
+     * takes in a two values and an operator and returns a boolean of the parameters' evaluation | 
+     * convention is to put userVal first, then operator, then rightVal last
+     * @param {*} userVal - the answer a user gave when answering a question
+     * @param {*} opCode - operator code specifying operator to use to evaluation
+     * @param {*} rightVal - the value the user's answer will be compared against
+     * @returns 
+     */
+    evaluate(userVal, opCode, rightVal) {
         const fn = this.#operators[opCode];
         if (!fn) throw new Error(`Unsupported operator: ${opCode}`);
         return fn(leftVal, rightVal);

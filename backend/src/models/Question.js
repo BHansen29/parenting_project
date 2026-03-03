@@ -8,7 +8,18 @@ const conditionSchema = new mongoose.Schema({
     enum: ["eq", "neq", "gt", "gte", "lt", "lte", "in", "nin", "exists"],
     required: true,
   },
-  value: mongoose.Schema.Types.Mixed, // number, string, boolean, array, etc.
+  value: {
+    type: mongoose.Schema.Types.Mixed,
+    required: true,
+    // number, string, boolean, array, etc.
+    // when using ordinal operators, always specify them in the form of "userAnswer operator value"
+    // For example:
+    //    Our evaluation condition is that if a user's answer is greater than 5, goTo Quesion X
+    // Then:
+    //    value = 5
+    //    operator = "gte"
+    //  if "userAnswer gte 5" evaluates to true, we will goTo Question X
+  },
 });
 
 const nextRuleSchema = new mongoose.Schema({

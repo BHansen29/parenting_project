@@ -4,7 +4,9 @@ const express = require('express');
 const router = express.Router();
 const Document = require('../models/Document');
 const User = require('../models/User');
+const Question = require('../models/Question');
 const planRoutes = require('./plan');
+import questionLogicHandler from '../lib/question-logic-handler'
 
 /* Middleware to check if a user is authenticated
  * This gets used like the following
@@ -108,6 +110,32 @@ router.post('/logout', (req, res) => {
     });
 });
 
+// GET /api/nextQuestion/:answer - get next question from answer to current question
+router.post('/nextQuestion/:answer', async (req, res) => {
+  const userAnswer = req.params.answer
+  const {question} = req.body
+  const next = null;
+  if (question.isDefault) {
+    next = question.nextQuestions[0].goTo
+  } else {
+    for (const nextRule of question.nextQuestions) {
+      const op = nextRule.condition.operator
+      const value = nextRule.condition.value
+      if (questionLogicHandler.evaluate(userAnswer, op, value)) {
+        next = nextRule.goTo
+        break;
+      }
+    }
+  }
+  try {
+    const nextQ = await Question.findById(next)
+    console.log("Returning next question of id: " + next)
+    res.status(200).json(nextQ)
+  } catch(err) {
+    console.error("Failed to find next question of id: " + next)
+    res.status(400).json({ error: err.message})
+  }
+})
 
 // POST /api/create_user - create user
 // req must contain user login info in JSON (name, email, password)
