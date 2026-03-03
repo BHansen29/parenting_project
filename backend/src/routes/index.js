@@ -5,7 +5,9 @@ const mongoose = require('mongoose');
 const router = express.Router();
 const Document = require('../models/Document');
 const User = require('../models/User');
+const Question = require('../models/Question');
 const planRoutes = require('./plan');
+import questionLogicHandler from '../lib/question-logic-handler'
 const { getFirebaseAuth } = require('../config/firebaseAdmin');
 
 const requireDatabaseConnection = (req, res, next) => {
@@ -52,6 +54,16 @@ router.get('/users', requireDatabaseConnection, async (req, res) => {
   }
 });
 
+
+// GET /api/questions - Get all users
+router.get('/questions', requireDatabaseConnection, async (req, res) => {
+  try {
+    const questions = await Question.find();
+    res.json(questions);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // GET /api/documents/:id - Get a single document by ID
 router.get('/documents/:id', requireDatabaseConnection, async (req, res) => {
@@ -158,6 +170,33 @@ router.post('/auth/firebase/session', requireDatabaseConnection, async (req, res
     return res.status(statusCode).json({
       error: isDev && error.message ? error.message : fallbackMessage
     });
+  }
+});
+
+// GET /api/nextQuestion/:answer - get next question from answer to current question
+router.post('/nextQuestion/:answer', async (req, res) => {
+  const userAnswer = req.params.answer
+  const {question} = req.body
+  const next = null;
+  if (question.isDefault) {
+    next = question.nextQuestions[0].goTo
+  } else {
+    for (const nextRule of question.nextQuestions) {
+      const op = nextRule.condition.operator
+      const value = nextRule.condition.value
+      if (questionLogicHandler.evaluate(userAnswer, op, value)) {
+        next = nextRule.goTo
+        break;
+      }
+    }
+  }
+  try {
+    const nextQ = await Question.findById(next)
+    console.log("Returning next question of id: " + next)
+    res.status(200).json(nextQ)
+  } catch(err) {
+    console.error("Failed to find next question of id: " + next)
+    res.status(400).json({ error: err.message})
   }
 });
 
