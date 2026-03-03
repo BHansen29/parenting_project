@@ -3,7 +3,9 @@ import MainLayout from './layouts/MainLayout';
 import LandingPage from './pages/LandingPage';
 import SignIn from './pages/auth/SignIn';
 import SignUp from './pages/auth/SignUp';
-import HouseholdInfo from './pages/HouseholdInfo';
+import GettingStarted from './pages/GettingStarted';
+import ParentalRights from './pages/ParentalRights';
+import ParentingTimeAndCommunication from './pages/ParentingTimeAndCommunication';
 import CustodySchedule from './pages/CustodySchedule';
 import Transportation from './pages/Transportation';
 import InformationSharing from './pages/InformationSharing';
@@ -23,10 +25,20 @@ function App() {
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
 
-       {/* Form routes with sidebar */}
-        <Route path="/household-info" element={
+        {/* Form routes with sidebar */}
+        <Route path="/getting-started" element={
           <MainLayout>
-            <HouseholdInfo />
+            <GettingStarted />
+          </MainLayout>
+        } />
+        <Route path="/parental-rights" element={
+          <MainLayout>
+            <ParentalRights />
+          </MainLayout>
+        } />
+        <Route path="/parenting-time-communication" element={
+          <MainLayout>
+            <ParentingTimeAndCommunication />
           </MainLayout>
         } />
         <Route path="/custody-schedule" element={

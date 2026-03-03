@@ -7,7 +7,9 @@ export default function Sidebar({ isCollapsed, onToggle }) {
   const location = useLocation();
 
   const navItems = [
-    { path: '/household-info', label: 'Household Info', icon: UserIcon },
+    { path: '/getting-started', label: 'Getting Started', icon: UserIcon },
+    { path: '/parental-rights', label: 'Parental Rights', icon: UserIcon },
+    { path: '/parenting-time-communication', label: 'Parenting Time & Communication', icon: CalendarIcon },
     { path: '/custody-schedule', label: 'Custody Schedule', icon: CalendarIcon },
     { path: '/transportation', label: 'Transportation', icon: CarIcon },
     { path: '/informationsharing',label: 'Information Sharing', icon: ShareIcon },    

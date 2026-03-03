@@ -1,0 +1,33 @@
+.flag-button,
+.flag-button--flagged {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid #ccc;
+  background-color: #ccc;
+  cursor: pointer;
+  border-radius: 50px;
+  transition: all 0.2s ease;
+  width:fit-content;
+  min-width:max-content;
+}
+
+.flag-button:hover {
+  background-color: #dadadae8;
+}
+
+.flag-button--flagged:hover{
+    background-color: #ffab45b3;
+}
+
+.flag-button:active,
+.flag-button--flagged {
+  background-color: #ffaa45;
+  border-color: #ffb700;
+  color: #ffffff;
+}
+
+.flag-button__label {
+  font-size: 0.875rem;
+}
