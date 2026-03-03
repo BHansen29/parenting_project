@@ -35,9 +35,8 @@ const planSchema = new mongoose.Schema(
     default: 'in_progress' 
 },
   currentQuestion: {
-    type: mongoose.Schema.Types.ObjectId, 
+    type: mongoose.Schema.Types.ObjectId,
     ref: "Question",
-    required: true 
   },
   children: [questionResponseSchema]
 })
