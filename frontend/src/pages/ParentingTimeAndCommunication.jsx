@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Car, Info, Calendar, Check, Radio, Flag } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import Header from '../components/common/Header';
-import Footer from '../components/common/Footer';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/card';
 import { useForm } from '../hooks/useForm';
 import { useSectionFlag } from '../hooks/useSectionFlag';
@@ -149,7 +147,6 @@ export default function ParentingTimeAndCommunication() {
 
     return (
         <div className="page-container">
-            <Header />
             <div className="page-content">
                 <Card>
                     <CardHeader>
@@ -468,12 +465,6 @@ export default function ParentingTimeAndCommunication() {
                     </CardContent>
                 </Card>
             </div>
-            <Footer 
-                showBackButton={true}
-                showNextButton={true}
-                onNext={handleNext}
-                onBack={handleBack}
-            />
         </div>
     );
 }

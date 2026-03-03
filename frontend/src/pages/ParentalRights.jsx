@@ -75,7 +75,7 @@ export default function ParentalRights() {
 
     const handleNext = () => {
     if (validateForm()) {
-      navigate('/parenting-time');
+      navigate('/parenting-time-communication');
     } else {
       setSubmitAttempted(true);
     }
@@ -92,7 +92,6 @@ export default function ParentalRights() {
 
     return (
         <div className="page-container">
-            <Header />
             <div className="page-content">
                 <Card>
                     <CardHeader>
@@ -302,12 +301,6 @@ export default function ParentalRights() {
                     </CardContent>    
                 </Card>
             </div>
-            <Footer
-                showBackButton={true}
-                showNextButton={true}
-                onNext={handleNext}
-                onBack={handleBack}
-            />
         </div>
     )
 }

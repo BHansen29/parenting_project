@@ -101,13 +101,6 @@ export default function Transportation() {
           </CardContent>
         </Card>
       </div>
-
-      <Footer
-        showBackButton={true}
-        showNextButton={true}
-        onNext={handleNext}
-        onBack={handleBack}
-      />
     </div>
   );
 }

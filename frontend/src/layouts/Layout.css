@@ -25,11 +25,8 @@
   min-width: 0; /* prevents horizontal scroll from large children */
 }
 
-/* Center and constrain page content to avoid overly wide pages */
+/* Allow page content to fill available width */
 .layout__content > * {
-  max-width: 1280px;
-  margin-left: auto;
-  margin-right: auto;
   width: 100%;
 }
 

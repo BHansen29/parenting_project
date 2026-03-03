@@ -453,13 +453,6 @@ export default function GettingStarted() {
           </CardContent>
         </Card>
       </div>
-
-      <Footer
-        showBackButton={true}
-        showNextButton={true}
-        onNext={handleNext}
-        onBack={handleBack}
-      />
     </div>
   );
 }

@@ -39,6 +39,7 @@ function App() {
             <ParentingTimeAndCommunication />
           </MainLayout>
         } />
+        <Route path="/custody-schedule" element={
           <MainLayout>
             <CustodySchedule />
           </MainLayout>

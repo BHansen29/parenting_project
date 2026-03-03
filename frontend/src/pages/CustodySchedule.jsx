@@ -71,7 +71,7 @@ export default function CustodySchedule() {
       section: 'parentingTime',
       payload: { errors: {} }
     });
-    navigate('/parenting-time');
+    navigate('/parenting-time-communication');
   };
 
   return (
@@ -101,13 +101,6 @@ export default function CustodySchedule() {
           </CardContent>
         </Card>
       </div>
-
-      <Footer
-        showBackButton={true}
-        showNextButton={true}
-        onNext={handleNext}
-        onBack={handleBack}
-      />
     </div>
   );
 }
