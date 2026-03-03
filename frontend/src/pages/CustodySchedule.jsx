@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import Header from "../components/common/Header";
 import Footer from "../components/common/Footer";
 import { useNavigate } from 'react-router-dom';
 import { useForm } from '../hooks/useForm';
@@ -72,13 +71,11 @@ export default function CustodySchedule() {
       section: 'parentingTime',
       payload: { errors: {} }
     });
-    navigate('/household-info');
+    navigate('/parenting-time-communication');
   };
 
   return (
     <div className="page-container">
-      <Header />
-
       <div className="page-content">
         <Card>
           <CardHeader>
@@ -104,13 +101,6 @@ export default function CustodySchedule() {
           </CardContent>
         </Card>
       </div>
-
-      <Footer
-        showBackButton={true}
-        showNextButton={true}
-        onNext={handleNext}
-        onBack={handleBack}
-      />
     </div>
   );
 }

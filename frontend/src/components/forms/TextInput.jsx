@@ -1,5 +1,26 @@
 import './TextInput.css';
 
+/**
+ * @param {id} param0 - Unique identifier for the input field
+ * @param {label} param1 - The label text for the input field
+ * @param {type} param2 - The type of input (e.g., 'text', 'textarea')
+ * @param {value} param3 - The current value of the input field
+ * @param {onChange} param4 - The function to call when the input value changes
+ * @param {placeholder} param5 - Placeholder text for the input field
+ * @param {required} param6 - Boolean indicating if the field is required
+ * @param {disabled} param7 - Boolean indicating if the field is disabled
+ * @param {error} param8 - Error message to display if there's a validation error
+ * @param {helpText} param9 - Additional help text to display below the input field
+ * @param {maxLength} param10 - Maximum number of characters allowed in the input
+ * @param {autoComplete} param11 - The autocomplete attribute for the input field
+ * @param {rows} param12 - Number of rows for textarea (if type is 'textarea')
+ * @param {className} param13 - Additional class names for custom styling
+ * 
+  TextInput component that can render either an input or textarea based on the 'type'.
+  It handles error display, help text, and dynamic class names for styling.
+
+  @returns TextInput component
+*/
 export default function TextInput({
   id,
   label,
