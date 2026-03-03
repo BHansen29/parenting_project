@@ -7,157 +7,233 @@
 /* ── Disclaimer blocks ───────────────────────────────────────────────────── */
 
 .tax-disclaimers-block {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    margin-top: 1.25rem;
-  }
-  
-  .tax-disclaimer {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    padding: 1rem 1.25rem;
-    border-radius: 10px;
-    font-size: 0.875rem;
-    line-height: 1.6;
-  }
-  
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.tax-disclaimer {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.tax-disclaimer--info {
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+}
+
+.tax-disclaimer--warning {
+  background-color: #fffbeb;
+  border: 1px solid #fcd34d;
+  color: #92400e;
+}
+
+.tax-disclaimer__icon {
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+  display: flex;
+  align-items: center;
+}
+
+.tax-disclaimer--info .tax-disclaimer__icon {
+  color: #2563eb;
+}
+
+.tax-disclaimer--warning .tax-disclaimer__icon {
+  color: #d97706;
+}
+
+.tax-disclaimer__text {
+  margin: 0;
+}
+
+/* ── Child checkbox list ─────────────────────────────────────────────────── */
+
+.tax-child-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.tax-checkbox {
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0.25rem;
+  cursor: pointer;
+  accent-color: #14abdd;
+  flex-shrink: 0;
+}
+
+/* Checked state for checkbox options */
+.radio-option--checked {
+  border-color: #14abdd;
+  background-color: rgba(20, 171, 221, 0.1);
+}
+
+/* Checkmark badge inside the checkbox row */
+.child-answer-badge {
+  margin-left: auto;
+  color: #14abdd;
+  display: flex;
+  align-items: center;
+}
+
+/* ── "None selected" helper note ─────────────────────────────────────────── */
+
+.tax-none-note {
+  margin-top: 0.875rem;
+  font-size: 0.85rem;
+  color: #6b7280;
+  font-style: italic;
+}
+
+/* ── Custom year input ───────────────────────────────────────────────────── */
+
+.tax-custom-years {
+  margin-top: 1.25rem;
+}
+
+.tax-custom-years__input {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  margin-top: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  color: #374151;
+  background-color: #ffffff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tax-custom-years__input:focus {
+  outline: none;
+  border-color: #14abdd;
+  box-shadow: 0 0 0 3px rgba(20, 171, 221, 0.15);
+}
+
+.tax-custom-years__input::placeholder {
+  color: #9ca3af;
+}
+
+/* ── Sub-answer block (tax years follow-up) ──────────────────────────────── */
+
+.child-tax-block__subanswer {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* ── Per-child block ─────────────────────────────────────────────────────── */
+
+.child-tax-block {
+  margin-bottom: 1.25rem;
+}
+
+.child-tax-block__header {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.875rem 1rem;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-bottom: none;
+  border-radius: 10px 10px 0 0;
+}
+
+.child-tax-block__avatar {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  background-color: #14abdd;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.child-tax-block__name {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: #111827;
+  margin: 0;
+}
+
+.child-tax-block__subtitle {
+  font-size: 0.8125rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.child-tax-block__status {
+  margin-left: auto;
+  color: #14abdd;
+  display: flex;
+  align-items: center;
+}
+
+.child-tax-block > .card,
+.child-tax-block > [class*="card"] {
+  border-radius: 0 0 10px 10px;
+  border-top: none;
+}
+
+/* ── Dark mode ───────────────────────────────────────────────────────────── */
+
+@media (prefers-color-scheme: dark) {
   .tax-disclaimer--info {
-    background-color: #eff6ff;
-    border: 1px solid #bfdbfe;
-    color: #1e40af;
+    background-color: #1e3a5f;
+    border-color: #2563eb;
+    color: #93c5fd;
   }
-  
-  .tax-disclaimer--warning {
-    background-color: #fffbeb;
-    border: 1px solid #fcd34d;
-    color: #92400e;
-  }
-  
-  .tax-disclaimer__icon {
-    flex-shrink: 0;
-    margin-top: 0.1rem;
-    display: flex;
-    align-items: center;
-  }
-  
+
   .tax-disclaimer--info .tax-disclaimer__icon {
-    color: #2563eb;
+    color: #60a5fa;
   }
-  
+
+  .tax-disclaimer--warning {
+    background-color: #3b2a00;
+    border-color: #d97706;
+    color: #fcd34d;
+  }
+
   .tax-disclaimer--warning .tax-disclaimer__icon {
-    color: #d97706;
+    color: #fbbf24;
   }
-  
-  .tax-disclaimer__text {
-    margin: 0;
-  }
-  
-  /* ── Child checkbox list ─────────────────────────────────────────────────── */
-  
-  .tax-child-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-  
-  .tax-checkbox {
-    width: 1rem;
-    height: 1rem;
-    margin-top: 0.25rem;
-    cursor: pointer;
-    accent-color: #14abdd;
-    flex-shrink: 0;
-  }
-  
-  /* Checked state for checkbox options */
-  .radio-option--checked {
-    border-color: #14abdd;
-    background-color: rgba(20, 171, 221, 0.1);
-  }
-  
-  /* ── Custom year input ───────────────────────────────────────────────────── */
-  
-  .tax-custom-years {
-    margin-top: 1.25rem;
-  }
-  
+
   .tax-custom-years__input {
-    width: 100%;
-    padding: 0.625rem 0.875rem;
-    margin-top: 0.5rem;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    font-size: 0.9375rem;
-    color: #374151;
-    background-color: #ffffff;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    background-color: #1f2937;
+    border-color: #4b5563;
+    color: #f9fafb;
   }
-  
-  .tax-custom-years__input:focus {
-    outline: none;
-    border-color: #14abdd;
-    box-shadow: 0 0 0 3px rgba(20, 171, 221, 0.15);
-  }
-  
+
   .tax-custom-years__input::placeholder {
+    color: #6b7280;
+  }
+
+  .child-tax-block__header {
+    background-color: #1f2937;
+    border-color: #374151;
+  }
+
+  .child-tax-block__name {
+    color: #f9fafb;
+  }
+
+  .child-tax-block__subanswer {
+    border-top-color: #374151;
+  }
+
+  .tax-none-note {
     color: #9ca3af;
   }
-  
-  /* ── Loop-back section ───────────────────────────────────────────────────── */
-  
-  .tax-loopback {
-    margin-top: 1.25rem;
-  }
-  
-  .tax-loopback__label {
-    font-size: 0.9375rem;
-    font-weight: 600;
-    color: #374151;
-    margin: 0 0 0.75rem 0;
-    padding: 0.875rem 1rem;
-    background-color: #f3f4f6;
-    border-left: 4px solid #14abdd;
-    border-radius: 0 8px 8px 0;
-    line-height: 1.5;
-  }
-  
-  /* ── Dark mode ───────────────────────────────────────────────────────────── */
-  
-  @media (prefers-color-scheme: dark) {
-    .tax-disclaimer--info {
-      background-color: #1e3a5f;
-      border-color: #2563eb;
-      color: #93c5fd;
-    }
-  
-    .tax-disclaimer--info .tax-disclaimer__icon {
-      color: #60a5fa;
-    }
-  
-    .tax-disclaimer--warning {
-      background-color: #3b2a00;
-      border-color: #d97706;
-      color: #fcd34d;
-    }
-  
-    .tax-disclaimer--warning .tax-disclaimer__icon {
-      color: #fbbf24;
-    }
-  
-    .tax-custom-years__input {
-      background-color: #1f2937;
-      border-color: #4b5563;
-      color: #f9fafb;
-    }
-  
-    .tax-custom-years__input::placeholder {
-      color: #6b7280;
-    }
-  
-    .tax-loopback__label {
-      background-color: #1f2937;
-      color: #e5e7eb;
-    }
-  }
+}

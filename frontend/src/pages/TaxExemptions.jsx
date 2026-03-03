@@ -1,15 +1,13 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Footer from '../components/common/Footer';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/card';
 import { useForm } from '../hooks/useForm';
-import ChildCheckboxList from '../components/forms/ChildCheckboxList';
 import {
-  IntentRadioGroup,
   ClaimEveryYearDisclaimers,
   ClaimSomeYearsDisclaimers,
   DeferDisclaimers,
 } from './taxExemptions/TaxExemptionDisclaimers';
-import RemainingChildrenLoopBack from './taxExemptions/RemainingChildrenLoopBack';
 import './Page.css';
 import './TaxExemptions.css';
 
@@ -32,11 +30,154 @@ const InfoIcon = () => (
   </svg>
 );
 
+const CheckCircleIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+    <path d="m9 11 3 3L22 4" />
+  </svg>
+);
+
 const TAX_YEAR_OPTIONS = [
   { value: 'odd',    label: 'Odd-numbered tax years (e.g. 2025, 2027, 2029…)' },
   { value: 'even',   label: 'Even-numbered tax years (e.g. 2026, 2028, 2030…)' },
   { value: 'custom', label: 'Custom — I will specify the years' },
 ];
+
+// ─── Per-child question block ─────────────────────────────────────────────────
+
+function ChildTaxBlock({ childName, childIndex, childData = {}, parentRole, onUpdate, errors = {} }) {
+  const intent     = childData.intent ?? '';
+  const taxYears   = childData.taxYears ?? '';
+  const customYears = childData.customYears ?? '';
+
+  const showTaxYearQuestion   = intent === 'someYears';
+  const showCustomYearInput   = showTaxYearQuestion && taxYears === 'custom';
+  const showEveryYearDisclaimers = intent === 'everyYear' && !!parentRole;
+  const showSomeYearsDisclaimers = intent === 'someYears' && !!taxYears && !!parentRole;
+  const showDeferDisclaimers    = intent === 'defer' && !!parentRole;
+
+  const update = (payload) => onUpdate(childIndex, payload);
+  const clearError = (field) => {
+    if (errors[field]) update({ errors: { ...errors, [field]: '' } });
+  };
+
+  return (
+    <div className="child-tax-block">
+      <div className="child-tax-block__header">
+        <div className="child-tax-block__avatar">
+          {childName.charAt(0).toUpperCase()}
+        </div>
+        <div>
+          <p className="child-tax-block__name">{childName}</p>
+          <p className="child-tax-block__subtitle">Tax claiming arrangement</p>
+        </div>
+        {intent && (
+          <div className="child-tax-block__status">
+            <CheckCircleIcon />
+          </div>
+        )}
+      </div>
+
+      <Card>
+        <CardContent>
+          <p className="parent-label">
+            How will you claim {childName} on tax forms?
+          </p>
+          <div className="radio-group">
+            {[
+              { value: 'everyYear', label: 'I will claim this child every year' },
+              { value: 'someYears', label: 'I will claim this child some years (alternating or specific years)' },
+              { value: 'defer',     label: 'I defer to my co-parent to claim this child' },
+            ].map(({ value, label }) => (
+              <label key={value} className={`radio-option${intent === value ? ' radio-option--checked' : ''}`}>
+                <input
+                  type="radio"
+                  name={`intent-${childIndex}`}
+                  value={value}
+                  checked={intent === value}
+                  onChange={() => {
+                    update({ intent: value, taxYears: '', customYears: '', errors: {} });
+                    clearError('intent');
+                  }}
+                />
+                <span>{label}</span>
+              </label>
+            ))}
+          </div>
+          {errors.intent && (
+            <p className="text-input__error-message">{errors.intent}</p>
+          )}
+
+          {/* Every year disclaimers */}
+          {showEveryYearDisclaimers && (
+            <ClaimEveryYearDisclaimers parentRole={parentRole} />
+          )}
+
+          {/* Some years: which tax years */}
+          {showTaxYearQuestion && (
+            <div className="child-tax-block__subanswer">
+              <p className="parent-label">Which tax years will you claim {childName}?</p>
+              <div className="radio-group">
+                {TAX_YEAR_OPTIONS.map(({ value, label }) => (
+                  <label key={value} className={`radio-option${taxYears === value ? ' radio-option--checked' : ''}`}>
+                    <input
+                      type="radio"
+                      name={`taxYears-${childIndex}`}
+                      value={value}
+                      checked={taxYears === value}
+                      onChange={() => { update({ taxYears: value, customYears: '' }); clearError('taxYears'); }}
+                    />
+                    <span>{label}</span>
+                  </label>
+                ))}
+              </div>
+              {errors.taxYears && (
+                <p className="text-input__error-message">{errors.taxYears}</p>
+              )}
+
+              {showCustomYearInput && (
+                <div className="tax-custom-years">
+                  <label className="parent-label" htmlFor={`customYears-${childIndex}`}>
+                    Enter the tax years you will claim (comma-separated)
+                  </label>
+                  <input
+                    id={`customYears-${childIndex}`}
+                    type="text"
+                    className="tax-custom-years__input"
+                    placeholder="e.g. 2025, 2027, 2029"
+                    value={customYears}
+                    onChange={(e) => { update({ customYears: e.target.value }); clearError('customYears'); }}
+                  />
+                  {errors.customYears && (
+                    <p className="text-input__error-message">{errors.customYears}</p>
+                  )}
+                </div>
+              )}
+
+              {showSomeYearsDisclaimers && (
+                <ClaimSomeYearsDisclaimers taxYears={taxYears} parentRole={parentRole} />
+              )}
+            </div>
+          )}
+
+          {/* Defer disclaimers */}
+          {showDeferDisclaimers && (
+            <DeferDisclaimers parentRole={parentRole} />
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// Validates a string is a comma-separated list of 4-digit years, e.g. "2025, 2027, 2029"
+const isValidYearList = (value) => {
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  const parts = trimmed.split(',').map(p => p.trim());
+  return parts.every(p => /^\d{4}$/.test(p));
+};
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
@@ -44,16 +185,15 @@ export default function TaxExemptions() {
   const navigate = useNavigate();
   const { state, dispatch } = useForm();
 
-  const children = state.children ?? [];
-  const formData = state.taxExemptions ?? {};
-  const errors   = state.taxExemptions?.errors ?? {};
+  const children  = state.children ?? [];
+  const formData  = state.taxExemptions ?? {};
+  const errors    = formData.errors ?? {};
 
-  const parentRole        = formData.parentRole ?? '';
-  const claimIntent       = formData.claimIntent ?? '';
-  const everyYearSelected = formData.everyYearSelected ?? [];
-  const someYearsSelected = formData.someYearsSelected ?? [];
-  const taxYears          = formData.taxYears ?? '';
-  const customYears       = formData.customYears ?? '';
+  const parentRole         = formData.parentRole ?? '';
+  // Which children the user plans to claim at some point
+  const claimingChildren   = formData.claimingChildren ?? [];
+  // Per-child answers: { [childName]: { intent, taxYears, customYears, errors } }
+  const childAnswers       = formData.childAnswers ?? {};
 
   const allChildNames = children.map(c =>
     `${c.firstName} ${c.lastName}`.trim() || `Child ${c.id}`
@@ -66,49 +206,90 @@ export default function TaxExemptions() {
     if (errors[field]) update({ errors: { ...errors, [field]: '' } });
   };
 
-  // ── Derived visibility flags ──────────────────────────────────────────────
+  // Toggle a child in the "claiming" list and reset their per-child answers if removed
+  const toggleChild = (name) => {
+    const next = claimingChildren.includes(name)
+      ? claimingChildren.filter(n => n !== name)
+      : [...claimingChildren, name];
 
-  const showEveryYearSection     = claimIntent === 'everyYear';
-  const showSomeYearsSection     = claimIntent === 'someYears';
-  const showDeferSection         = claimIntent === 'defer';
+    // Remove answers for de-selected child
+    const nextAnswers = { ...childAnswers };
+    if (claimingChildren.includes(name)) delete nextAnswers[name];
 
-  const everyYearAllSelected     = everyYearSelected.length === allChildNames.length && allChildNames.length > 0;
-  const everyYearRemaining       = allChildNames.filter(n => !everyYearSelected.includes(n));
-  const showEveryYearLoopBack    = showEveryYearSection && everyYearSelected.length > 0 && !everyYearAllSelected;
-  const showEveryYearDisclaimers = showEveryYearSection && everyYearSelected.length > 0 && !!parentRole;
+    update({ claimingChildren: next, childAnswers: nextAnswers, errors: { ...errors, claimingChildren: '' } });
+  };
 
-  const someYearsAllSelected     = someYearsSelected.length === allChildNames.length && allChildNames.length > 0;
-  const someYearsRemaining       = allChildNames.filter(n => !someYearsSelected.includes(n));
-  const showSomeYearsLoopBack    = showSomeYearsSection && someYearsSelected.length > 0 && !someYearsAllSelected;
-  const showTaxYearQuestion      = showSomeYearsSection && someYearsSelected.length > 0;
-  const showCustomYearInput      = showTaxYearQuestion && taxYears === 'custom';
-  const showSomeYearsDisclaimers = showTaxYearQuestion && !!taxYears && !!parentRole;
+  // Update a specific child's answers
+  const updateChildAnswer = (childName, payload) => {
+    update({
+      childAnswers: {
+        ...childAnswers,
+        [childName]: { ...(childAnswers[childName] ?? {}), ...payload },
+      },
+    });
+  };
 
   // ── Validation ────────────────────────────────────────────────────────────
 
   const validateForm = () => {
     const newErrors = {};
-    if (!parentRole)  newErrors.parentRole  = 'Please indicate your parental role.';
-    if (!claimIntent) newErrors.claimIntent = 'Please select an option.';
+    if (!parentRole) newErrors.parentRole = 'Please indicate your parental role.';
+    if (claimingChildren.length === 0) newErrors.claimingChildren = 'Please select at least one child, or indicate you are not claiming any.';
 
-    if (claimIntent === 'everyYear' && everyYearSelected.length === 0)
-      newErrors.everyYearSelected = 'Please select at least one child.';
+    const newChildAnswerErrors = { ...childAnswers };
+    claimingChildren.forEach(name => {
+      const ans = childAnswers[name] ?? {};
+      const childErrors = {};
+      if (!ans.intent) childErrors.intent = 'Please select an option for this child.';
+      if (ans.intent === 'someYears' && !ans.taxYears) childErrors.taxYears = 'Please select which tax years.';
+      if (ans.intent === 'someYears' && ans.taxYears === 'custom') {
+        if (!ans.customYears?.trim()) {
+          childErrors.customYears = 'Please enter the specific tax years.';
+        } else if (!isValidYearList(ans.customYears)) {
+          childErrors.customYears = 'Please enter years as comma-separated 4-digit years (e.g. 2025, 2027, 2029).';
+        }
+      }
+      if (Object.keys(childErrors).length > 0)
+        newChildAnswerErrors[name] = { ...(childAnswers[name] ?? {}), errors: childErrors };
+    });
 
-    if (claimIntent === 'someYears') {
-      if (someYearsSelected.length === 0)
-        newErrors.someYearsSelected = 'Please select at least one child.';
-      if (!taxYears)
-        newErrors.taxYears = 'Please select which tax years you will claim.';
-      if (taxYears === 'custom' && !customYears.trim())
-        newErrors.customYears = 'Please enter the tax years (e.g. 2025, 2027, 2029).';
-    }
-
-    update({ errors: newErrors });
-    return Object.keys(newErrors).length === 0;
+    update({ errors: newErrors, childAnswers: newChildAnswerErrors });
+    return Object.keys(newErrors).length === 0 &&
+      claimingChildren.every(name => {
+        const ans = childAnswers[name] ?? {};
+        if (!ans.intent) return false;
+        if (ans.intent === 'someYears' && !ans.taxYears) return false;
+        if (ans.intent === 'someYears' && ans.taxYears === 'custom') {
+          if (!ans.customYears?.trim() || !isValidYearList(ans.customYears)) return false;
+        }
+        return true;
+      });
   };
 
-  const handleNext = () => { if (validateForm()) navigate('/review'); };
+  const handleNext = () => {
+    if (validateForm()) {
+      navigate('/review');
+    } else {
+      setSubmitAttempted(true);
+    }
+  };
   const handleBack = () => { update({ errors: {} }); navigate('/informationsharing'); };
+
+  // Tracks when a failed submission happens
+  const [submitAttempted, setSubmitAttempted] = useState(false);
+
+  // Runs after React re-renders with new errors, then scrolls to the first one
+  useEffect(() => {
+    if (submitAttempted) {
+      const firstError = document.querySelector('.text-input__error-message');
+      if (firstError) {
+        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      setSubmitAttempted(false);
+    }
+  }, [formData, submitAttempted]);
+
+  const showChildQuestions = claimingChildren.length > 0;
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -161,7 +342,7 @@ export default function TaxExemptions() {
                       { value: 'residential',    label: 'I am the residential parent' },
                       { value: 'nonresidential', label: 'I am the non-residential parent' },
                     ].map(({ value, label }) => (
-                      <label key={value} className="radio-option">
+                      <label key={value} className={`radio-option${parentRole === value ? ' radio-option--checked' : ''}`}>
                         <input
                           type="radio"
                           name="parentRole"
@@ -180,7 +361,7 @@ export default function TaxExemptions() {
               </Card>
             </div>
 
-            {/* ── 6.a — Main intent ── */}
+            {/* ── Step 1: Which children will you claim at some point? ── */}
             <div className="info-section">
               <div className="info-section__header">
                 <div className="info-section__icon"
@@ -188,44 +369,54 @@ export default function TaxExemptions() {
                   <FileTextIcon />
                 </div>
                 <div>
-                  <p className="info-section__title">Tax Claiming Intent</p>
+                  <p className="info-section__title">Children You Plan to Claim</p>
                   <p className="info-section__description">
-                    Will you claim your children on tax forms?
+                    Select all children you plan to claim on your taxes at any point — even if only in certain years.
                   </p>
                 </div>
               </div>
               <Card>
                 <CardContent>
                   <p className="parent-label">
-                    Do you want to claim your children on any tax forms every year?
+                    Which children do you plan to claim on your tax forms (now or in the future)?
                   </p>
-                  <IntentRadioGroup
-                    name="claimIntent"
-                    value={claimIntent}
-                    onChange={(val) => update({
-                      claimIntent: val,
-                      everyYearSelected: [],
-                      someYearsSelected: [],
-                      taxYears: '',
-                      customYears: '',
-                      remainingEveryYearIntent: '',
-                      remainingEveryYearTaxYears: '',
-                      remainingEveryYearCustomYears: '',
-                      remainingSomeYearsIntent: '',
-                      remainingSomeYearsTaxYears: '',
-                      remainingSomeYearsCustomYears: '',
-                      errors: {},
-                    })}
-                  />
-                  {errors.claimIntent && (
-                    <p className="text-input__error-message">{errors.claimIntent}</p>
+                  {allChildNames.length === 0 ? (
+                    <p className="text-input__error-message">No children found. Please go back and add children first.</p>
+                  ) : (
+                    <div className="tax-child-list">
+                      {allChildNames.map(name => (
+                        <label key={name} className={`radio-option${claimingChildren.includes(name) ? ' radio-option--checked' : ''}`}>
+                          <input
+                            type="checkbox"
+                            className="tax-checkbox"
+                            checked={claimingChildren.includes(name)}
+                            onChange={() => toggleChild(name)}
+                          />
+                          <span>{name}</span>
+                          {claimingChildren.includes(name) && childAnswers[name]?.intent && (
+                            <span className="child-answer-badge">
+                              <CheckCircleIcon />
+                            </span>
+                          )}
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                  {errors.claimingChildren && (
+                    <p className="text-input__error-message">{errors.claimingChildren}</p>
+                  )}
+
+                  {allChildNames.length > 0 && claimingChildren.length === 0 && (
+                    <p className="tax-none-note">
+                      If you do not plan to claim any children, leave all boxes unchecked and proceed to the next step.
+                    </p>
                   )}
                 </CardContent>
               </Card>
             </div>
 
-            {/* ── 6.b — Every year: child selection + disclaimers ── */}
-            {showEveryYearSection && (
+            {/* ── Step 2: Per-child questions ── */}
+            {showChildQuestions && (
               <div className="info-section">
                 <div className="info-section__header">
                   <div className="info-section__icon"
@@ -233,148 +424,24 @@ export default function TaxExemptions() {
                     <FileTextIcon />
                   </div>
                   <div>
-                    <p className="info-section__title">Select Children — Every Year</p>
+                    <p className="info-section__title">Tax Claiming Details</p>
                     <p className="info-section__description">
-                      Please select which children you will be claiming each year.
+                      For each child you selected, indicate how you will claim them.
                     </p>
                   </div>
                 </div>
-                <Card>
-                  <CardContent>
-                    <ChildCheckboxList
-                      children={children}
-                      selected={everyYearSelected}
-                      onChange={(val) => { update({ everyYearSelected: val }); clearError('everyYearSelected'); }}
-                      label="Which children will you claim every year?"
-                    />
-                    {errors.everyYearSelected && (
-                      <p className="text-input__error-message">{errors.everyYearSelected}</p>
-                    )}
-                    {showEveryYearDisclaimers && (
-                      <ClaimEveryYearDisclaimers parentRole={parentRole} />
-                    )}
-                  </CardContent>
-                </Card>
 
-                {showEveryYearLoopBack && (
-                  <RemainingChildrenLoopBack
-                    selectedChildren={everyYearSelected}
-                    remainingChildren={everyYearRemaining}
-                    intentKey="remainingEveryYearIntent"
-                    taxYearsKey="remainingEveryYearTaxYears"
-                    customYearsKey="remainingEveryYearCustomYears"
-                    formData={formData}
+                {claimingChildren.map((name, idx) => (
+                  <ChildTaxBlock
+                    key={name}
+                    childName={name}
+                    childIndex={name}
+                    childData={childAnswers[name] ?? {}}
                     parentRole={parentRole}
-                    onUpdate={update}
+                    onUpdate={(_, payload) => updateChildAnswer(name, payload)}
+                    errors={(childAnswers[name] ?? {}).errors ?? {}}
                   />
-                )}
-              </div>
-            )}
-
-            {/* ── 6.c — Some years: child selection + tax year question + disclaimers ── */}
-            {showSomeYearsSection && (
-              <div className="info-section">
-                <div className="info-section__header">
-                  <div className="info-section__icon"
-                    style={{ color: '#ff9c27', backgroundColor: '#ff9c271a' }}>
-                    <FileTextIcon />
-                  </div>
-                  <div>
-                    <p className="info-section__title">Select Children — Some Years</p>
-                    <p className="info-section__description">
-                      Please select which children you plan to claim on future tax forms.
-                    </p>
-                  </div>
-                </div>
-                <Card>
-                  <CardContent>
-                    <ChildCheckboxList
-                      children={children}
-                      selected={someYearsSelected}
-                      onChange={(val) => { update({ someYearsSelected: val }); clearError('someYearsSelected'); }}
-                      label="Which children will you claim some years?"
-                    />
-                    {errors.someYearsSelected && (
-                      <p className="text-input__error-message">{errors.someYearsSelected}</p>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* 6.c.ii — Which tax years */}
-                {showTaxYearQuestion && (
-                  <Card>
-                    <CardContent>
-                      <p className="parent-label">
-                        Which tax years will you claim your children on?
-                      </p>
-                      <div className="radio-group">
-                        {TAX_YEAR_OPTIONS.map(({ value, label }) => (
-                          <label key={value} className="radio-option">
-                            <input
-                              type="radio"
-                              name="taxYears"
-                              value={value}
-                              checked={taxYears === value}
-                              onChange={() => { update({ taxYears: value, customYears: '' }); clearError('taxYears'); }}
-                            />
-                            <span>{label}</span>
-                          </label>
-                        ))}
-                      </div>
-                      {errors.taxYears && (
-                        <p className="text-input__error-message">{errors.taxYears}</p>
-                      )}
-
-                      {showCustomYearInput && (
-                        <div className="tax-custom-years">
-                          <label className="parent-label" htmlFor="customYears">
-                            Enter the tax years you will claim (comma-separated)
-                          </label>
-                          <input
-                            id="customYears"
-                            type="text"
-                            className="tax-custom-years__input"
-                            placeholder="e.g. 2025, 2027, 2029"
-                            value={customYears}
-                            onChange={(e) => { update({ customYears: e.target.value }); clearError('customYears'); }}
-                          />
-                          {errors.customYears && (
-                            <p className="text-input__error-message">{errors.customYears}</p>
-                          )}
-                        </div>
-                      )}
-
-                      {showSomeYearsDisclaimers && (
-                        <ClaimSomeYearsDisclaimers taxYears={taxYears} parentRole={parentRole} />
-                      )}
-                    </CardContent>
-                  </Card>
-                )}
-
-                {showSomeYearsLoopBack && (
-                  <RemainingChildrenLoopBack
-                    selectedChildren={someYearsSelected}
-                    remainingChildren={someYearsRemaining}
-                    intentKey="remainingSomeYearsIntent"
-                    taxYearsKey="remainingSomeYearsTaxYears"
-                    customYearsKey="remainingSomeYearsCustomYears"
-                    formData={formData}
-                    parentRole={parentRole}
-                    onUpdate={update}
-                  />
-                )}
-              </div>
-            )}
-
-            {/* ── 6.d — Defer disclaimers ── */}
-            {showDeferSection && parentRole && (
-              <div className="info-section">
-                <Card>
-                  <CardContent>
-                    <p className="parent-label">You have decided to defer to your co-parent.</p>
-                    <DeferDisclaimers parentRole={parentRole} />
-                  </CardContent>
-                </Card>
+                ))}
               </div>
             )}
 

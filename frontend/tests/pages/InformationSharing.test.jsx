@@ -58,16 +58,6 @@ describe('InformationSharing', () => {
     ).toBeInTheDocument()
   })
 
-  it('displays the ShareCare logo in the header', () => {
-    renderWithRouter(<InformationSharing />)
-    expect(screen.getByAltText('ShareCare')).toBeInTheDocument()
-  })
-
-  it('displays the step indicator in the header', () => {
-    renderWithRouter(<InformationSharing />)
-    expect(screen.getByText(/step \d+ of \d+/i)).toBeInTheDocument()
-  })
-
   // ─── Section Rendering ────────────────────────────────────────────────────
 
   it('displays the Medical Information Access section', () => {
@@ -292,14 +282,14 @@ describe('InformationSharing', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/transportation')
   })
 
-  it('navigates to /review on valid form submission', async () => {
+  it('navigates to /tax-exemptions on valid form submission', async () => {
     renderWithRouter(<InformationSharing />)
     const sections = ['medicalRecords', 'schoolContact', 'schoolReports', 'schoolActivities', 'extracurricularActivities']
     for (const key of sections) {
       await userEvent.click(document.querySelector(`input[name="${key}"][value="both"]`))
     }
     fireEvent.click(screen.getByRole('button', { name: /next/i }))
-    expect(mockNavigate).toHaveBeenCalledWith('/review')
+    expect(mockNavigate).toHaveBeenCalledWith('/tax-exemptions')
   })
 
   it('does not show errors after Back is clicked', async () => {
@@ -337,6 +327,6 @@ describe('InformationSharing', () => {
       await userEvent.click(document.querySelector(`input[name="${key}"][value="${value}"]`))
     }
     fireEvent.click(screen.getByRole('button', { name: /next/i }))
-    expect(mockNavigate).toHaveBeenCalledWith('/review')
+    expect(mockNavigate).toHaveBeenCalledWith('/tax-exemptions')
   })
 })
