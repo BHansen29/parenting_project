@@ -6,8 +6,6 @@ import SignUp from './pages/auth/SignUp';
 import GettingStarted from './pages/GettingStarted';
 import ParentalRights from './pages/ParentalRights';
 import ParentingTimeAndCommunication from './pages/ParentingTimeAndCommunication';
-import CustodySchedule from './pages/CustodySchedule';
-import Transportation from './pages/Transportation';
 import InformationSharing from './pages/InformationSharing';
 import TaxExemptions from './pages/TaxExemptions';
 import Review from './pages/Review';
@@ -39,16 +37,6 @@ function App() {
         <Route path="/parenting-time-communication" element={
           <MainLayout>
             <ParentingTimeAndCommunication />
-          </MainLayout>
-        } />
-        <Route path="/custody-schedule" element={
-          <MainLayout>
-            <CustodySchedule />
-          </MainLayout>
-        } />
-        <Route path="/transportation" element={
-          <MainLayout>
-            <Transportation />
           </MainLayout>
         } />
         <Route path="/informationsharing" element={

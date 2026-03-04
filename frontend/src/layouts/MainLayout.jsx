@@ -15,8 +15,6 @@ export default function Layout({ children }) {
     '/getting-started',
     '/parental-rights',
     '/parenting-time-communication',
-    '/custody-schedule',
-    '/transportation',
     '/informationsharing', 
     '/tax-exemptions',
     '/review'
