@@ -54,7 +54,7 @@ export default function SignUp() {
         // Create the user in Firebase Auth with email + password
         await createUserWithEmailAndPassword(auth, formData.email, formData.password);
         // On success, send them to the next step
-        navigate('/household-info');
+        navigate('/getting-started');
       } catch (err) {
         // Show Firebase error in the form
         setErrors({ general: err.message });

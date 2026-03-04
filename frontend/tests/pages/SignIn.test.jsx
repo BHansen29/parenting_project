@@ -4,6 +4,16 @@ import { MemoryRouter } from 'react-router-dom'
 import SignIn from '../../src/pages/auth/SignIn'
 import { renderWithRouter } from '../../src/utils/renderWithRouter'
 
+// Mock Firebase
+vi.mock('firebase/auth', () => ({
+  signInWithEmailAndPassword: vi.fn(() => Promise.resolve({ user: { uid: '123' } })),
+  getAuth: vi.fn(),
+}))
+
+vi.mock('../../src/lib/firebase', () => ({
+  auth: {},
+}))
+
 // Mock useNavigate from react-router-dom
 const mockNavigate = vi.fn()
 vi.mock('react-router-dom', async () => {
@@ -114,14 +124,14 @@ describe('SignIn', () => {
   })
 
   // Navigation behavior
-  it('navigates to /household-info after successful sign in', async () => {
+  it('navigates to /getting-started after successful sign in', async () => {
     renderWithRouter(<SignIn />)
     await userEvent.type(screen.getByLabelText(/email/i), 'valid@email.com')
     await userEvent.type(screen.getByLabelText(/password/i), 'password123')
     fireEvent.click(screen.getByRole('button', { name: /^sign in$/i }))
     await screen.findByText('Signing in...')
     await vi.waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/household-info')
+      expect(mockNavigate).toHaveBeenCalledWith('/getting-started')
     }, { timeout: 2000 })
   })
 
