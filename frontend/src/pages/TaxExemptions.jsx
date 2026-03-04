@@ -204,6 +204,33 @@ export default function TaxExemptions() {
     `${c.firstName} ${c.lastName}`.trim() || `Child ${c.id}`
   );
 
+  // ── Sync: remove deleted children from claimingChildren and childAnswers ──
+  useEffect(() => {
+    const removedFromClaiming = claimingChildren.filter(
+      name => !allChildNames.includes(name)
+    );
+    const removedFromAnswers = Object.keys(childAnswers).filter(
+      name => !allChildNames.includes(name)
+    );
+
+    if (removedFromClaiming.length > 0 || removedFromAnswers.length > 0) {
+      const nextClaimingChildren = claimingChildren.filter(
+        name => allChildNames.includes(name)
+      );
+      const nextChildAnswers = { ...childAnswers };
+      removedFromAnswers.forEach(name => delete nextChildAnswers[name]);
+
+      dispatch({
+        type: 'UPDATE_SECTION',
+        section: 'taxExemptions',
+        payload: {
+          claimingChildren: nextClaimingChildren,
+          childAnswers: nextChildAnswers,
+        },
+      });
+    }
+  }, [allChildNames.join(',')]);
+
   const update = (payload) =>
     dispatch({ type: 'UPDATE_SECTION', section: 'taxExemptions', payload });
 
