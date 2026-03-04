@@ -17,6 +17,8 @@ export default function Layout({ children }) {
     '/parenting-time-communication',
     '/custody-schedule',
     '/transportation',
+    '/informationsharing', 
+    '/tax-exemptions',
     '/review'
   ];
 

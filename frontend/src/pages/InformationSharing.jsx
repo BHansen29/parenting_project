@@ -1,11 +1,11 @@
 import { useNavigate } from 'react-router-dom';
-//import Header from '../components/common/Header';
-import Footer from '../components/common/Footer';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/card';
 import { useForm } from '../hooks/useForm';
 import './Page.css';
+import RadioButton from '../components/forms/RadioButton';
+import FlagButton from '../components/forms/FlagButton';
+import { useSectionFlag } from '../hooks/useSectionFlag';
 
-// SVG icons matching the mockup inspect code exactly
 const HeartIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
     fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -22,7 +22,6 @@ const GraduationCapIcon = () => (
   </svg>
 );
 
-// Trophy icon for Extracurricular Activities
 const TrophyIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
     fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -35,7 +34,6 @@ const TrophyIcon = () => (
   </svg>
 );
 
-// Calendar icon for School Activity Participation
 const CalendarIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
     fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -46,7 +44,6 @@ const CalendarIcon = () => (
   </svg>
 );
 
-// File text icon for School Reports & Notices
 const FileTextIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
     fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -121,6 +118,22 @@ export default function InformationSharing() {
   const formData = state.informationSharing ?? {};
   const errors = state.informationSharing?.errors ?? {};
 
+  // ── Flag hooks (one per section) ──────────────────────────────────────────
+  const medicalRecordsFlag        = useSectionFlag('medicalRecords');
+  const schoolContactFlag         = useSectionFlag('schoolContact');
+  const schoolReportsFlag         = useSectionFlag('schoolReports');
+  const schoolActivitiesFlag      = useSectionFlag('schoolActivities');
+  const extracurricularActivitiesFlag = useSectionFlag('extracurricularActivities');
+
+  // Map section key → flag object so it's easy to look up inside the map
+  const flagMap = {
+    medicalRecords:           medicalRecordsFlag,
+    schoolContact:            schoolContactFlag,
+    schoolReports:            schoolReportsFlag,
+    schoolActivities:         schoolActivitiesFlag,
+    extracurricularActivities: extracurricularActivitiesFlag,
+  };
+
   const handleChange = (field) => (value) => {
     dispatch({
       type: 'UPDATE_SECTION',
@@ -153,7 +166,7 @@ export default function InformationSharing() {
 
   const handleNext = () => {
     if (validateForm()) {
-      navigate('/tax-exemptions'); 
+      navigate('/tax-exemptions');
     }
   };
 
@@ -163,12 +176,11 @@ export default function InformationSharing() {
       section: 'informationSharing',
       payload: { errors: {} },
     });
-    navigate('/transportation'); 
+    navigate('/transportation');
   };
 
   return (
     <div className="page-container">
-
       <div className="page-content">
         <Card>
           <CardHeader>
@@ -196,26 +208,30 @@ export default function InformationSharing() {
                   </div>
                 </div>
 
-                {/* Questions */}
+                {/* Question card with flag */}
                 <Card>
+                  <CardHeader className="card-header-with-flag">
+                    <CardDescription className="card-heading-question-bold">
+                      {question}
+                    </CardDescription>
+                    <FlagButton
+                      isFlagged={flagMap[key].isFlagged}
+                      onClick={flagMap[key].toggleFlag}
+                    />
+                  </CardHeader>
                   <CardContent>
-                    <p className="parent-label">{question}</p>
-
                     <div className="radio-group">
                       {RADIO_OPTIONS.map(({ value, label }) => (
-                        <label key={value} className="radio-option">
-                          <input
-                            type="radio"
-                            name={key}
-                            value={value}
-                            checked={formData[key] === value}
-                            onChange={(e) => handleChange(key)(e.target.value)}
-                          />
-                          <span>{label}</span>
-                        </label>
+                        <RadioButton
+                          key={value}
+                          name={key}
+                          value={value}
+                          checked={formData[key] === value}
+                          onChange={(e) => handleChange(key)(e.target.value)}
+                          label={label}
+                        />
                       ))}
                     </div>
-
                     {errors[key] && (
                       <p className="text-input__error-message">{errors[key]}</p>
                     )}
@@ -228,12 +244,6 @@ export default function InformationSharing() {
         </Card>
       </div>
 
-      <Footer
-        showBackButton={true}
-        showNextButton={true}
-        onNext={handleNext}
-        onBack={handleBack}
-      />
     </div>
   );
 }

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Footer from '../components/common/Footer';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/card';
 import { useForm } from '../hooks/useForm';
 import {
@@ -10,6 +9,10 @@ import {
 } from './taxExemptions/TaxExemptionDisclaimers';
 import './Page.css';
 import './TaxExemptions.css';
+import Checkbox from '../components/forms/Checkbox';
+import RadioButton from '../components/forms/RadioButton';
+import FlagButton from '../components/forms/FlagButton';
+import { useSectionFlag } from '../hooks/useSectionFlag';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -46,16 +49,16 @@ const TAX_YEAR_OPTIONS = [
 
 // ─── Per-child question block ─────────────────────────────────────────────────
 
-function ChildTaxBlock({ childName, childIndex, childData = {}, parentRole, onUpdate, errors = {} }) {
-  const intent     = childData.intent ?? '';
-  const taxYears   = childData.taxYears ?? '';
+function ChildTaxBlock({ childName, childIndex, childData = {}, parentRole, onUpdate, errors = {}, isFlagged, onToggleFlag }) {
+  const intent      = childData.intent ?? '';
+  const taxYears    = childData.taxYears ?? '';
   const customYears = childData.customYears ?? '';
 
-  const showTaxYearQuestion   = intent === 'someYears';
-  const showCustomYearInput   = showTaxYearQuestion && taxYears === 'custom';
+  const showTaxYearQuestion      = intent === 'someYears';
+  const showCustomYearInput      = showTaxYearQuestion && taxYears === 'custom';
   const showEveryYearDisclaimers = intent === 'everyYear' && !!parentRole;
   const showSomeYearsDisclaimers = intent === 'someYears' && !!taxYears && !!parentRole;
-  const showDeferDisclaimers    = intent === 'defer' && !!parentRole;
+  const showDeferDisclaimers     = intent === 'defer' && !!parentRole;
 
   const update = (payload) => onUpdate(childIndex, payload);
   const clearError = (field) => {
@@ -79,57 +82,58 @@ function ChildTaxBlock({ childName, childIndex, childData = {}, parentRole, onUp
         )}
       </div>
 
+      {/* Card with flag in header */}
       <Card>
-        <CardContent>
-          <p className="parent-label">
+        <CardHeader className="card-header-with-flag">
+          <CardDescription className="card-heading-question-bold">
             How will you claim {childName} on tax forms?
-          </p>
+          </CardDescription>
+          <FlagButton
+            isFlagged={isFlagged}
+            onClick={onToggleFlag}
+          />
+        </CardHeader>
+        <CardContent>
           <div className="radio-group">
             {[
               { value: 'everyYear', label: 'I will claim this child every year' },
               { value: 'someYears', label: 'I will claim this child some years (alternating or specific years)' },
               { value: 'defer',     label: 'I defer to my co-parent to claim this child' },
             ].map(({ value, label }) => (
-              <label key={value} className={`radio-option${intent === value ? ' radio-option--checked' : ''}`}>
-                <input
-                  type="radio"
-                  name={`intent-${childIndex}`}
-                  value={value}
-                  checked={intent === value}
-                  onChange={() => {
-                    update({ intent: value, taxYears: '', customYears: '', errors: {} });
-                    clearError('intent');
-                  }}
-                />
-                <span>{label}</span>
-              </label>
+              <RadioButton
+                key={value}
+                name={`intent-${childIndex}`}
+                value={value}
+                checked={intent === value}
+                onChange={() => {
+                  update({ intent: value, taxYears: '', customYears: '', errors: {} });
+                  clearError('intent');
+                }}
+                label={label}
+              />
             ))}
           </div>
           {errors.intent && (
             <p className="text-input__error-message">{errors.intent}</p>
           )}
 
-          {/* Every year disclaimers */}
           {showEveryYearDisclaimers && (
             <ClaimEveryYearDisclaimers parentRole={parentRole} />
           )}
 
-          {/* Some years: which tax years */}
           {showTaxYearQuestion && (
             <div className="child-tax-block__subanswer">
               <p className="parent-label">Which tax years will you claim {childName}?</p>
               <div className="radio-group">
                 {TAX_YEAR_OPTIONS.map(({ value, label }) => (
-                  <label key={value} className={`radio-option${taxYears === value ? ' radio-option--checked' : ''}`}>
-                    <input
-                      type="radio"
-                      name={`taxYears-${childIndex}`}
-                      value={value}
-                      checked={taxYears === value}
-                      onChange={() => { update({ taxYears: value, customYears: '' }); clearError('taxYears'); }}
-                    />
-                    <span>{label}</span>
-                  </label>
+                  <RadioButton
+                    key={value}
+                    name={`taxYears-${childIndex}`}
+                    value={value}
+                    checked={taxYears === value}
+                    onChange={() => { update({ taxYears: value, customYears: '' }); clearError('taxYears'); }}
+                    label={label}
+                  />
                 ))}
               </div>
               {errors.taxYears && (
@@ -161,7 +165,6 @@ function ChildTaxBlock({ childName, childIndex, childData = {}, parentRole, onUp
             </div>
           )}
 
-          {/* Defer disclaimers */}
           {showDeferDisclaimers && (
             <DeferDisclaimers parentRole={parentRole} />
           )}
@@ -171,7 +174,7 @@ function ChildTaxBlock({ childName, childIndex, childData = {}, parentRole, onUp
   );
 }
 
-// Validates a string is a comma-separated list of 4-digit years, e.g. "2025, 2027, 2029"
+// Validates a string is a comma-separated list of 4-digit years
 const isValidYearList = (value) => {
   const trimmed = value.trim();
   if (!trimmed) return false;
@@ -185,15 +188,17 @@ export default function TaxExemptions() {
   const navigate = useNavigate();
   const { state, dispatch } = useForm();
 
-  const children  = state.children ?? [];
-  const formData  = state.taxExemptions ?? {};
-  const errors    = formData.errors ?? {};
+  const children        = state.children ?? [];
+  const formData        = state.taxExemptions ?? {};
+  const errors          = formData.errors ?? {};
+  const parentRole      = formData.parentRole ?? '';
+  const claimingChildren = formData.claimingChildren ?? [];
+  const childAnswers    = formData.childAnswers ?? {};
 
-  const parentRole         = formData.parentRole ?? '';
-  // Which children the user plans to claim at some point
-  const claimingChildren   = formData.claimingChildren ?? [];
-  // Per-child answers: { [childName]: { intent, taxYears, customYears, errors } }
-  const childAnswers       = formData.childAnswers ?? {};
+  // ── Flag hooks ────────────────────────────────────────────────────────────
+  const parentalRoleFlag      = useSectionFlag('taxParentalRole');
+  const claimingChildrenFlag  = useSectionFlag('taxClaimingChildren');
+  const taxDetailsFlag        = useSectionFlag('taxDetails');
 
   const allChildNames = children.map(c =>
     `${c.firstName} ${c.lastName}`.trim() || `Child ${c.id}`
@@ -206,20 +211,15 @@ export default function TaxExemptions() {
     if (errors[field]) update({ errors: { ...errors, [field]: '' } });
   };
 
-  // Toggle a child in the "claiming" list and reset their per-child answers if removed
   const toggleChild = (name) => {
     const next = claimingChildren.includes(name)
       ? claimingChildren.filter(n => n !== name)
       : [...claimingChildren, name];
-
-    // Remove answers for de-selected child
     const nextAnswers = { ...childAnswers };
     if (claimingChildren.includes(name)) delete nextAnswers[name];
-
     update({ claimingChildren: next, childAnswers: nextAnswers, errors: { ...errors, claimingChildren: '' } });
   };
 
-  // Update a specific child's answers
   const updateChildAnswer = (childName, payload) => {
     update({
       childAnswers: {
@@ -266,6 +266,8 @@ export default function TaxExemptions() {
       });
   };
 
+  const [submitAttempted, setSubmitAttempted] = useState(false);
+
   const handleNext = () => {
     if (validateForm()) {
       navigate('/review');
@@ -273,12 +275,9 @@ export default function TaxExemptions() {
       setSubmitAttempted(true);
     }
   };
+
   const handleBack = () => { update({ errors: {} }); navigate('/informationsharing'); };
 
-  // Tracks when a failed submission happens
-  const [submitAttempted, setSubmitAttempted] = useState(false);
-
-  // Runs after React re-renders with new errors, then scrolls to the first one
   useEffect(() => {
     if (submitAttempted) {
       const firstError = document.querySelector('.text-input__error-message');
@@ -333,25 +332,29 @@ export default function TaxExemptions() {
                 </div>
               </div>
               <Card>
-                <CardContent>
-                  <p className="parent-label">
+                <CardHeader className="card-header-with-flag">
+                  <CardDescription className="card-heading-question-bold">
                     Are you the residential or non-residential parent?
-                  </p>
+                  </CardDescription>
+                  <FlagButton
+                    isFlagged={parentalRoleFlag.isFlagged}
+                    onClick={parentalRoleFlag.toggleFlag}
+                  />
+                </CardHeader>
+                <CardContent>
                   <div className="radio-group">
                     {[
                       { value: 'residential',    label: 'I am the residential parent' },
                       { value: 'nonresidential', label: 'I am the non-residential parent' },
                     ].map(({ value, label }) => (
-                      <label key={value} className={`radio-option${parentRole === value ? ' radio-option--checked' : ''}`}>
-                        <input
-                          type="radio"
-                          name="parentRole"
-                          value={value}
-                          checked={parentRole === value}
-                          onChange={() => { update({ parentRole: value }); clearError('parentRole'); }}
-                        />
-                        <span>{label}</span>
-                      </label>
+                      <RadioButton
+                        key={value}
+                        name="parentRole"
+                        value={value}
+                        checked={parentRole === value}
+                        onChange={() => { update({ parentRole: value }); clearError('parentRole'); }}
+                        label={label}
+                      />
                     ))}
                   </div>
                   {errors.parentRole && (
@@ -361,7 +364,7 @@ export default function TaxExemptions() {
               </Card>
             </div>
 
-            {/* ── Step 1: Which children will you claim at some point? ── */}
+            {/* ── Children to claim ── */}
             <div className="info-section">
               <div className="info-section__header">
                 <div className="info-section__icon"
@@ -376,36 +379,37 @@ export default function TaxExemptions() {
                 </div>
               </div>
               <Card>
-                <CardContent>
-                  <p className="parent-label">
+                <CardHeader className="card-header-with-flag">
+                  <CardDescription className="card-heading-question-bold">
                     Which children do you plan to claim on your tax forms (now or in the future)?
-                  </p>
+                  </CardDescription>
+                  <FlagButton
+                    isFlagged={claimingChildrenFlag.isFlagged}
+                    onClick={claimingChildrenFlag.toggleFlag}
+                  />
+                </CardHeader>
+                <CardContent>
                   {allChildNames.length === 0 ? (
                     <p className="text-input__error-message">No children found. Please go back and add children first.</p>
                   ) : (
                     <div className="tax-child-list">
                       {allChildNames.map(name => (
-                        <label key={name} className={`radio-option${claimingChildren.includes(name) ? ' radio-option--checked' : ''}`}>
-                          <input
-                            type="checkbox"
-                            className="tax-checkbox"
-                            checked={claimingChildren.includes(name)}
-                            onChange={() => toggleChild(name)}
-                          />
-                          <span>{name}</span>
-                          {claimingChildren.includes(name) && childAnswers[name]?.intent && (
-                            <span className="child-answer-badge">
-                              <CheckCircleIcon />
-                            </span>
-                          )}
-                        </label>
+                        <Checkbox
+                          key={name}
+                          id={`claim-child-${name}`}
+                          name="claimingChildren"
+                          value={name}
+                          label={name}
+                          checked={claimingChildren.includes(name)}
+                          onChange={() => toggleChild(name)}
+                          variant="card"
+                        />
                       ))}
                     </div>
                   )}
                   {errors.claimingChildren && (
                     <p className="text-input__error-message">{errors.claimingChildren}</p>
                   )}
-
                   {allChildNames.length > 0 && claimingChildren.length === 0 && (
                     <p className="tax-none-note">
                       If you do not plan to claim any children, leave all boxes unchecked and proceed to the next step.
@@ -415,7 +419,7 @@ export default function TaxExemptions() {
               </Card>
             </div>
 
-            {/* ── Step 2: Per-child questions ── */}
+            {/* ── Per-child details ── */}
             {showChildQuestions && (
               <div className="info-section">
                 <div className="info-section__header">
@@ -431,7 +435,7 @@ export default function TaxExemptions() {
                   </div>
                 </div>
 
-                {claimingChildren.map((name, idx) => (
+                {claimingChildren.map((name) => (
                   <ChildTaxBlock
                     key={name}
                     childName={name}
@@ -440,6 +444,8 @@ export default function TaxExemptions() {
                     parentRole={parentRole}
                     onUpdate={(_, payload) => updateChildAnswer(name, payload)}
                     errors={(childAnswers[name] ?? {}).errors ?? {}}
+                    isFlagged={childAnswers[name]?.flagged ?? false}
+                    onToggleFlag={() => updateChildAnswer(name, { flagged: !childAnswers[name]?.flagged })}
                   />
                 ))}
               </div>
@@ -449,12 +455,6 @@ export default function TaxExemptions() {
         </Card>
       </div>
 
-      <Footer
-        showBackButton={true}
-        showNextButton={true}
-        onNext={handleNext}
-        onBack={handleBack}
-      />
     </div>
   );
 }
