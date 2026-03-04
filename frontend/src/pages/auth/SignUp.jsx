@@ -61,8 +61,7 @@ export default function SignUp() {
         // On success, send them to the next step
         navigate('/household-info');
       } catch (err) {
-        // Show Firebase error in the form
-        setErrors({ general: err.message });
+        console.error('Sign-up failed:', err);
         setIsLoading(false);
       }
     }
@@ -112,12 +111,6 @@ export default function SignUp() {
                   Forgot password?
                 </Link>
               </div>
-
-              {errors.general && (
-                <p role="alert" className="text-red-600 text-sm mb-4">
-                  {errors.general}
-                </p>
-              )}
 
               <button
                 type="submit"

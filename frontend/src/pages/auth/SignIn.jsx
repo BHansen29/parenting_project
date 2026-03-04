@@ -61,8 +61,7 @@ export default function SignIn() {
         // Next Step
         navigate('/household-info');
       } catch (err) {
-        // Show Firebase error in the form
-        setErrors({ general: err.message });
+        console.error('Sign-in failed:', err);
         setIsLoading(false);
       }
     }
@@ -112,12 +111,6 @@ export default function SignIn() {
                   Forgot password?
                 </Link>
               </div>
-
-              {errors.general && (
-                <p role="alert" className="text-red-600 text-sm mb-4">
-                  {errors.general}
-                </p>
-              )}
 
               <button
                 type="submit"

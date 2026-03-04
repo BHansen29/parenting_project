@@ -36,10 +36,6 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
-  photoURL: {
-    type: String,
-    default: ''
-  },
   lastLoginAt: {
     type: Date
   },
