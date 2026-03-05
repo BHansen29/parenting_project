@@ -68,67 +68,6 @@ router.post('/documents', async (req, res) => {
   }
 });
 
-// POST /api/login - login user
-// req must contain user login info in JSON (name, email, password)
-router.post('/login', async (req, res) => {
-  try {
-    const { name, email, password } = req.body
-    // database check for user
-    const user = await User.findOne({email, password})
-    if (user) {
-      req.session.user = {
-        id: '1', // generate id?
-        username: name,
-        role: 'user'
-      }
-      // found user, proceed to login
-      // set session information here
-      // redirect users to home page of application/dashboard
-      console.log("Logging in user")
-      res.status(200).json({ message: 'Login success', authenticated: true});
-    } else {
-      // todo: make more descriptive res depending on if password wrong, user doesn't exist, etc.
-      console.error('User doesn\'t exist, login failed')
-      res.status(401).send("Login failed")
-    }
-  } catch (err) {
-    console.error('Error during user search: ', err)
-    res.status(400).json({ error: err.message });
-  } 
-})
-
-router.post('/logout', (req, res) => {
-    req.session.destroy(err => {
-        console.log('Logging out')
-        if (err) {
-            console.error('Failed to log out')
-            return res.status(500).json({ message: 'Could not log out, please try again' });
-        }
-        res.status(200).json({ message: 'Successfully logged out' });
-    });
-});
-
-
-// POST /api/create_user - create user
-// req must contain user login info in JSON (name, email, password)
-router.post('/createUser', async (req, res) => {
-  try {
-    const user = await User.findOne({ email: req.body.email })
-    // might not need this logic if unique property of email is accounted for in User.create()
-    if (!user) {
-      await User.create(req.body)
-      res.status(201);
-    } else {
-      console.error('Create user failed, user already exists')
-      res.status(409).send('User already exists!')
-    }
-
-  } catch (err) {
-    console.error('Error during user creation: ', err)
-    res.status(400).json({ error: err.message });
-  } 
-})
-
 // GET /api - Show available endpoints
 router.get('/', (req, res) => {
   res.json({

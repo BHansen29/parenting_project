@@ -18,11 +18,16 @@ router.post('/', verifyToken, async (req, res) => {
 
 // Add an answer to the plan
 // POST/api/plan/:planId/answer
-router.post('/:planId/answer', async (req, res) => {
+router.post('/:planId/answer', verifyToken, async (req, res) => {
   try {
     const planID = req.params.planId;
     //Retrieve plan and fetch from Mongo
     const plan = await Plan.findById(planID);
+
+    //If the planId was not found or doesn't belong to the requesting user
+    if (!plan || plan.userID !== req.user.uid) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
 
     //Store the question into the plan
     const {questionID, answer} = req.body
@@ -38,15 +43,15 @@ router.post('/:planId/answer', async (req, res) => {
 
 //Retrieve a plan
 // GET/api/plan/:planId
-router.get('/:planId', async (req, res) => {
+router.get('/:planId', verifyToken, async (req, res) => {
   try {
     const planID = req.params.planId;
     //Retrieve plan and fetch from Mongo
     const plan = await Plan.findById(planID);
 
-    //If the planId was not found
-    if (!plan) {
-      res.status(400).json({ error: 'Plan not found' });
+    //If the planId was not found or doesn't belong to the requesting user
+    if (!plan || plan.userID !== req.user.uid) {
+      return res.status(403).json({ error: 'Forbidden' });
     }
     //Send plan back
     res.json(plan);
