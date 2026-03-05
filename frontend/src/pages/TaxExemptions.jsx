@@ -13,6 +13,7 @@ import Checkbox from '../components/forms/Checkbox';
 import RadioButton from '../components/forms/RadioButton';
 import FlagButton from '../components/forms/FlagButton';
 import { useSectionFlag } from '../hooks/useSectionFlag';
+import { useNavigation } from '../context/NavigationContext';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -82,16 +83,12 @@ function ChildTaxBlock({ childName, childIndex, childData = {}, parentRole, onUp
         )}
       </div>
 
-      {/* Card with flag in header */}
       <Card>
         <CardHeader className="card-header-with-flag">
           <CardDescription className="card-heading-question-bold">
             How will you claim {childName} on tax forms?
           </CardDescription>
-          <FlagButton
-            isFlagged={isFlagged}
-            onClick={onToggleFlag}
-          />
+          <FlagButton isFlagged={isFlagged} onClick={onToggleFlag} />
         </CardHeader>
         <CardContent>
           <div className="radio-group">
@@ -187,18 +184,19 @@ const isValidYearList = (value) => {
 export default function TaxExemptions() {
   const navigate = useNavigate();
   const { state, dispatch } = useForm();
+  const { setOnNext, setOnBack } = useNavigation();
 
-  const children        = state.children ?? [];
-  const formData        = state.taxExemptions ?? {};
-  const errors          = formData.errors ?? {};
-  const parentRole      = formData.parentRole ?? '';
+  const children         = state.children ?? [];
+  const formData         = state.taxExemptions ?? {};
+  const errors           = formData.errors ?? {};
+  const parentRole       = formData.parentRole ?? '';
   const claimingChildren = formData.claimingChildren ?? [];
-  const childAnswers    = formData.childAnswers ?? {};
+  const childAnswers     = formData.childAnswers ?? {};
 
   // ── Flag hooks ────────────────────────────────────────────────────────────
-  const parentalRoleFlag      = useSectionFlag('taxParentalRole');
-  const claimingChildrenFlag  = useSectionFlag('taxClaimingChildren');
-  const taxDetailsFlag        = useSectionFlag('taxDetails');
+  const parentalRoleFlag     = useSectionFlag('taxParentalRole');
+  const claimingChildrenFlag = useSectionFlag('taxClaimingChildren');
+  const taxDetailsFlag       = useSectionFlag('taxDetails');
 
   const allChildNames = children.map(c =>
     `${c.firstName} ${c.lastName}`.trim() || `Child ${c.id}`
@@ -223,12 +221,10 @@ export default function TaxExemptions() {
       dispatch({
         type: 'UPDATE_SECTION',
         section: 'taxExemptions',
-        payload: {
-          claimingChildren: nextClaimingChildren,
-          childAnswers: nextChildAnswers,
-        },
+        payload: { claimingChildren: nextClaimingChildren, childAnswers: nextChildAnswers },
       });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allChildNames.join(',')]);
 
   const update = (payload) =>
@@ -261,7 +257,8 @@ export default function TaxExemptions() {
   const validateForm = () => {
     const newErrors = {};
     if (!parentRole) newErrors.parentRole = 'Please indicate your parental role.';
-    if (claimingChildren.length === 0) newErrors.claimingChildren = 'Please select at least one child, or indicate you are not claiming any.';
+    if (claimingChildren.length === 0)
+      newErrors.claimingChildren = 'Please select at least one child, or indicate you are not claiming any.';
 
     const newChildAnswerErrors = { ...childAnswers };
     claimingChildren.forEach(name => {
@@ -303,14 +300,22 @@ export default function TaxExemptions() {
     }
   };
 
-  const handleBack = () => { update({ errors: {} }); navigate('/informationsharing'); };
+  const handleBack = () => {
+    update({ errors: {} });
+    navigate('/informationsharing');
+  };
+
+  // ── Register handlers with Layout footer on every state change ────────────
+  useEffect(() => {
+    setOnNext(handleNext);
+    setOnBack(handleBack);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state]);
 
   useEffect(() => {
     if (submitAttempted) {
       const firstError = document.querySelector('.text-input__error-message');
-      if (firstError) {
-        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
+      if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
       setSubmitAttempted(false);
     }
   }, [formData, submitAttempted]);
@@ -332,7 +337,6 @@ export default function TaxExemptions() {
 
           <CardContent>
 
-            {/* Info banner */}
             <div className="info-banner">
               <InfoIcon />
               <div>
@@ -347,8 +351,7 @@ export default function TaxExemptions() {
             {/* ── Parental role ── */}
             <div className="info-section">
               <div className="info-section__header">
-                <div className="info-section__icon"
-                  style={{ color: '#1bb0dd', backgroundColor: '#1bb0dd1a' }}>
+                <div className="info-section__icon" style={{ color: '#1bb0dd', backgroundColor: '#1bb0dd1a' }}>
                   <FileTextIcon />
                 </div>
                 <div>
@@ -363,10 +366,7 @@ export default function TaxExemptions() {
                   <CardDescription className="card-heading-question-bold">
                     Are you the residential or non-residential parent?
                   </CardDescription>
-                  <FlagButton
-                    isFlagged={parentalRoleFlag.isFlagged}
-                    onClick={parentalRoleFlag.toggleFlag}
-                  />
+                  <FlagButton isFlagged={parentalRoleFlag.isFlagged} onClick={parentalRoleFlag.toggleFlag} />
                 </CardHeader>
                 <CardContent>
                   <div className="radio-group">
@@ -394,8 +394,7 @@ export default function TaxExemptions() {
             {/* ── Children to claim ── */}
             <div className="info-section">
               <div className="info-section__header">
-                <div className="info-section__icon"
-                  style={{ color: '#1bb0dd', backgroundColor: '#1bb0dd1a' }}>
+                <div className="info-section__icon" style={{ color: '#1bb0dd', backgroundColor: '#1bb0dd1a' }}>
                   <FileTextIcon />
                 </div>
                 <div>
@@ -410,10 +409,7 @@ export default function TaxExemptions() {
                   <CardDescription className="card-heading-question-bold">
                     Which children do you plan to claim on your tax forms (now or in the future)?
                   </CardDescription>
-                  <FlagButton
-                    isFlagged={claimingChildrenFlag.isFlagged}
-                    onClick={claimingChildrenFlag.toggleFlag}
-                  />
+                  <FlagButton isFlagged={claimingChildrenFlag.isFlagged} onClick={claimingChildrenFlag.toggleFlag} />
                 </CardHeader>
                 <CardContent>
                   {allChildNames.length === 0 ? (
@@ -450,8 +446,7 @@ export default function TaxExemptions() {
             {showChildQuestions && (
               <div className="info-section">
                 <div className="info-section__header">
-                  <div className="info-section__icon"
-                    style={{ color: '#55c77e', backgroundColor: '#55c77e1a' }}>
+                  <div className="info-section__icon" style={{ color: '#55c77e', backgroundColor: '#55c77e1a' }}>
                     <FileTextIcon />
                   </div>
                   <div>
@@ -481,7 +476,6 @@ export default function TaxExemptions() {
           </CardContent>
         </Card>
       </div>
-
     </div>
   );
 }

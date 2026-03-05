@@ -9,55 +9,60 @@ import ParentingTimeAndCommunication from './pages/ParentingTimeAndCommunication
 import InformationSharing from './pages/InformationSharing';
 import TaxExemptions from './pages/TaxExemptions';
 import Review from './pages/Review';
+import { FormProvider } from './context/FormContext';
+import { NavigationProvider } from './context/NavigationContext';
 import './App.css';
 
-// Main App component with routing
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        {/* Landing page (no sidebar) */}
-        <Route path="/" element={<LandingPage />} />
+      <FormProvider>
+        <NavigationProvider>
+          <Routes>
+            {/* Landing page (no sidebar) */}
+            <Route path="/" element={<LandingPage />} />
 
-        {/* Auth routes without sidebar */}
-        <Route path="/signin" element={<SignIn />} />
-        <Route path="/signup" element={<SignUp />} />
+            {/* Auth routes without sidebar */}
+            <Route path="/signin" element={<SignIn />} />
+            <Route path="/signup" element={<SignUp />} />
 
-        {/* Form routes with sidebar */}
-        <Route path="/getting-started" element={
-          <MainLayout>
-            <GettingStarted />
-          </MainLayout>
-        } />
-        <Route path="/parental-rights" element={
-          <MainLayout>
-            <ParentalRights />
-          </MainLayout>
-        } />
-        <Route path="/parenting-time-communication" element={
-          <MainLayout>
-            <ParentingTimeAndCommunication />
-          </MainLayout>
-        } />
-        <Route path="/informationsharing" element={
-          <MainLayout>
-            <InformationSharing />
-          </MainLayout>
-        } />
-        <Route path="/tax-exemptions" element={
-          <MainLayout>
-            <TaxExemptions />
-          </MainLayout>
-        } />
-        <Route path="/review" element={
-          <MainLayout>
-            <Review />
-          </MainLayout>
-        } />
+            {/* Form routes with sidebar */}
+            <Route path="/getting-started" element={
+              <MainLayout>
+                <GettingStarted />
+              </MainLayout>
+            } />
+            <Route path="/parental-rights" element={
+              <MainLayout>
+                <ParentalRights />
+              </MainLayout>
+            } />
+            <Route path="/parenting-time-communication" element={
+              <MainLayout>
+                <ParentingTimeAndCommunication />
+              </MainLayout>
+            } />
+            <Route path="/informationsharing" element={
+              <MainLayout>
+                <InformationSharing />
+              </MainLayout>
+            } />
+            <Route path="/tax-exemptions" element={
+              <MainLayout>
+                <TaxExemptions />
+              </MainLayout>
+            } />
+            <Route path="/review" element={
+              <MainLayout>
+                <Review />
+              </MainLayout>
+            } />
 
-        {/* Catch all - redirect unknown routes to home */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+            {/* Catch all - redirect unknown routes to home */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </NavigationProvider>
+      </FormProvider>
     </BrowserRouter>
   );
 }
