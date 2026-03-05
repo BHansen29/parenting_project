@@ -1,26 +1,41 @@
 import { useState, useEffect } from 'react';
+import { AlertCircle, Info, Shield, Users, MapPin, Phone, UserCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import Header from '../components/common/Header';
 import Footer from '../components/common/Footer';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/card';
 import TextInput from '../components/forms/TextInput';
 import DatePicker from '../components/forms/DatePicker';
 import { useForm } from '../hooks/useForm';
+import { useSectionFlag } from '../hooks/useSectionFlag';
 import './Page.css';
+import FlagButton from '../components/forms/FlagButton';
+import RadioButton from '../components/forms/RadioButton';
 
-export default function HouseholdInfo() {
+/**
+ * "Getting Started" page component for the parenting plan application.
+ * This page collects basic information about the parents, their safety concerns, case filing status, and their children.
+ * It uses local state for managing the list of children and global context for other form data.
+ * The page includes validation logic to ensure all required fields are filled out before proceeding to the next step.
+ */
+export default function GettingStarted() {
   const navigate = useNavigate();
   const { state, dispatch } = useForm();
 
   // Parents stay in global context
   const formData = state.parents ?? { name: '', secondParentName: '', errors: {} };
-  const errors = state.parents?.errors ?? {};
+  const safetyConcern = state.safetyConcern ?? '';
+  const caseFilingStatus = state.caseFilingStatus ?? '';
+  const errors = formData.errors ?? {};
 
-  // Children use local state 
+  // Section-specific flag states
+  const caseFilingFlag = useSectionFlag('caseFilingStatus');
+  const childrenFlag = useSectionFlag('children'); 
+
+  // Children use local state
   const [children, setChildren] = useState(() => {
     return state.children?.length > 0
       ? state.children
-      : [{ id: 1, firstName: '', lastName: '', dateOfBirth: '', classification: 'minor', errors: {} }];
+      : [{ id: 1, firstName: '', lastName: '', dateOfBirth: '', classification: '', errors: {} }];
   });
 
   // Syncs children to global context whenever local state changes
@@ -28,16 +43,24 @@ export default function HouseholdInfo() {
     dispatch({ type: 'UPDATE_CHILDREN', payload: children });
   }, [children]);
 
-  const handleChange = (field) => (value) => {
+  const handleRadioChange = (section) => (e) => {
     dispatch({
       type: 'UPDATE_SECTION',
-      section: 'parents',
+      section: section,
+      payload: e.target.value
+    });
+  };
+
+  const handleFormChange = (section, field) => (value) => {
+    dispatch({
+      type: 'UPDATE_SECTION',
+      section: section,
       payload: { [field]: value }
     });
     if (errors[field]) {
       dispatch({
         type: 'UPDATE_SECTION',
-        section: 'parents',
+        section: section,
         payload: { errors: { ...errors, [field]: '' } }
       });
     }
@@ -58,7 +81,7 @@ export default function HouseholdInfo() {
       firstName: '',
       lastName: '',
       dateOfBirth: '',
-      classification: 'minor',
+      classification: '',
       errors: {}
     }]);
   };
@@ -91,6 +114,10 @@ export default function HouseholdInfo() {
         childErrors.dateOfBirth = `Child ${index + 1} date of birth is required`;
         childrenValid = false;
       }
+      if (!child.classification) {
+        childErrors.classification = `Child ${index + 1} classification is required`;
+        childrenValid = false;
+      } 
       return { ...child, errors: childErrors };
     });
 
@@ -105,7 +132,7 @@ export default function HouseholdInfo() {
     return Object.keys(parentErrors).length === 0 && childrenValid;
   };
 
-  // Tracks when a failed submission happens
+  // Tracks when a failed submission happens - controls when to show validation errors
   const [submitAttempted, setSubmitAttempted] = useState(false);
 
   // Runs after React re-renders with new errors
@@ -125,7 +152,7 @@ export default function HouseholdInfo() {
     if (validateForm()) {
       // Save children to global context before navigating
       dispatch({ type: 'UPDATE_CHILDREN', payload: children });
-      navigate('/custody-schedule');
+      navigate('/parental-rights');
     } else {
       setSubmitAttempted(true);
     }
@@ -145,92 +172,186 @@ export default function HouseholdInfo() {
 
   return (
     <div className="page-container">
-      <Header />
-
       <div className="page-content">
         <Card>
           <CardHeader>
-            <CardTitle>Household Information</CardTitle>
+            <CardTitle>Getting Started</CardTitle>
             <CardDescription>
-              Enter the details of the parents and children covered by this agreement.
-            </CardDescription>
+              Let's start by gathering some basic information about your family and situation.            </CardDescription>
           </CardHeader>
 
           <CardContent>
-            <Card>
-              <CardHeader>
-                <CardTitle>Parents</CardTitle>
-                <CardDescription>
-                  The individuals entering into this parenting agreement.
-                </CardDescription>
-              </CardHeader>
+            <hr className="section-divider" />
+            <section className="safety-privacy-section">
+              <div className="section-header">
+                <div className="shield-icon">
+                  <Shield size={25} />
+                </div>
+                <div className="section-title-group">
+                  <h2 className="section-title">Safety & Privacy</h2>
+                  <p className="section-intro">Your safety is our priority.</p>
+                </div>
+              </div>
+              <Card>
+                <CardHeader>
+                  <CardDescription className={"card-heading-question-bold"}>Would sharing information from this questionnaire
+                     with your co-parent make you fear for your safety in any way?</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="radio-group">
+                    <RadioButton
+                      name="safetyConcern"
+                      value="yes"
+                      checked={safetyConcern === 'yes'}
+                      onChange={handleRadioChange('safetyConcern')}
+                      label="Yes, please keep my information private"
+                      description="You and your co-parent will fill out the form separately"
+                    />
+                    <RadioButton
+                      name="safetyConcern"
+                      value="no"
+                      checked={safetyConcern === 'no'}
+                      onChange={handleRadioChange('safetyConcern')}
+                      label="No, I wish to collaborate with my co-parent"
+                      description="Your answers will be shared with your co-parent"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </section>
+            <hr className="section-divider" />
 
-              <CardContent>
-                <form noValidate>
-                  <p className="parent-label">Parent 1</p>
+             <section className="parent-information-section">
+              <div className="section-header">
+                <div className="user-icon">
+                  <UserCheck size={25} />
+                </div>
+                <div className="section-title-group">
+                  <h2 className="section-title">Your Information</h2>
+                  <p className="section-intro">Please provide your contact details.</p>
+                </div>
+              </div>
+              <Card>
+                <CardContent>
                   <div className="form-row">
                     <TextInput
                       id="firstParentFirstName"
-                      label="Parent 1 First Name"
                       type="text"
                       value={formData.firstName ?? ''}
-                      onChange={handleChange('firstName')}
-                      required
-                      error={errors.firstName}
-                      placeholder="First Name"
+                      onChange={handleFormChange('parents', 'firstName')}
+                      error={submitAttempted ? errors.firstName : ''}
+                      placeholder="Enter your first name"
+                      label="First Name"
                       autoComplete="given-name"
+                      required
                     />
                     <TextInput
                       id="firstParentLastName"
-                      label="Parent 1 Last Name"
                       type="text"
                       value={formData.lastName ?? ''}
-                      onChange={handleChange('lastName')}
-                      required
-                      error={errors.lastName}
-                      placeholder="Last Name"
+                      onChange={handleFormChange('parents', 'lastName')}
+                      error={submitAttempted ? errors.lastName : ''}
+                      placeholder="Enter your last name"
+                      label="Last Name"
                       autoComplete="family-name"
+                      required
                     />
                   </div>
+                  <TextInput
+                      id="firstParentPhone"
+                      type="text"
+                      value={formData.phone ?? ''}
+                      onChange={handleFormChange('parents', 'phone')}
+                      error={submitAttempted ? errors.phone : ''}
+                      placeholder="Enter your phone number"
+                      label="Phone Number"
+                      autoComplete="tel"
+                      required
+                  />
+                  <TextInput className="text-input-long-text"
+                      id="firstParentAddress"
+                      type="text"
+                      value={formData.address ?? ''}
+                      onChange={handleFormChange('parents', 'address')}
+                      error={submitAttempted ? errors.address : ''}
+                      placeholder="Enter your full address (this will help identify the relevant county)"
+                      label="Address"
+                      autoComplete="street-address"
+                      required
+                  />
+                </CardContent>
+              </Card>
+            </section>
+            <hr className="section-divider" />
 
-                  <p className="parent-label">Parent 2</p>
-                  <div className="form-row">
-                    <TextInput
-                      id="secondParentFirstName"
-                      label="Parent 2 First Name"
-                      type="text"
-                      value={formData.secondParentFirstName ?? ''}
-                      onChange={handleChange('secondParentFirstName')}
-                      required
-                      error={errors.secondParentFirstName}
-                      placeholder="First Name"
-                      autoComplete="given-name"
-                    />
-                    <TextInput
-                      id="secondParentLastName"
-                      label="Parent 2 Last Name"
-                      type="text"
-                      value={formData.secondParentLastName ?? ''}
-                      onChange={handleChange('secondParentLastName')}
-                      required
-                      error={errors.secondParentLastName}
-                      placeholder="Last Name"
-                      autoComplete="family-name"
+            <section className="case-filing-status-section">
+              <div className="section-header">
+                <div className="info-icon">
+                  <Info size={25} />
+                </div>
+                <div className="section-title-group">
+                  <h2 className="section-title">Case Filing Status</h2>
+                  <p className="section-intro">Help us understand your legal situation.</p>
+                </div>
+              </div>
+              <Card>
+                <CardHeader>
+                  <div className="card-header-with-flag">
+                    <CardDescription className={"card-heading-question-bold"}>Did you file the divorce, separation, or child custody case that led to this parenting plan?</CardDescription>
+                    <FlagButton
+                      isFlagged={caseFilingFlag.isFlagged}
+                      onClick={caseFilingFlag.toggleFlag}
                     />
                   </div>
-                </form>
-              </CardContent>
-            </Card>
+                </CardHeader>
+                <CardContent>
+                  <div className="radio-group">
+                    <RadioButton
+                      name="caseFilingStatus"
+                      value="yes"
+                      checked={caseFilingStatus === 'yes'}
+                      onChange={handleRadioChange('caseFilingStatus')}
+                      label="Yes, it was me"
+                      description="You will be identified as Parent 1/Petitioner 1/Plaintiff in the parenting plan"
+                    />
+                    <RadioButton
+                      name="caseFilingStatus"
+                      value="no"
+                      checked={caseFilingStatus === 'no'}
+                      onChange={handleRadioChange('caseFilingStatus')}
+                      label="No, my co-parent filed"
+                      description="You will be identified as Parent 2/Petitioner 2/Defendant in the parenting plan"
+                    />
+                    <RadioButton
+                      name="caseFilingStatus"
+                      value="flagged"
+                      checked={caseFilingStatus === 'flagged'}
+                      onChange={handleRadioChange('caseFilingStatus')}
+                      label="I need more information"
+                    />
+                    <RadioButton
+                      name="caseFilingStatus"
+                      value="defer"
+                      checked={caseFilingStatus === 'defer'}
+                      onChange={handleRadioChange('caseFilingStatus')}
+                      label="Defer to co-parent"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </section>
+            <hr className="section-divider" />
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Children</CardTitle>
-                <CardDescription>
-                  The children covered by this parenting agreement.
-                </CardDescription>
-              </CardHeader>
-
-              <CardContent>
+            <section className="children-section">
+              <div className="section-header">
+                <div className="users-icon">
+                  <Users size={25} />
+                </div>
+                <div className="section-title-group">
+                  <h2 className="section-title">Your Children</h2>
+                  <p className="section-intro">Please list the children you are including in this shared parenting plan.</p>
+                </div>
+              </div>
                 {children.map((child, index) => (
                   <Card key={child.id}>
                     <CardHeader>
@@ -261,7 +382,7 @@ export default function HouseholdInfo() {
                             required
                             placeholder="First Name"
                             autoComplete="given-name"
-                            error={child.errors?.firstName}
+                            error={submitAttempted ? child.errors?.firstName : ''}
                           />
 
                           <TextInput
@@ -273,7 +394,7 @@ export default function HouseholdInfo() {
                             required
                             placeholder="Last Name"
                             autoComplete="family-name"
-                            error={child.errors?.lastName}
+                            error={submitAttempted ? child.errors?.lastName : ''}
                           />
                         </div>
 
@@ -284,7 +405,7 @@ export default function HouseholdInfo() {
                           onChange={handleChildChange(child.id, 'dateOfBirth')}
                           required
                           max={new Date().toISOString().split('T')[0]}
-                          error={child.errors?.dateOfBirth}
+                          error={submitAttempted ? child.errors?.dateOfBirth : ''}
                         />
 
                         <div className="child-classification">
@@ -328,18 +449,10 @@ export default function HouseholdInfo() {
                 >
                   + Add Another Child
                 </button>
-              </CardContent>
-            </Card>
+              </section>
           </CardContent>
         </Card>
       </div>
-
-      <Footer
-        showBackButton={true}
-        showNextButton={true}
-        onNext={handleNext}
-        onBack={handleBack}
-      />
     </div>
   );
 }

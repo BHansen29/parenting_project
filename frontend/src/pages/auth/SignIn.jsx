@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../../lib/firebase';
+import { syncFirebaseUserProfile } from '../../lib/authApi';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/common/card';
 import TextInput from '../../components/forms/TextInput';
 import '../Page.css';
@@ -48,14 +51,20 @@ export default function SignIn() {
 
     if (validateForm()) {
       setIsLoading(true);
-      // TODO: Implement actual authentication
-      console.log('Sign in:', formData);
+      try {
+        // Sign in the user in Firebase Auth with email + password
+        const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
 
-      // Simulate API call
-      setTimeout(() => {
-        setIsLoading(false);
+        // Sync Mongo if Firebase verifies
+        await syncFirebaseUserProfile(userCredential.user);
+
+        // Next Step
         navigate('/household-info');
-      }, 1000);
+      } catch (err) {
+        // Show Firebase error in the form
+        setErrors({ general: err.message });
+        setIsLoading(false);
+      }
     }
   };
 
@@ -103,6 +112,12 @@ export default function SignIn() {
                   Forgot password?
                 </Link>
               </div>
+
+              {errors.general && (
+                <p role="alert" className="text-red-600 text-sm mb-4">
+                  {errors.general}
+                </p>
+              )}
 
               <button
                 type="submit"

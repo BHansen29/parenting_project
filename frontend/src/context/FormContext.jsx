@@ -3,6 +3,9 @@ import { createContext, useReducer, useEffect } from "react";
 export const FormContext = createContext(null);
 
 const initialState = {
+  safetyConcern: '',
+  caseFilingStatus: '',
+  flags: {},
   parents: {
     firstName: '',
     lastName: '',
@@ -16,12 +19,36 @@ const initialState = {
   decisionMaking: { errors: {} },
   communication: { errors: {} },
   education: { errors: {} },
-  transportation: { errors: {} }, 
+  transportation: { errors: {} },
+  parentalRights: { 
+    appliesToAllChildren: '',
+    livingArrangement: '',
+    decisionMaking: '',
+    errors: {} 
+  },
+  timeAndCommunication: {
+    agreeToTransportationPolicy: false,
+    transportationArrangementDescription: '',
+    agreeToActivityPolicy: false,
+    activityPolicyDescription: '',
+    communicationWithCoParentOnPhone: '',
+    communicationWithCoParentOnPhoneDescription: '',
+    notifyCoParentOfChildRelatedEvents: '',
+    errors: {}
+  }
 };
 
 function formReducer(state, action) {
   switch (action.type) {
     case "UPDATE_SECTION":
+      // Handle primitive values (strings, numbers, etc.)
+      if (typeof action.payload !== 'object' || action.payload === null) {
+        return {
+          ...state,
+          [action.section]: action.payload
+        };
+      }
+      // Handle object values (merge with existing state)
       return {
         ...state,
         [action.section]: {
@@ -33,6 +60,14 @@ function formReducer(state, action) {
       return {
         ...state,
         children: action.payload
+      };
+    case "UPDATE_FLAG":
+      return {
+        ...state,
+        flags: {
+          ...state.flags,
+          [action.section]: action.payload
+        }
       };
     case "LOAD_SAVED":
       return action.payload;
