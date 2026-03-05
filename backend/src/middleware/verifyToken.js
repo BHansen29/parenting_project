@@ -1,4 +1,4 @@
-const admin = require('../config/firebase');
+const { getFirebaseAuth } = require('../config/firebaseAdmin');
 
 const verifyToken = async (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -12,7 +12,7 @@ const verifyToken = async (req, res, next) => {
 
   try {
     // Verify the token with Firebase Admin and attach the decoded user to the request
-    req.user = await admin.auth().verifyIdToken(token);
+    req.user = await getFirebaseAuth().verifyIdToken(token);
     next();
   } catch (err) {
     return res.status(401).json({ message: 'Invalid or expired token' });
