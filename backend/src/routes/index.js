@@ -41,6 +41,18 @@ router.get('/documents', requireDatabaseConnection, async (req, res) => {
   }
 });
 
+
+// GET /api/users - Get all users
+router.get('/users', requireDatabaseConnection, async (req, res) => {
+  try {
+    const users = await User.find();
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
 // GET /api/documents/:id - Get a single document by ID
 router.get('/documents/:id', requireDatabaseConnection, async (req, res) => {
   try {
@@ -158,7 +170,8 @@ router.get('/', (req, res) => {
       documents: 'GET /api/documents - Get all documents',
       document: 'GET /api/documents/:id - Get a document by ID',
       createDocument: 'POST /api/documents - Create a new document',
-      firebaseSession: 'POST /api/auth/firebase/session - Verify Firebase token and sync user profile'
+      firebaseSession: 'POST /api/auth/firebase/session - Verify Firebase token and sync user profile',
+      users: 'GET /api/users - List all users'
     }
   });
 });
