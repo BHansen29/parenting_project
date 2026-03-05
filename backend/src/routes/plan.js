@@ -1,12 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const Plan = require('../models/Plan');
+const verifyToken = require('../middleware/verifyToken');
 
 // POST/api/plan
-router.post('/', async (req, res) => {
+router.post('/', verifyToken, async (req, res) => {
   try {
-    //Extract userId from the request
-    const userID = req.body.userID;
+    // Pull userID from the verified Firebase token — can't be faked
+    const userID = req.user.uid;
     //Call Plan.create()
     const plan = await Plan.create({ userID });
     res.status(201).json(plan);
