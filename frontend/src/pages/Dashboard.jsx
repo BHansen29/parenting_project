@@ -4,10 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import { Users, FileText, Calendar, UserPlus, Plus } from 'lucide-react';
 // import { auth } from '../lib/firebase';
 import Header from '../components/common/Header';
+import InviteModal from '../components/common/InviteModal';
 import './Dashboard.css';
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const [isInviteOpen, setIsInviteOpen] = useState(false);
 
   // Mock plan data — replace with real data fetching later
   const [plans] = useState([
@@ -31,6 +33,7 @@ export default function Dashboard() {
   return (
     <div className="dashboard">
       <Header />
+      <InviteModal isOpen={isInviteOpen} onClose={() => setIsInviteOpen(false)} />
 
       <main className="dashboard__main">
 
@@ -49,7 +52,7 @@ export default function Dashboard() {
           </div>
 
           <div className="dashboard__invite-action">
-            <button className="dashboard__invite-btn">
+            <button className="dashboard__invite-btn" onClick={() => setIsInviteOpen(true)}>
               <UserPlus size={18} />
               Invite Co-parent
             </button>
@@ -91,7 +94,7 @@ export default function Dashboard() {
                   Open Plan &rarr;
                 </button>
 
-                <button className="plan-card__invite-btn">
+                <button className="plan-card__invite-btn" onClick={() => setIsInviteOpen(true)}>
                   <UserPlus size={14} />
                   Invite Parent
                 </button>
