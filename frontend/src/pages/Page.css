@@ -283,6 +283,36 @@
   text-align: left;
 }
 
+/* ── Required field asterisk ─────────────────────────────────────────── */
+.required-asterisk {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+/* ── Note shown below policy boxes indicating the field is required ──── */
+.policy-required-note {
+  margin: 0.75rem 0 0 0;
+  font-size: 0.8125rem;
+  color: #6b7280;
+}
+
+/* ── Radio group error message ───────────────────────────────────────── */
+/* Mirrors the style of TextInput/DatePicker error messages */
+.radio-group-error {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  font-size: 0.8125rem;
+  color: #dc2626;
+}
+
+.radio-group-error::before {
+  content: "⚠";
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
 /* Dark mode */
 @media (prefers-color-scheme: dark) {
   [data-slot="card"],
@@ -307,6 +337,14 @@
     border-color: #14abdd;
     color: #14abdd;
     background-color: rgba(20, 171, 221, 0.1);
+  }
+
+  .radio-group-error {
+    color: #f87171;
+  }
+
+  .policy-required-note {
+    color: #9ca3af;
   }
 }
 

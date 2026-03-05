@@ -32,15 +32,29 @@ export default function ParentingTimeAndCommunication() {
         communicationWithCoParentOnPhone: '',
         communicationWithCoParentOnPhoneDescription: '',
         notifyCoParentOfChildRelatedEvents: '',
+        notifyCoParentOfChildRelatedEventsDescription: '',
         errors: {}
     };
     const errors = state.timeAndCommunication?.errors ?? {};
+
+    // Separate error state for radio groups (not stored in formData.errors)
+    const [communicationError, setCommunicationError] = useState('');
+    const [notifyError, setNotifyError] = useState('');
+
+    // ── Clear all errors on mount (e.g. user navigated away and came back) ──
+    useEffect(() => {
+        dispatch({ type: 'UPDATE_SECTION', section: 'timeAndCommunication', payload: { errors: {} } });
+        setCommunicationError('');
+        setNotifyError('');
+    }, []);
 
     const [submitAttempted, setSubmitAttempted] = useState(false);
 
     useEffect(() => {
         if (submitAttempted) {
-            const firstError = document.querySelector('.text-input__error-message, .date-picker__error-message');
+            const firstError = document.querySelector(
+                '.text-input__error-message, .date-picker__error-message, .radio-group-error'
+            );
             if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
             setSubmitAttempted(false);
         }
@@ -51,6 +65,8 @@ export default function ParentingTimeAndCommunication() {
         if (errors[field]) {
             dispatch({ type: 'UPDATE_SECTION', section: 'timeAndCommunication', payload: { errors: { ...errors, [field]: '' } } });
         }
+        if (field === 'communicationWithCoParentOnPhone') setCommunicationError('');
+        if (field === 'notifyCoParentOfChildRelatedEvents') setNotifyError('');
     };
 
     const handlePolicyChange = (field) => (value) => {
@@ -59,8 +75,12 @@ export default function ParentingTimeAndCommunication() {
         const checkboxActivity = document.getElementById('hide-checkbox-activity');
         const targetDescriptionField = document.getElementById('invisibility-target-transportation');
         const targetDescriptionFieldActivity = document.getElementById('invisibility-target-activity');
-        checkboxTransportation.checked ? targetDescriptionField.style.display = 'none' : targetDescriptionField.style.display = 'flex';
-        checkboxActivity.checked ? targetDescriptionFieldActivity.style.display = 'none' : targetDescriptionFieldActivity.style.display = 'flex';
+        checkboxTransportation.checked
+            ? targetDescriptionField.style.display = 'none'
+            : targetDescriptionField.style.display = 'flex';
+        checkboxActivity.checked
+            ? targetDescriptionFieldActivity.style.display = 'none'
+            : targetDescriptionFieldActivity.style.display = 'flex';
         if (value === true) {
             const descriptionField = field === 'agreeToTransportationPolicy'
                 ? 'transportationArrangementDescription'
@@ -79,21 +99,53 @@ export default function ParentingTimeAndCommunication() {
     };
 
     const validateForm = () => {
+        let isValid = true;
         const formErrors = {};
+
+        // Transportation: must agree OR provide description
         if (!formData.agreeToTransportationPolicy && !formData.transportationArrangementDescription?.trim()) {
-            formErrors.transportationArrangementDescription = 'Please describe your transportation arrangement if you do not agree to the standard policy';
+            formErrors.transportationArrangementDescription = 'Please agree to the standard policy or describe your preferred arrangement';
+            isValid = false;
         }
+
+        // Activities: must agree OR provide description
         if (!formData.agreeToActivityPolicy && !formData.activityPolicyDescription?.trim()) {
-            formErrors.activityPolicyDescription = 'Please describe your activity scheduling arrangement if you do not agree to the standard policy';
+            formErrors.activityPolicyDescription = 'Please agree to the standard policy or describe your preferred arrangement';
+            isValid = false;
         }
+
+        // Communication with co-parent on phone (radio required)
         if (!formData.communicationWithCoParentOnPhone?.trim()) {
-            formErrors.communicationWithCoParentOnPhone = 'Please describe your phone communication arrangement with your co-parent';
+            setCommunicationError('Please select an option to continue');
+            isValid = false;
+        } else {
+            setCommunicationError('');
+            if (
+                formData.communicationWithCoParentOnPhone === 'sometimes' &&
+                !formData.communicationWithCoParentOnPhoneDescription?.trim()
+            ) {
+                formErrors.communicationWithCoParentOnPhoneDescription = 'Please describe the circumstances';
+                isValid = false;
+            }
         }
+
+        // Notify co-parent of child-related events (radio required)
         if (!formData.notifyCoParentOfChildRelatedEvents?.trim()) {
-            formErrors.notifyCoParentOfChildRelatedEvents = 'Please describe how you will notify your co-parent of child-related events';
+            setNotifyError('Please select an option to continue');
+            isValid = false;
+        } else {
+            setNotifyError('');
+            if (
+                formData.notifyCoParentOfChildRelatedEvents === 'sometimes' &&
+                !formData.notifyCoParentOfChildRelatedEventsDescription?.trim()
+            ) {
+                formErrors.notifyCoParentOfChildRelatedEventsDescription = 'Please describe the circumstances';
+                isValid = false;
+            }
         }
+
         dispatch({ type: 'UPDATE_SECTION', section: 'timeAndCommunication', payload: { errors: formErrors } });
-        return Object.keys(formErrors).length === 0;
+        return isValid;
     };
 
     const handleNext = () => {
@@ -118,11 +170,16 @@ export default function ParentingTimeAndCommunication() {
             <div className="page-content">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Parenting Time & Communication</CardTitle>
-                        <CardDescription>Establish how parenting time will be structured and communication will work.</CardDescription>
+                        <CardTitle>Parenting Time &amp; Communication</CardTitle>
+                        <CardDescription>
+                            Establish how parenting time will be structured and communication will work.
+                            Fields marked with <span className="required-asterisk">*</span> are required.
+                        </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <hr className="section-divider" />
+
+                        {/* ── Transportation Agreement ── */}
                         <section className="transportation-agreement-section">
                             <div className="section-header-with-flag">
                                 <div className="section-header">
@@ -147,30 +204,44 @@ export default function ParentingTimeAndCommunication() {
                                             <li>Each parent shall be responsible for providing transportation for the child(ren) to and from school during that parent's parenting time period.</li>
                                         </ul>
                                     </div>
+                                    <p className="policy-required-note">
+                                        <span className="required-asterisk">*</span> You must either agree to the standard policy or describe your preferred arrangement.
+                                    </p>
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <Checkbox id="hide-checkbox-transportation" label="I agree to the standard transportation policy"
-                                    name="agreeToTransportationPolicy" checked={formData.agreeToTransportationPolicy}
-                                    onChange={handlePolicyChange('agreeToTransportationPolicy')} />
+                                <Checkbox
+                                    id="hide-checkbox-transportation"
+                                    label="I agree to the standard transportation policy"
+                                    name="agreeToTransportationPolicy"
+                                    checked={formData.agreeToTransportationPolicy}
+                                    onChange={handlePolicyChange('agreeToTransportationPolicy')}
+                                />
                                 <div className="custom-description-section" id="invisibility-target-transportation">
                                     <div className="or-divider">OR</div>
-                                    <TextInput className="text-input-long-text" id="transportationArrangementDescription"
+                                    <TextInput
+                                        className="text-input-long-text"
+                                        id="transportationArrangementDescription"
                                         label="Please describe your preferred transportation arrangement:"
-                                        type="text" value={formData.transportationArrangementDescription}
+                                        type="text"
+                                        value={formData.transportationArrangementDescription}
                                         onChange={handleChange('transportationArrangementDescription')}
-                                        placeholder="Describe how you would like transportation to be handled if you do not agree to the standard policy" />
+                                        placeholder="Describe how you would like transportation to be handled if you do not agree to the standard policy"
+                                        error={errors.transportationArrangementDescription}
+                                    />
                                 </div>
                             </CardContent>
                         </Card>
 
                         <hr className="section-divider" />
-                        <section className="activities-and-sceduling-section">
+
+                        {/* ── Activities & Scheduling ── */}
+                        <section className="activities-and-scheduling-section">
                             <div className="section-header-with-flag">
                                 <div className="section-header">
                                     <div className="car-icon"><Calendar size={25} /></div>
                                     <div className="section-title-group">
-                                        <h2 className="section-title">Activities & Scheduling</h2>
+                                        <h2 className="section-title">Activities &amp; Scheduling</h2>
                                         <p className="section-intro">Supporting your children's activities</p>
                                     </div>
                                 </div>
@@ -192,31 +263,45 @@ export default function ParentingTimeAndCommunication() {
                                             <li>Absent other agreement by the parents, it is the responsibility of the parent in possession of the child(ren) to provide transportation to an activity.</li>
                                         </ul>
                                     </div>
+                                    <p className="policy-required-note">
+                                        <span className="required-asterisk">*</span> You must either agree to the standard policy or describe your preferred arrangement.
+                                    </p>
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <Checkbox id="hide-checkbox-activity" label="I agree to the standard activity policy"
-                                    name="agreeToActivityPolicy" checked={formData.agreeToActivityPolicy}
-                                    onChange={handlePolicyChange('agreeToActivityPolicy')} />
+                                <Checkbox
+                                    id="hide-checkbox-activity"
+                                    label="I agree to the standard activity policy"
+                                    name="agreeToActivityPolicy"
+                                    checked={formData.agreeToActivityPolicy}
+                                    onChange={handlePolicyChange('agreeToActivityPolicy')}
+                                />
                                 <div className="custom-description-section" id="invisibility-target-activity">
                                     <div className="or-divider">OR</div>
-                                    <TextInput className="text-input-long-text" id="activityArrangementDescription"
+                                    <TextInput
+                                        className="text-input-long-text"
+                                        id="activityArrangementDescription"
                                         label="Please describe your preferred activity policy:"
-                                        type="text" value={formData.activityArrangementDescription}
-                                        onChange={handleChange('activityArrangementDescription')}
-                                        placeholder="Describe how you would like activities and scheduling to be handled if you do not agree to the standard policy" />
+                                        type="text"
+                                        value={formData.activityPolicyDescription}
+                                        onChange={handleChange('activityPolicyDescription')}
+                                        placeholder="Describe how you would like activities and scheduling to be handled if you do not agree to the standard policy"
+                                        error={errors.activityPolicyDescription}
+                                    />
                                 </div>
                             </CardContent>
                         </Card>
 
                         <hr className="section-divider" />
+
+                        {/* ── Parenting Schedule (optional) ── */}
                         <section className="parenting-schedule-section">
                             <div className="section-header-with-flag">
                                 <div className="section-header">
                                     <div className="car-icon"><Calendar size={25} /></div>
                                     <div className="section-title-group">
                                         <h2 className="section-title">Parenting Schedule</h2>
-                                        <p className="section-intro">Create your monthly parenting schedule</p>
+                                        <p className="section-intro">Create your monthly parenting schedule (optional)</p>
                                     </div>
                                 </div>
                                 <div className="section-flag">
@@ -231,14 +316,20 @@ export default function ParentingTimeAndCommunication() {
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <ScheduleBuilder value={formData.parentingSchedule} onChange={handleScheduleChange}
-                                    parent1Label="You" parent2Label="Co-Parent"
+                                <ScheduleBuilder
+                                    value={formData.parentingSchedule}
+                                    onChange={handleScheduleChange}
+                                    parent1Label="You"
+                                    parent2Label="Co-Parent"
                                     helpText="Click on a day to add time slots. You can specify exact time frames or mark whole days."
-                                    error={errors.parentingSchedule} />
+                                    error={errors.parentingSchedule}
+                                />
                             </CardContent>
                         </Card>
 
                         <hr className="section-divider" />
+
+                        {/* ── Communication with Co-Parent ── */}
                         <section className="communication-section">
                             <div className="section-header">
                                 <div className="car-icon"><Info size={25} /></div>
@@ -248,10 +339,12 @@ export default function ParentingTimeAndCommunication() {
                                 </div>
                             </div>
                         </section>
+
                         <Card>
                             <CardHeader className="card-header-with-flag">
-                                <CardDescription className={"card-heading-question-bold"}>
+                                <CardDescription className="card-heading-question-bold">
                                     If your child is with you, are they allowed to talk to your co-parent on the phone?
+                                    <span className="required-asterisk"> *</span>
                                 </CardDescription>
                                 <FlagButton isFlagged={communicationWithCoParentOnPhoneFlag.isFlagged} onClick={() => communicationWithCoParentOnPhoneFlag.toggleFlag()} />
                             </CardHeader>
@@ -267,11 +360,17 @@ export default function ParentingTimeAndCommunication() {
                                         onChange={(e) => handleChange('communicationWithCoParentOnPhone')(e.target.value)}
                                         label="Sometimes (please describe)" checked={formData.communicationWithCoParentOnPhone === 'sometimes'} />
                                     {formData.communicationWithCoParentOnPhone === 'sometimes' && (
-                                        <TextInput className="text-input-long-text" id="communicationWithCoParentOnPhoneDescription"
+                                        <TextInput
+                                            className="text-input-long-text"
+                                            id="communicationWithCoParentOnPhoneDescription"
                                             label="Please describe the circumstances under which your child can talk to your co-parent on the phone:"
-                                            type="text" value={formData.communicationWithCoParentOnPhoneDescription}
+                                            type="text"
+                                            value={formData.communicationWithCoParentOnPhoneDescription}
                                             onChange={handleChange('communicationWithCoParentOnPhoneDescription')}
-                                            placeholder="Describe when your child can talk to your co-parent on the phone" />
+                                            placeholder="Describe when your child can talk to your co-parent on the phone"
+                                            error={errors.communicationWithCoParentOnPhoneDescription}
+                                            required
+                                        />
                                     )}
                                     <RadioButton name="communicationWithCoParentOnPhone" value="needMoreInfo"
                                         onChange={(e) => handleChange('communicationWithCoParentOnPhone')(e.target.value)}
@@ -280,12 +379,17 @@ export default function ParentingTimeAndCommunication() {
                                         onChange={(e) => handleChange('communicationWithCoParentOnPhone')(e.target.value)}
                                         label="Default to my co-parent's choice" checked={formData.communicationWithCoParentOnPhone === 'defaultToCoParentChoice'} />
                                 </div>
+                                {communicationError && (
+                                    <p className="radio-group-error" role="alert">{communicationError}</p>
+                                )}
                             </CardContent>
                         </Card>
+
                         <Card>
                             <CardHeader className="card-header-with-flag">
-                                <CardDescription className={"card-heading-question-bold"}>
+                                <CardDescription className="card-heading-question-bold">
                                     Should your co-parent be told if your children get sick or injured?
+                                    <span className="required-asterisk"> *</span>
                                 </CardDescription>
                                 <FlagButton isFlagged={notifyCoParentOfChildRelatedEventsFlag.isFlagged} onClick={() => notifyCoParentOfChildRelatedEventsFlag.toggleFlag()} />
                             </CardHeader>
@@ -301,11 +405,17 @@ export default function ParentingTimeAndCommunication() {
                                         onChange={(e) => handleChange('notifyCoParentOfChildRelatedEvents')(e.target.value)}
                                         label="Sometimes (please describe)" checked={formData.notifyCoParentOfChildRelatedEvents === 'sometimes'} />
                                     {formData.notifyCoParentOfChildRelatedEvents === 'sometimes' && (
-                                        <TextInput className="text-input-long-text" id="notifyCoParentOfChildRelatedEventsDescription"
+                                        <TextInput
+                                            className="text-input-long-text"
+                                            id="notifyCoParentOfChildRelatedEventsDescription"
                                             label="Please describe the circumstances under which you would notify your co-parent if your child gets sick or injured:"
-                                            type="text" value={formData.notifyCoParentOfChildRelatedEventsDescription}
+                                            type="text"
+                                            value={formData.notifyCoParentOfChildRelatedEventsDescription}
                                             onChange={handleChange('notifyCoParentOfChildRelatedEventsDescription')}
-                                            placeholder="Describe when you would notify your co-parent if your child gets sick or injured" />
+                                            placeholder="Describe when you would notify your co-parent if your child gets sick or injured"
+                                            error={errors.notifyCoParentOfChildRelatedEventsDescription}
+                                            required
+                                        />
                                     )}
                                     <RadioButton name="notifyCoParentOfChildRelatedEvents" value="needMoreInfo"
                                         onChange={(e) => handleChange('notifyCoParentOfChildRelatedEvents')(e.target.value)}
@@ -314,8 +424,12 @@ export default function ParentingTimeAndCommunication() {
                                         onChange={(e) => handleChange('notifyCoParentOfChildRelatedEvents')(e.target.value)}
                                         label="Default to my co-parent's choice" checked={formData.notifyCoParentOfChildRelatedEvents === 'defaultToCoParentChoice'} />
                                 </div>
+                                {notifyError && (
+                                    <p className="radio-group-error" role="alert">{notifyError}</p>
+                                )}
                             </CardContent>
                         </Card>
+
                     </CardContent>
                 </Card>
             </div>

@@ -14,36 +14,72 @@ export default function ParentalRights() {
     const { state, dispatch } = useForm();
     const { setOnNext, setOnBack } = useNavigation();
 
-    const formData = state.parentalRights ?? { appliesToAllChildren: '', livingArrangement: '', decisionMaking: '', errors: {} };
-    const errors = state.parentalRights?.errors ?? {};
+    const formData = state.parentalRights ?? {
+        appliesToAllChildren: '',
+        livingArrangements: '',
+        decisionMaking: '',
+        errors: {}
+    };
 
     const childrenApplicationFlag = useSectionFlag('childrenApplication');
     const livingArrangementsFlag = useSectionFlag('livingArrangements');
     const decisionMakingFlag = useSectionFlag('decisionMaking');
 
+    // Separate error state for each radio group
+    const [appliesToAllChildrenError, setAppliesToAllChildrenError] = useState('');
+    const [livingArrangementsError, setLivingArrangementsError] = useState('');
+    const [decisionMakingError, setDecisionMakingError] = useState('');
+
+    // ── Clear all errors on mount (e.g. user navigated away and came back) ──
+    useEffect(() => {
+        setAppliesToAllChildrenError('');
+        setLivingArrangementsError('');
+        setDecisionMakingError('');
+    }, []);
+
     const [submitAttempted, setSubmitAttempted] = useState(false);
+
     useEffect(() => {
         if (submitAttempted) {
-            const firstError = document.querySelector('.text-input__error-message, .date-picker__error-message');
+            const firstError = document.querySelector('.radio-group-error');
             if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
             setSubmitAttempted(false);
         }
     }, [formData, submitAttempted]);
 
-    const handleFormChange = (section, field) => (value) => {
-        dispatch({ type: 'UPDATE_SECTION', section, payload: { [field]: value } });
-        if (errors[field]) {
-            dispatch({ type: 'UPDATE_SECTION', section, payload: { errors: { ...errors, [field]: '' } } });
-        }
+    const handleFormChange = (field) => (e) => {
+        dispatch({ type: 'UPDATE_SECTION', section: 'parentalRights', payload: { [field]: e.target.value } });
+        // Clear the corresponding error on selection
+        if (field === 'appliesToAllChildren') setAppliesToAllChildrenError('');
+        if (field === 'livingArrangements')   setLivingArrangementsError('');
+        if (field === 'decisionMaking')       setDecisionMakingError('');
     };
 
     const validateForm = () => {
-        const formErrors = {};
-        if (!formData.appliesToAllChildren) formErrors.appliesToAllChildren = 'Please select an option';
-        if (!formData.livingArrangements) formErrors.livingArrangements = 'Please select an option';
-        if (!formData.decisionMaking) formErrors.decisionMaking = 'Please select an option';
-        dispatch({ type: 'UPDATE_SECTION', section: 'parentalRights', payload: { errors: formErrors } });
-        return Object.keys(formErrors).length === 0;
+        let isValid = true;
+
+        if (!formData.appliesToAllChildren) {
+            setAppliesToAllChildrenError('Please select an option to continue');
+            isValid = false;
+        } else {
+            setAppliesToAllChildrenError('');
+        }
+
+        if (!formData.livingArrangements) {
+            setLivingArrangementsError('Please select an option to continue');
+            isValid = false;
+        } else {
+            setLivingArrangementsError('');
+        }
+
+        if (!formData.decisionMaking) {
+            setDecisionMakingError('Please select an option to continue');
+            isValid = false;
+        } else {
+            setDecisionMakingError('');
+        }
+
+        return isValid;
     };
 
     const handleNext = () => {
@@ -55,14 +91,13 @@ export default function ParentalRights() {
     };
 
     const handleBack = () => {
-        dispatch({ type: 'UPDATE_SECTION', section: 'parentalRights', payload: { errors: {} } });
         navigate('/getting-started');
     };
 
     useEffect(() => {
         setOnNext(handleNext);
         setOnBack(handleBack);
-    }, [state]);
+    }, [state, formData]);
 
     return (
         <div className="page-container">
@@ -70,10 +105,15 @@ export default function ParentalRights() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Parental Rights</CardTitle>
-                        <CardDescription>Define where your children live and who will make legal decisions.</CardDescription>
+                        <CardDescription>
+                            Define where your children live and who will make legal decisions.
+                            Fields marked with <span className="required-asterisk">*</span> are required.
+                        </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <hr className="section-divider" />
+
+                        {/* ── Applies to All Children ── */}
                         <section className="children-application-section">
                             <div className="section-header">
                                 <div className="scale-icon"><Scale size={25} /></div>
@@ -85,8 +125,9 @@ export default function ParentalRights() {
                         </section>
                         <Card>
                             <CardHeader className="card-header-with-flag">
-                                <CardDescription className={"card-heading-question-bold"}>
+                                <CardDescription className="card-heading-question-bold">
                                     Will your answers apply to all of your children that you share with your co-parent?
+                                    <span className="required-asterisk"> *</span>
                                 </CardDescription>
                                 <FlagButton isFlagged={childrenApplicationFlag.isFlagged} onClick={childrenApplicationFlag.toggleFlag} />
                             </CardHeader>
@@ -94,28 +135,30 @@ export default function ParentalRights() {
                                 <div className="radio-group">
                                     <RadioButton name="appliesToAllChildren" value="yes"
                                         checked={formData.appliesToAllChildren === 'yes'}
-                                        onChange={(e) => handleFormChange('parentalRights', 'appliesToAllChildren')(e.target.value)}
+                                        onChange={handleFormChange('appliesToAllChildren')}
                                         label="Yes" description="My answers will be the same for all children" />
                                     <RadioButton name="appliesToAllChildren" value="no"
                                         checked={formData.appliesToAllChildren === 'no'}
-                                        onChange={(e) => handleFormChange('parentalRights', 'appliesToAllChildren')(e.target.value)}
+                                        onChange={handleFormChange('appliesToAllChildren')}
                                         label="No" description="I need to answer separately for each child" />
                                     <RadioButton name="appliesToAllChildren" value="needMoreInfo"
                                         checked={formData.appliesToAllChildren === 'needMoreInfo'}
-                                        onChange={(e) => handleFormChange('parentalRights', 'appliesToAllChildren')(e.target.value)}
+                                        onChange={handleFormChange('appliesToAllChildren')}
                                         label="I need more information" />
                                     <RadioButton name="appliesToAllChildren" value="defaultToCoParent"
                                         checked={formData.appliesToAllChildren === 'defaultToCoParent'}
-                                        onChange={(e) => handleFormChange('parentalRights', 'appliesToAllChildren')(e.target.value)}
+                                        onChange={handleFormChange('appliesToAllChildren')}
                                         label="Default to my co-parent's choice" />
                                 </div>
-                                {errors.appliesToAllChildren && (
-                                    <div className="text-input__error-message" role="alert">{errors.appliesToAllChildren}</div>
+                                {appliesToAllChildrenError && (
+                                    <p className="radio-group-error" role="alert">{appliesToAllChildrenError}</p>
                                 )}
                             </CardContent>
                         </Card>
 
                         <hr className="section-divider" />
+
+                        {/* ── Living Arrangements ── */}
                         <section className="living-arrangements-section">
                             <div className="section-header">
                                 <div className="house-icon"><House size={25} /></div>
@@ -127,8 +170,9 @@ export default function ParentalRights() {
                         </section>
                         <Card>
                             <CardHeader className="card-header-with-flag">
-                                <CardDescription className={"card-heading-question-bold"}>
+                                <CardDescription className="card-heading-question-bold">
                                     Do you want your children to live with you?
+                                    <span className="required-asterisk"> *</span>
                                 </CardDescription>
                                 <FlagButton isFlagged={livingArrangementsFlag.isFlagged} onClick={livingArrangementsFlag.toggleFlag} />
                             </CardHeader>
@@ -136,32 +180,34 @@ export default function ParentalRights() {
                                 <div className="radio-group">
                                     <RadioButton name="livingArrangements" value="parent1FullTime"
                                         checked={formData.livingArrangements === 'parent1FullTime'}
-                                        onChange={(e) => handleFormChange('parentalRights', 'livingArrangements')(e.target.value)}
+                                        onChange={handleFormChange('livingArrangements')}
                                         label="Yes, all the time" />
                                     <RadioButton name="livingArrangements" value="parent1Occasional"
                                         checked={formData.livingArrangements === 'parent1Occasional'}
-                                        onChange={(e) => handleFormChange('parentalRights', 'livingArrangements')(e.target.value)}
+                                        onChange={handleFormChange('livingArrangements')}
                                         label="Yes, on occasion" />
                                     <RadioButton name="livingArrangements" value="parent1VisitingOnly"
                                         checked={formData.livingArrangements === 'parent1VisitingOnly'}
-                                        onChange={(e) => handleFormChange('parentalRights', 'livingArrangements')(e.target.value)}
+                                        onChange={handleFormChange('livingArrangements')}
                                         label="No, I just want visiting time" />
                                     <RadioButton name="livingArrangements" value="needMoreInfo"
                                         checked={formData.livingArrangements === 'needMoreInfo'}
-                                        onChange={(e) => handleFormChange('parentalRights', 'livingArrangements')(e.target.value)}
+                                        onChange={handleFormChange('livingArrangements')}
                                         label="I need more information" />
                                     <RadioButton name="livingArrangements" value="defaultToCoParent"
                                         checked={formData.livingArrangements === 'defaultToCoParent'}
-                                        onChange={(e) => handleFormChange('parentalRights', 'livingArrangements')(e.target.value)}
+                                        onChange={handleFormChange('livingArrangements')}
                                         label="Default to my co-parent's choice" />
                                 </div>
-                                {errors.livingArrangements && (
-                                    <div className="text-input__error-message" role="alert">{errors.livingArrangements}</div>
+                                {livingArrangementsError && (
+                                    <p className="radio-group-error" role="alert">{livingArrangementsError}</p>
                                 )}
                             </CardContent>
                         </Card>
 
                         <hr className="section-divider" />
+
+                        {/* ── Legal Decision Making ── */}
                         <section className="decision-making-section">
                             <div className="section-header">
                                 <div className="scale-icon"><Scale size={25} /></div>
@@ -173,8 +219,9 @@ export default function ParentalRights() {
                         </section>
                         <Card>
                             <CardHeader className="card-header-with-flag">
-                                <CardDescription className={"card-heading-question-bold"}>
+                                <CardDescription className="card-heading-question-bold">
                                     Do you want to make legal decisions for your children?
+                                    <span className="required-asterisk"> *</span>
                                 </CardDescription>
                                 <FlagButton isFlagged={decisionMakingFlag.isFlagged} onClick={decisionMakingFlag.toggleFlag} />
                             </CardHeader>
@@ -182,30 +229,31 @@ export default function ParentalRights() {
                                 <div className="radio-group">
                                     <RadioButton name="decisionMaking" value="parent1Sole"
                                         checked={formData.decisionMaking === 'parent1Sole'}
-                                        onChange={(e) => handleFormChange('parentalRights', 'decisionMaking')(e.target.value)}
+                                        onChange={handleFormChange('decisionMaking')}
                                         label="Yes, by myself" />
                                     <RadioButton name="decisionMaking" value="jointWithCoParent"
                                         checked={formData.decisionMaking === 'jointWithCoParent'}
-                                        onChange={(e) => handleFormChange('parentalRights', 'decisionMaking')(e.target.value)}
+                                        onChange={handleFormChange('decisionMaking')}
                                         label="Yes, with my co-parent" />
                                     <RadioButton name="decisionMaking" value="noLegalDecisionMaking"
                                         checked={formData.decisionMaking === 'noLegalDecisionMaking'}
-                                        onChange={(e) => handleFormChange('parentalRights', 'decisionMaking')(e.target.value)}
+                                        onChange={handleFormChange('decisionMaking')}
                                         label="No" />
                                     <RadioButton name="decisionMaking" value="needMoreInfo"
                                         checked={formData.decisionMaking === 'needMoreInfo'}
-                                        onChange={(e) => handleFormChange('parentalRights', 'decisionMaking')(e.target.value)}
+                                        onChange={handleFormChange('decisionMaking')}
                                         label="I need more information" />
                                     <RadioButton name="decisionMaking" value="defaultToCoParent"
                                         checked={formData.decisionMaking === 'defaultToCoParent'}
-                                        onChange={(e) => handleFormChange('parentalRights', 'decisionMaking')(e.target.value)}
+                                        onChange={handleFormChange('decisionMaking')}
                                         label="Default to my co-parent's choice" />
                                 </div>
-                                {errors.decisionMaking && (
-                                    <div className="text-input__error-message" role="alert">{errors.decisionMaking}</div>
+                                {decisionMakingError && (
+                                    <p className="radio-group-error" role="alert">{decisionMakingError}</p>
                                 )}
                             </CardContent>
                         </Card>
+
                     </CardContent>
                 </Card>
             </div>
