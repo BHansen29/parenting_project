@@ -12,9 +12,17 @@ export default function Dashboard() {
   const [isInviteOpen, setIsInviteOpen] = useState(false);
 
   // Mock plan data — replace with real data fetching later
-  const [plans] = useState([
+  const [plans, setPlans] = useState([
     { id: 1, name: 'Plan for Alice', status: 'DRAFT', lastModified: '3/3/2026' },
   ]);
+
+  const handleNewPlan = () => {
+    const today = new Date().toLocaleDateString('en-US');
+    setPlans(prev => [
+      ...prev,
+      { id: Date.now(), name: 'Untitled Plan', status: 'DRAFT', lastModified: today },
+    ]);
+  };
 
   // TODO: restore auth guard when Firebase is connected
   // useEffect(() => {
@@ -64,7 +72,7 @@ export default function Dashboard() {
         <section className="dashboard__plans">
           <div className="dashboard__plans-header">
             <h2 className="dashboard__plans-title">Your Plans</h2>
-            <button className="dashboard__new-plan-btn" onClick={() => navigate('/getting-started')}>
+            <button className="dashboard__new-plan-btn" onClick={handleNewPlan}>
               <Plus size={16} />
               New Plan
             </button>
