@@ -13,7 +13,7 @@ export default function Dashboard() {
 
   // Mock plan data — replace with real data fetching later
   const [plans, setPlans] = useState([
-    { id: 1, name: 'Plan for Alice', status: 'DRAFT', lastModified: '3/3/2026' },
+    { id: 1, name: 'Untitled Plan', status: 'DRAFT', lastModified: '3/3/2026' },
   ]);
 
   const handleNewPlan = () => {
