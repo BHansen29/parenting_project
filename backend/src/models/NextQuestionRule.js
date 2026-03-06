@@ -2,7 +2,7 @@
 
 const mongoose = require('mongoose');
 
-const conditionSchema = new mongoose.Schema({
+const ruleSchema = new mongoose.Schema({
   operator: {
     type: String,
     enum: ["eq", "neq", "gt", "gte", "lt", "lte", "in", "nin", "exists"],
@@ -20,13 +20,8 @@ const conditionSchema = new mongoose.Schema({
     //    operator = "gte"
     //  if "userAnswer gte 5" evaluates to true, we will goTo Question X
   },
-});
 
-const nextRuleSchema = new mongoose.Schema({
-  condition: {
-    type: conditionSchema
-  },
-  // if a user response evaluates to true using the condition, we go to the question specified
+  // if a user response evaluates to true using the operator & value, we go to the question specified
   goTo: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: "Question"
@@ -47,7 +42,7 @@ const nextQuestionRuleSchema = new mongoose.Schema({
   },
   nextQuestions: {
     // this allows for branching depending on the user's answer to the current question
-    type: [nextRuleSchema],
+    type: [ruleSchema],
     required: true
   },
   isDefault: {
