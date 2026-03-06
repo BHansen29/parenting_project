@@ -2,37 +2,6 @@
 
 const mongoose = require('mongoose');
 
-const conditionSchema = new mongoose.Schema({
-  operator: {
-    type: String,
-    enum: ["eq", "neq", "gt", "gte", "lt", "lte", "in", "nin", "exists"],
-    required: true,
-  },
-  value: {
-    type: mongoose.Schema.Types.Mixed,
-    required: true,
-    // number, string, boolean, array, etc.
-    // when using ordinal operators, always specify them in the form of "userAnswer operator value"
-    // For example:
-    //    Our evaluation condition is that if a user's answer is greater than 5, goTo Quesion X
-    // Then:
-    //    value = 5
-    //    operator = "gte"
-    //  if "userAnswer gte 5" evaluates to true, we will goTo Question X
-  },
-});
-
-const nextRuleSchema = new mongoose.Schema({
-  condition: {
-    type: conditionSchema
-  },
-  // if a user response evaluates to true using the condition, we go to the question specified
-  goTo: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: "Question"
-  }
-});
-
 const questionSchema = new mongoose.Schema({
   type: {
     // this specifies if question is multiple choice, integer input, checkbox, etc.
@@ -56,17 +25,6 @@ const questionSchema = new mongoose.Schema({
     type: String,
     enum: ["health insurance coverage", "child support"],
     required: true
-  }, 
-  nextQuestions: {
-    // this allows for branching depending on the user's answer to the current question
-    type: [nextRuleSchema],
-    required: true
-  },
-  isDefault: {
-    // true if there is a default next question no matter the answer
-    type: Boolean,
-    required: true,
-    default: true
   },
 
   // the followings field is dependant on the type of question

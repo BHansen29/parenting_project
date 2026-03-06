@@ -1,0 +1,66 @@
+// This file defines what a NextQuestionRule looks like in our database
+
+const mongoose = require('mongoose');
+
+const conditionSchema = new mongoose.Schema({
+  operator: {
+    type: String,
+    enum: ["eq", "neq", "gt", "gte", "lt", "lte", "in", "nin", "exists"],
+    required: true,
+  },
+  value: {
+    type: mongoose.Schema.Types.Mixed,
+    required: true,
+    // number, string, boolean, array, etc.
+    // when using ordinal operators, always specify them in the form of "userAnswer operator value"
+    // For example:
+    //    Our evaluation condition is that if a user's answer is greater than 5, goTo Quesion X
+    // Then:
+    //    value = 5
+    //    operator = "gte"
+    //  if "userAnswer gte 5" evaluates to true, we will goTo Question X
+  },
+});
+
+const nextRuleSchema = new mongoose.Schema({
+  condition: {
+    type: conditionSchema
+  },
+  // if a user response evaluates to true using the condition, we go to the question specified
+  goTo: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: "Question"
+  }
+});
+
+const nextQuestionRuleSchema = new mongoose.Schema({
+  questionID: { 
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: "Question",
+      required: true, 
+      unique: true
+  },
+  qKey: { 
+      type: String, 
+      unique: true,
+      required: true
+  },
+  nextQuestions: {
+    // this allows for branching depending on the user's answer to the current question
+    type: [nextRuleSchema],
+    required: true
+  },
+  isDefault: {
+    // true if there is a default next question no matter the answer
+    type: Boolean,
+    required: true,
+    default: true
+  },
+  goToDefault: {
+    // question id of default if isDefault is true
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Question"
+  }
+})
+
+module.exports = mongoose.model('NextQuestionRule', nextQuestionRuleSchema);

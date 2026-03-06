@@ -6,7 +6,7 @@ const questionResponseSchema = new mongoose.Schema(
     type: mongoose.Schema.Types.ObjectId, 
     ref: "Question",
     required: true 
-},
+  },
   answer: { 
     type: mongoose.Schema.Types.Mixed, 
     required: true },
