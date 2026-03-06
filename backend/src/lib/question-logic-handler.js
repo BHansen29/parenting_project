@@ -28,4 +28,4 @@ class QuestionLogicHandler {
 
 // export a single instance of QuestionLogicHandler since we don't really need different instances of it
 const questionLogicHandler = new QuestionLogicHandler();
-export default questionLogicHandler
+module.exports = questionLogicHandler
