@@ -1,3 +1,75 @@
+/* Delete confirmation modal */
+.delete-modal__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.delete-modal {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.16);
+}
+
+.delete-modal__title {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.delete-modal__body {
+  margin: 0 0 1.25rem;
+  font-size: 0.9rem;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.delete-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
+.delete-modal__cancel {
+  padding: 0.5rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #374151;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.delete-modal__cancel:hover {
+  background-color: #f3f4f6;
+}
+
+.delete-modal__confirm {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 8px;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.delete-modal__confirm:hover {
+  background-color: #dc2626;
+}
+
 /* Context menu */
 .context-menu {
   position: fixed;

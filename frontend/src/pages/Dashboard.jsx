@@ -33,8 +33,11 @@ export default function Dashboard() {
     setContextMenu({ x: e.clientX, y: e.clientY, plan });
   };
 
+  const [deleteTarget, setDeleteTarget] = useState(null); // plan pending confirmation
+
   const handleDeletePlan = (id) => {
     setPlans(prev => prev.filter(plan => plan.id !== id));
+    setDeleteTarget(null);
   };
 
   const startEditing = (plan) => {
@@ -74,6 +77,21 @@ export default function Dashboard() {
       <Header />
       <InviteModal isOpen={isInviteOpen} onClose={() => setIsInviteOpen(false)} />
 
+      {deleteTarget && (
+        <div className="delete-modal__overlay" onClick={() => setDeleteTarget(null)}>
+          <div className="delete-modal" onClick={e => e.stopPropagation()}>
+            <h3 className="delete-modal__title">Delete plan?</h3>
+            <p className="delete-modal__body">
+              Are you sure you want to delete <strong>"{deleteTarget.name}"</strong>? This action cannot be undone.
+            </p>
+            <div className="delete-modal__actions">
+              <button className="delete-modal__cancel" onClick={() => setDeleteTarget(null)}>Cancel</button>
+              <button className="delete-modal__confirm" onClick={() => handleDeletePlan(deleteTarget.id)}>Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {contextMenu && (
         <ul
           className="context-menu"
@@ -83,7 +101,7 @@ export default function Dashboard() {
           <li onClick={() => { startEditing(contextMenu.plan); setContextMenu(null); }}>
             <Pencil size={14} /> Rename
           </li>
-          <li className="context-menu__delete" onClick={() => { handleDeletePlan(contextMenu.plan.id); setContextMenu(null); }}>
+          <li className="context-menu__delete" onClick={() => { setDeleteTarget(contextMenu.plan); setContextMenu(null); }}>
             <Trash2 size={14} /> Delete
           </li>
         </ul>
@@ -131,7 +149,7 @@ export default function Dashboard() {
                   <div className="plan-card__icon">
                     <FileText size={24} color="#6b7280" />
                   </div>
-                  <button className="plan-card__delete-btn" onClick={() => handleDeletePlan(plan.id)}>
+                  <button className="plan-card__delete-btn" onClick={() => setDeleteTarget(plan)}>
                     <Trash2 size={16} />
                   </button>
                 </div>
