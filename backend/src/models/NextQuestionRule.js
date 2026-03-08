@@ -23,8 +23,7 @@ const ruleSchema = new mongoose.Schema({
 
   // if a user response evaluates to true using the operator & value, we go to the question specified
   goTo: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: "Question"
+    type: String, 
   }
 });
 
@@ -37,6 +36,7 @@ const nextQuestionRuleSchema = new mongoose.Schema({
   nextQuestions: {
     // this allows for branching depending on the user's answer to the current question
     type: [ruleSchema],
+    default: []
   },
   isDefault: {
     // true if there is a default next question no matter the answer

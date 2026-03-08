@@ -29,12 +29,7 @@ const questionSchema = new mongoose.Schema({
 
   // the followings field is dependant on the type of question
   // options will contain different multiple choice/checkbox options a user can select
-  options: [
-    {
-      label: String,
-      value: mongoose.Schema.Types.Mixed
-    }
-  ],
+  options: [String],
 }, { timestamps: true});
 
 module.exports = mongoose.model('Question', questionSchema);
