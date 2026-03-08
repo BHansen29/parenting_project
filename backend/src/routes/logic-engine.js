@@ -32,45 +32,6 @@ router.post('/nextQuestion/:qkey/:answer', async (req, res) => {
   }
 });
 
-//TODO: remove this as this is just to help me
-
-router.get('/seed', async (req, res) => {
-  console.log('seeding')
-  const newQ = new Question({
-    type: "multiple choice",
-    qText: "The next few questions ask about who your children with live with and who will make the legal decisions for them. Will your answers apply to all of your children that you share with your co-parent?",
-    qKey: "apply_to_all",
-    section: "allocation_of_parental_rights_and_responsibilities"
-  });
-  newQ.options = []
-  newQ.options.push("Yes")
-  newQ.options.push("No")
-  newQ.options.push("I need more information")
-  newQ.options.push("Default to my co-parent's choice")
-
-  const saveRez = await newQ.save()
-  console.log("saving: " + saveRez)
-
-  const newR = new NextQuestionRule({
-    qKey: "apply_to_all",
-    isDefault: true,
-    goToDefault: "want_live_with_you"
-  });
-  const saveR = await newR.save()
-  console.log("saving: " + saveR)
-  res.status(200).send()
-});
-
-router.get('/delete', async (req, res) => {
-  console.log('deleting')
-  try {
-      const deleteRez = await Question.deleteOne({_id: "69add5f6eb61f535ea5c7026"})
-      console.log("deleting: " + deleteRez)
-  } catch (error) {
-    res.status(404).json({error: error.message})
-  }
-  res.status(200).send()
-});
 
 
 // GET /api/questions - Get all questions
