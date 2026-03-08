@@ -54,7 +54,7 @@ export default function SignIn() {
         // Sign in the user in Firebase Auth with email + password
         await signInWithEmailAndPassword(auth, formData.email, formData.password);
         // Next Step
-        navigate('/household-info');
+        navigate('/dashboard');
       } catch (err) {
         // Show Firebase error in the form
         setErrors({ general: err.message });

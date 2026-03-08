@@ -26,6 +26,49 @@
   width: auto;
 }
 
+.header__right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.header__user {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.header__user-label {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.header__user-label strong {
+  color: #111827;
+  font-weight: 600;
+}
+
+.header__signout-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: transparent;
+  border: none;
+  color: #6b7280;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0.25rem 0;
+  border-radius: 0;
+  transition: color 0.2s;
+}
+
+.header__signout-btn:hover {
+  color: #111827;
+  background: transparent;
+  border-color: transparent;
+}
+
 .header__saved {
   display: flex;
   align-items: center;
