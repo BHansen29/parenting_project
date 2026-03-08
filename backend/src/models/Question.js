@@ -23,7 +23,7 @@ const questionSchema = new mongoose.Schema({
   section: {
     // this describes the section of the tree this question falls under (ex: "health insurance coverage", "child support", etc.)
     type: String,
-    enum: ["health insurance coverage", "child support"],
+    enum: ["allocation_of_parental_rights_and_responsibilities", "child_support"],
     required: true
   },
 

@@ -60,4 +60,24 @@ router.get('/:planId', verifyToken, async (req, res) => {
   }
 });
 
+// Set a plan's allowShare field
+// POST/api/plan/setShareMode/:planId
+router.get('/setShareMode/:planId', verifyToken, async (req, res) => {
+  try {
+    const planID = req.params.planId;
+    //Retrieve plan and fetch from Mongo
+    const plan = await Plan.findById(planID);
+
+    //If the planId was not found or doesn't belong to the requesting user
+    if (!plan || plan.userID !== req.user.uid) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    const { allowShare } = req.body
+    plan.allowSharing = allowShare
+    plan.save()
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 module.exports = router;

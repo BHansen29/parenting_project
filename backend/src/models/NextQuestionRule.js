@@ -29,12 +29,6 @@ const ruleSchema = new mongoose.Schema({
 });
 
 const nextQuestionRuleSchema = new mongoose.Schema({
-  questionID: { 
-      type: mongoose.Schema.Types.ObjectId, 
-      ref: "Question",
-      required: true, 
-      unique: true
-  },
   qKey: { 
       type: String, 
       unique: true,
@@ -43,7 +37,6 @@ const nextQuestionRuleSchema = new mongoose.Schema({
   nextQuestions: {
     // this allows for branching depending on the user's answer to the current question
     type: [ruleSchema],
-    required: true
   },
   isDefault: {
     // true if there is a default next question no matter the answer
@@ -52,9 +45,8 @@ const nextQuestionRuleSchema = new mongoose.Schema({
     default: true
   },
   goToDefault: {
-    // question id of default if isDefault is true
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Question"
+    // qKey of default next question if isDefault is true
+    type: String,
   }
 })
 

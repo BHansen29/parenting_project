@@ -38,7 +38,12 @@ const planSchema = new mongoose.Schema(
     type: mongoose.Schema.Types.ObjectId,
     ref: "Question",
   },
-  children: [questionResponseSchema]
+  allowSharing: {
+    type: Boolean,
+    required: true,
+    default: false
+  },
+  children: [questionResponseSchema],
 })
 
 module.exports = mongoose.model('Plan', planSchema);
