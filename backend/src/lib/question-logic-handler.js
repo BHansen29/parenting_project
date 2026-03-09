@@ -22,7 +22,7 @@ class QuestionLogicHandler {
     evaluate(userVal, opCode, rightVal) {
         const fn = this.#operators[opCode];
         if (!fn) throw new Error(`Unsupported operator: ${opCode}`);
-        return fn(leftVal, rightVal);
+        return fn(userVal, rightVal);
     }
 }
 

@@ -9,6 +9,11 @@ router.get('/nextQuestion/:qkey/:answer', async (req, res) => {
   const userAnswer = req.params.answer
   const qKey = req.params.qkey
   const nextQRules = await NextQuestionRule.findOne({qKey: qKey})
+  
+  if (nextQRules == null) {
+    console.log("Failed to retrieve NextQuestionRule using qkey: " + qKey)
+    res.status(404).send()
+  }
 
   const next = nextQRules.isDefault 
     ? nextQRules.goToDefault 
