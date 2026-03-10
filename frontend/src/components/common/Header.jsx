@@ -8,6 +8,12 @@ export default function Header({
   user = null,
   onSignOut = null,
 }) {
+  const navigate = useNavigate();
+
+  const handleLogoClick = () => {
+    navigate('/landing-page');
+  };
+
   return (
     <header className="header">
       <div className="header__top-bar">
