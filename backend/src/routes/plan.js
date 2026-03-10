@@ -1,15 +1,28 @@
 const express = require('express');
 const router = express.Router();
 const Plan = require('../models/Plan');
+const Question = require('../models/Question');
 const verifyToken = require('../middleware/verifyToken');
 
-// POST/api/plan
+// POST /api/plan - Start a new plan
 router.post('/', verifyToken, async (req, res) => {
   try {
-    // Pull userID from the verified Firebase token — can't be faked
     const userID = req.user.uid;
-    //Call Plan.create()
-    const plan = await Plan.create({ userID });
+    const { startQuestionId } = req.body;
+
+    // startQuestionId is required to know where to begin
+    if (!startQuestionId) {
+      return res.status(400).json({ error: 'startQuestionId is required' });
+    }
+
+    // Make sure that question actually exists
+    const startQuestion = await Question.findById(startQuestionId);
+    if (!startQuestion) {
+      const errorMessage = { error: 'Starting question not found' };
+      return res.status(400).json(errorMessage);
+    }
+
+    const plan = await Plan.create({ userID, currentQuestion: startQuestionId });
     res.status(201).json(plan);
   } catch (error) {
     res.status(400).json({ error: error.message });
