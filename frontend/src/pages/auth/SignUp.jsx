@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../lib/firebase';
-import { syncFirebaseUserProfile } from '../../lib/authApi';
+import { syncFirebaseUserProfileSafely } from '../../lib/authApi';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/common/card';
 import TextInput from '../../components/forms/TextInput';
 import '../Page.css';
@@ -55,8 +55,8 @@ export default function SignUp() {
         // Create the user in Firebase Auth with email + password
         const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
 
-        // Syncs Firebase with MongoDB
-        await syncFirebaseUserProfile(userCredential.user);
+        // Try to sync Mongo profile, but do not block sign-up if backend/database is down.
+        await syncFirebaseUserProfileSafely(userCredential.user);
 
         // On success, send them to the next step
         navigate('/household-info');
