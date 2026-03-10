@@ -59,7 +59,7 @@ export default function SignIn() {
         await syncFirebaseUserProfileSafely(userCredential.user);
 
         // Next Step
-        navigate('/household-info');
+        navigate('/dashboard');
       } catch (err) {
         // Show Firebase error in the form
         setErrors({ general: err.message });
