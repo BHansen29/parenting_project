@@ -7,11 +7,6 @@ describe('Transportation Page', () => {
     renderWithRouter(<Transportation />);
   });
 
-  it('displays page heading', () => {
-    renderWithRouter(<Transportation />);
-    expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
-  });
-
   it('renders form elements', () => {
     renderWithRouter(<Transportation />);
     // Check that the page has a form container

@@ -189,6 +189,61 @@
   transition: width 0.3s ease;
 }
 
+@media (prefers-color-scheme: dark) {
+  .sidebar {
+    background-color: #1f2937;
+    border-right: 1px solid #374151;
+    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.3);
+  }
+
+  .sidebar__header {
+    border-bottom: 1px solid #374151;
+  }
+
+  .sidebar__title {
+    color: #e5e7eb;
+  }
+
+  .sidebar__toggle {
+    color: #9ca3af;
+  }
+
+  .sidebar__toggle:hover {
+    background-color: #374151;
+    color: #e5e7eb;
+  }
+
+  .sidebar__nav-link {
+    color: #9ca3af;
+  }
+
+  .sidebar__nav-link:hover {
+    background-color: #374151;
+    color: #e5e7eb;
+  }
+
+  .sidebar__nav-link--active {
+    background-color: #2563eb;
+    color: #ffffff;
+  }
+
+  .sidebar__nav-link--completed {
+    color: #10b981;
+  }
+
+  .sidebar__nav-link--completed .sidebar__nav-icon {
+    color: #10b981;
+  }
+
+  .sidebar__nav-icon {
+    color: #9ca3af;
+  }
+
+  .sidebar__progress-text {
+    color: #9ca3af;
+  }
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
   .sidebar {

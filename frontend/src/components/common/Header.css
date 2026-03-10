@@ -24,6 +24,12 @@
 .header__logo {
   height: 50px;
   width: auto;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.header__logo:hover {
+  opacity: 0.8;
 }
 
 .header__saved {
@@ -44,7 +50,15 @@
 @media (prefers-color-scheme: dark) {
   .header {
     background-color: #1f2937;
-    border-bottom-color: #374151;
+    border-bottom: 1px solid #374151;
+  }
+
+  .header__top-bar {
+    background-color: #1f2937;
+  }
+
+  .header__saved {
+    color: #10b981;
   }
 }
 

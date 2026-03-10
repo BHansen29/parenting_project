@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Car, Info, Calendar, Check, Radio, Flag } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/card';
@@ -70,19 +70,24 @@ export default function ParentingTimeAndCommunication() {
             section: 'timeAndCommunication',
             payload: { [field]: value }
         });
-        const checkboxTransportation = document.getElementById('hide-checkbox-transportation');
-        const checkboxActivity = document.getElementById('hide-checkbox-activity');
-        const targetDescriptionField = document.getElementById( 'invisibility-target-transportation');
-        const targetDescriptionFieldActivity = document.getElementById( 'invisibility-target-activity');
 
-        //If user agrees to standard policy, hide custom field
-        checkboxTransportation.checked ? targetDescriptionField.style.display = 'none' : targetDescriptionField.style.display = 'flex';
-        checkboxActivity.checked ? targetDescriptionFieldActivity.style.display = 'none' : targetDescriptionFieldActivity.style.display = 'flex';
+        // Update the visibility of the corresponding description section based on the value
+        if (field === 'agreeToTransportationPolicy') {
+            const targetDescriptionField = document.getElementById('invisibility-target-transportation');
+            if (targetDescriptionField) {
+                targetDescriptionField.style.display = value ? 'none' : 'flex';
+            }
+        } else if (field === 'agreeToActivityPolicy') {
+            const targetDescriptionFieldActivity = document.getElementById('invisibility-target-activity');
+            if (targetDescriptionFieldActivity) {
+                targetDescriptionFieldActivity.style.display = value ? 'none' : 'flex';
+            }
+        }
 
         // Clear corresponding description error if user agrees to standard policy
         if (value === true) {
-            const descriptionField = field === 'agreeToTransportationPolicy' 
-                ? 'transportationArrangementDescription' 
+            const descriptionField = field === 'agreeToTransportationPolicy'
+                ? 'transportationArrangementDescription'
                 : 'activityPolicyDescription';
             if (errors[descriptionField]) {
                 dispatch({
@@ -94,7 +99,7 @@ export default function ParentingTimeAndCommunication() {
         }
     }
 
-    const handleScheduleChange = (schedule) => {
+    const handleScheduleChange = useCallback((schedule) => {
         dispatch({
             type: 'UPDATE_SECTION',
             section: 'timeAndCommunication',
@@ -107,7 +112,7 @@ export default function ParentingTimeAndCommunication() {
                 payload: { errors: { ...errors, parentingSchedule: '' } }
             });
         }
-    };
+    }, [dispatch, errors.parentingSchedule]);
 
     const validateForm = () => {
         const formErrors = {};

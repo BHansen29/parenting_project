@@ -285,21 +285,47 @@
 
 /* Dark mode */
 @media (prefers-color-scheme: dark) {
+  .page-container {
+    background-color: #374151;
+  }
+
   [data-slot="card"],
   .page-card {
-    background-color: #2a2a2a;
+    background-color: #1f2937;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    border: 1px solid #444;
+    border: 1px solid #374151;
+  }
+
+  [data-slot="card-title"],
+  .page-card {
+    color:#d1d5db
   }
 
   [data-slot="card-description"],
   .page-card > p {
-    color: #aaa;
+    color: #9ca3af;
+  }
+
+  [data-slot="card-heading-question-bold"],
+  .card-heading-question-bold {
+    color: #d1d5db;
+  }
+
+  .section-header h2 {
+    color: #d1d5db;
+  }
+
+  .section-intro {
+    color: #9ca3af;
+  }
+
+  .section-divider {
+    background-color: #374151;
   }
 
   .add-child-btn {
-    background-color: #2a2a2a;
-    border-color: #4b5563;
+    background-color: #1f2937;
+    border-color: #374151;
     color: #9ca3af;
   }
 
@@ -307,6 +333,52 @@
     border-color: #14abdd;
     color: #14abdd;
     background-color: rgba(20, 171, 221, 0.1);
+  }
+
+  .text-input-long-text .text-input__field {
+    background-color: #1f2937;
+    border-color: #374151;
+    color: #d1d5db;
+  }
+
+  .policy-description-group {
+    background-color: #1f2937;
+    border: 1px solid #374151;
+  }
+
+  .policy-description-group h3 {
+    color: #d1d5db;
+  }
+
+  .policy-description-group li {
+    color: #9ca3af;
+  }
+
+  .or-divider {
+    color: #9ca3af;
+  }
+
+  .remove-child-btn {
+    border-color: #ef4444;
+    color: #ef4444;
+    background-color: transparent;
+  }
+
+  .remove-child-btn:hover {
+    background-color: #ef4444;
+    color: #1f2937;
+  }
+
+  .shield-icon {
+    background-color: rgba(233, 49, 67, 0.2);
+  }
+
+  .user-icon, .info-icon, .users-icon, .house-icon, .scale-icon, .car-icon {
+    background-color: rgba(20, 171, 221, 0.2);
+  }
+
+  .classification-label {
+    color: #d1d5db;
   }
 }
 

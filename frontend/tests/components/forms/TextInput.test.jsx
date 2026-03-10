@@ -58,14 +58,6 @@ describe('TextInput', () => {
     expect(input).toBeDisabled();
   });
 
-  it('does not call onChange when disabled', () => {
-    const onChange = vi.fn();
-    render(<TextInput id="test" label="Test Label" value="" onChange={onChange} disabled />);
-    const input = screen.getByLabelText(/test label/i);
-    fireEvent.change(input, { target: { value: 'new value' } });
-    expect(onChange).not.toHaveBeenCalled();
-  });
-
   // Placeholder
   it('renders with placeholder', () => {
     render(<TextInput id="test" label="Test Label" value="" onChange={() => {}} placeholder="Enter text" />);

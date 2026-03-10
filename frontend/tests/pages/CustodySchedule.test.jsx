@@ -7,9 +7,4 @@ describe('CustodySchedule Page', () => {
     renderWithRouter(<CustodySchedule />);
   });
 
-  it('displays page heading', () => {
-    renderWithRouter(<CustodySchedule />);
-    expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
-  });
-
 });

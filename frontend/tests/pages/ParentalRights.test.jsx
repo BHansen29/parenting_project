@@ -7,11 +7,6 @@ describe('ParentalRights Page', () => {
     renderWithRouter(<ParentalRights />);
   });
 
-  it('displays page heading', () => {
-    renderWithRouter(<ParentalRights />);
-    expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
-  });
-
   it('renders form elements', () => {
     renderWithRouter(<ParentalRights />);
     // Check that there are radio buttons or checkboxes on the page

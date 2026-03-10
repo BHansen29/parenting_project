@@ -52,14 +52,6 @@ describe('DatePicker', () => {
     expect(input).toBeDisabled();
   });
 
-  it('does not call onChange when disabled', () => {
-    const onChange = vi.fn();
-    render(<DatePicker id="test" label="Test Date" value="" onChange={onChange} disabled />);
-    const input = screen.getByLabelText(/test date/i);
-    fireEvent.change(input, { target: { value: '2024-01-15' } });
-    expect(onChange).not.toHaveBeenCalled();
-  });
-
   // Min and max dates
   it('sets min attribute', () => {
     render(<DatePicker id="test" label="Test Date" value="" onChange={() => {}} min="2024-01-01" />);

@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import './Header.css';
 import logo from '../../assets/logos/ShareCare_Symmetrical Diamond Logo (1120 x 310 px).png';
 
@@ -5,10 +6,21 @@ export default function Header({
   showNavigation = true,
   saved = false,
 }) {
+  const navigate = useNavigate();
+
+  const handleLogoClick = () => {
+    navigate('/landing-page');
+  };
+
   return (
     <header className="header">
       <div className="header__top-bar">
-        <img src={logo} alt="ShareCare" className="header__logo" />
+        <img
+          src={logo}
+          alt="ShareCare"
+          className="header__logo"
+          onClick={handleLogoClick}
+        />
 
         {saved && (
           <div className="header__saved">

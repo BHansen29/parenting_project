@@ -139,7 +139,8 @@ describe('Sidebar', () => {
 
   it('navigation items have title attribute when collapsed', () => {
     renderWithRouter(<Sidebar isCollapsed={true} onToggle={mockOnToggle} />);
-    const link = screen.getByRole('link', { name: /1/i });
-    expect(link).toHaveAttribute('title', 'Getting Started');
+    const links = screen.getAllByRole('link');
+    // First link should have title attribute for tooltip when collapsed
+    expect(links[0]).toHaveAttribute('title', 'Getting Started');
   });
 });

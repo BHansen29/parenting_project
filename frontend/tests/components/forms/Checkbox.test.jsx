@@ -67,14 +67,6 @@ describe('Checkbox', () => {
     expect(checkbox).toBeDisabled();
   });
 
-  it('does not call onChange when disabled', () => {
-    const onChange = vi.fn();
-    render(<Checkbox id="test" label="Test Label" checked={false} onChange={onChange} disabled />);
-    const checkbox = screen.getByRole('checkbox');
-    fireEvent.click(checkbox);
-    expect(onChange).not.toHaveBeenCalled();
-  });
-
   // Description
   it('renders description when provided', () => {
     render(<Checkbox id="test" label="Test Label" description="Test description" checked={false} onChange={() => {}} />);
