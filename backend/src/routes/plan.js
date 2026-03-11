@@ -29,6 +29,29 @@ router.post('/', verifyToken, async (req, res) => {
   }
 });
 
+// GET /api/plan/:planId/current -> Get the current question for a plan
+router.get('/:planId/current', verifyToken, async (req, res) => {
+  try {
+    // Fetch the plan and replace currentQuestion ID with the full Question document
+    const plan = await Plan.findById(req.params.planId).populate('currentQuestion');
+
+    // Reject if plan doesn't exist or belongs to a different user
+    if (!plan || plan.userID !== req.user.uid) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    // No current question means the plan is finished
+    if (!plan.currentQuestion) {
+      return res.json({ done: true });
+    }
+
+    // Return the full question data for the frontend to render
+    res.json({ question: plan.currentQuestion });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Add an answer to the plan
 // POST/api/plan/:planId/answer
 router.post('/:planId/answer', verifyToken, async (req, res) => {
