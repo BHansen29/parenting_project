@@ -6,6 +6,7 @@ const router = express.Router();
 const Document = require('../models/Document');
 const User = require('../models/User');
 const planRoutes = require('./plan');
+const logicRoutes = require('./logic-engine');
 const { getFirebaseAuth } = require('../config/firebaseAdmin');
 
 const requireDatabaseConnection = (req, res, next) => {
@@ -51,7 +52,6 @@ router.get('/users', requireDatabaseConnection, async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
 
 // GET /api/documents/:id - Get a single document by ID
 router.get('/documents/:id', requireDatabaseConnection, async (req, res) => {
@@ -177,5 +177,6 @@ router.get('/', (req, res) => {
 });
 
 router.use('/plan', requireDatabaseConnection, planRoutes);
+router.use('/logic-engine', requireDatabaseConnection, logicRoutes);
 
 module.exports = router;
