@@ -1,23 +1,41 @@
+import { LogOut } from 'lucide-react';
 import './Header.css';
 import logo from '../../assets/logos/ShareCare_Symmetrical Diamond Logo (1120 x 310 px).png';
 
 export default function Header({
-  showNavigation = true,
   saved = false,
+  user = null,
+  onSignOut = null,
 }) {
   return (
     <header className="header">
       <div className="header__top-bar">
         <img src={logo} alt="ShareCare" className="header__logo" />
 
-        {saved && (
-          <div className="header__saved">
-            <svg className="header__saved-icon" viewBox="0 0 16 16" fill="none">
-              <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            Saved
-          </div>
-        )}
+        <div className="header__right">
+          {saved && (
+            <div className="header__saved">
+              <svg className="header__saved-icon" viewBox="0 0 16 16" fill="none">
+                <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Saved
+            </div>
+          )}
+
+          {user && (
+            <div className="header__user">
+              <span className="header__user-label">
+                Logged in as <strong>{user.email}</strong>
+              </span>
+              {onSignOut && (
+                <button className="header__signout-btn" onClick={onSignOut}>
+                  <LogOut size={16} />
+                  Sign Out
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );

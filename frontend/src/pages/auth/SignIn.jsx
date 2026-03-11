@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../lib/firebase';
-import { syncFirebaseUserProfile } from '../../lib/authApi';
+import { syncFirebaseUserProfileSafely } from '../../lib/authApi';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/common/card';
 import TextInput from '../../components/forms/TextInput';
 import '../Page.css';
@@ -55,11 +55,11 @@ export default function SignIn() {
         // Sign in the user in Firebase Auth with email + password
         const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
 
-        // Sync Mongo if Firebase verifies
-        await syncFirebaseUserProfile(userCredential.user);
+        // Try to sync Mongo profile, but do not block sign-in if backend/database is down.
+        await syncFirebaseUserProfileSafely(userCredential.user);
 
         // Next Step
-        navigate('/household-info');
+        navigate('/dashboard');
       } catch (err) {
         // Show Firebase error in the form
         setErrors({ general: err.message });
