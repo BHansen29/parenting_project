@@ -1,14 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Car, Info, Calendar, Check, Radio, Flag } from 'lucide-react';
+import { Car, Info, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/card';
 import { useForm } from '../hooks/useForm';
 import { useSectionFlag } from '../hooks/useSectionFlag';
 import './Page.css';
-import FlagButton from '../components/forms/FlagButton';
-import RadioButton from '../components/forms/RadioButton';
-import Checkbox from '../components/forms/Checkbox';
-import TextInput from '../components/forms/TextInput';
+import SectionHeader from '../components/forms/SectionHeader';
+import RadioQuestion from '../components/forms/RadioQuestion';
+import PolicyAgreementQuestion from '../components/forms/PolicyAgreementQuestion';
 import ScheduleBuilder from '../components/forms/ScheduleBuilder';
 
 export default function ParentingTimeAndCommunication() {
@@ -70,19 +69,10 @@ export default function ParentingTimeAndCommunication() {
             section: 'timeAndCommunication',
             payload: { [field]: value }
         });
-        const checkboxTransportation = document.getElementById('hide-checkbox-transportation');
-        const checkboxActivity = document.getElementById('hide-checkbox-activity');
-        const targetDescriptionField = document.getElementById( 'invisibility-target-transportation');
-        const targetDescriptionFieldActivity = document.getElementById( 'invisibility-target-activity');
-
-        //If user agrees to standard policy, hide custom field
-        checkboxTransportation.checked ? targetDescriptionField.style.display = 'none' : targetDescriptionField.style.display = 'flex';
-        checkboxActivity.checked ? targetDescriptionFieldActivity.style.display = 'none' : targetDescriptionFieldActivity.style.display = 'flex';
-
-        // Clear corresponding description error if user agrees to standard policy
+        // Clear the paired description error when user agrees to the standard policy
         if (value === true) {
-            const descriptionField = field === 'agreeToTransportationPolicy' 
-                ? 'transportationArrangementDescription' 
+            const descriptionField = field === 'agreeToTransportationPolicy'
+                ? 'transportationArrangementDescription'
                 : 'activityPolicyDescription';
             if (errors[descriptionField]) {
                 dispatch({
@@ -92,7 +82,7 @@ export default function ParentingTimeAndCommunication() {
                 });
             }
         }
-    }
+    };
 
     const handleScheduleChange = (schedule) => {
         dispatch({
@@ -156,161 +146,78 @@ export default function ParentingTimeAndCommunication() {
                     <CardContent>
                         <hr className="section-divider" />
                         <section className="transportation-agreement-section">
-                            <div className="section-header-with-flag">
-                                <div className="section-header">
-                                    <div className="car-icon">
-                                        <Car size={25} />
-                                    </div>
-                                    <div className="section-title-group">
-                                        <h2 className="section-title">Transportation Agreement</h2>
-                                        <p className="section-intro">Standard transportation arrangements</p>
-                                    </div>
-                                </div>
-                                <div className="section-flag">
-                                    <FlagButton
-                                        isFlagged={transportationAgreementFlag.isFlagged}
-                                        onClick={() => transportationAgreementFlag.toggleFlag()}
-                                    />
-                                </div>
-                            </div>
+                            <SectionHeader
+                                iconClassName="car-icon"
+                                icon={<Car size={25} />}
+                                title="Transportation Agreement"
+                                intro="Standard transportation arrangements"
+                                flag={transportationAgreementFlag}
+                            />
                         </section>
-                        <Card>
-                            <CardHeader>
-                                <CardDescription >
-                                    <div className="policy-description-group">
-                                        <h3 className="policy-title">Standard Transportation Policy: </h3>
-                                        <ul className="policy-description-list">
-                                            <li>Absent other agreement of the parties included in the attached parenting time schedule, 
-                                                each parent shall be responsible for providing transportation for the child(ren) at the 
-                                                beginning of the parent's parenting time period.
-                                            </li>
-                                            <li>
-                                                Each parent shall be responsible for providing transportation for the child(ren) to and 
-                                                from school during that parent's parenting time period.
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <Checkbox 
-                                    id="hide-checkbox-transportation"
-                                    label="I agree to the standard transportation policy"
-                                    name="agreeToTransportationPolicy"
-                                    checked={formData.agreeToTransportationPolicy}
-                                    onChange={handlePolicyChange('agreeToTransportationPolicy')}
-                                />
-                                <div className="custom-description-section"
-                                    id="invisibility-target-transportation"> 
-                                    <div className="or-divider">OR</div>
-                                    <TextInput className="text-input-long-text"
-                                        id="transportationArrangementDescription"
-                                        label="Please describe your preferred transportation arrangement:"
-                                        type="text"
-                                        value={formData.transportationArrangementDescription}
-                                        onChange={handleChange('transportationArrangementDescription')} 
-                                        placeholder="Describe how you would like transportation to be handled if you do not agree to the standard policy"
-                                    />
-                                </div>
-                            </CardContent>
-                        </Card>
+                        <PolicyAgreementQuestion
+                            policyTitle="Standard Transportation Policy:"
+                            policyItems={[
+                                'Absent other agreement of the parties included in the attached parenting time schedule, each parent shall be responsible for providing transportation for the child(ren) at the beginning of the parent\'s parenting time period.',
+                                'Each parent shall be responsible for providing transportation for the child(ren) to and from school during that parent\'s parenting time period.',
+                            ]}
+                            checkboxId="agreeToTransportationPolicy"
+                            checkboxLabel="I agree to the standard transportation policy"
+                            checked={formData.agreeToTransportationPolicy}
+                            onCheckboxChange={handlePolicyChange('agreeToTransportationPolicy')}
+                            textInput={{
+                                id: 'transportationArrangementDescription',
+                                label: 'Please describe your preferred transportation arrangement:',
+                                value: formData.transportationArrangementDescription,
+                                onChange: handleChange('transportationArrangementDescription'),
+                                placeholder: 'Describe how you would like transportation to be handled if you do not agree to the standard policy',
+                                error: errors.transportationArrangementDescription,
+                            }}
+                        />
 
                         <hr className="section-divider" />
-                        <section className="activities-and-sceduling-section">
-                            <div className="section-header-with-flag">
-                                <div className="section-header">
-                                    <div className="car-icon">
-                                        <Calendar size={25} />
-                                    </div>
-                                    <div className="section-title-group">
-                                        <h2 className="section-title">Activities & Scheduling</h2>
-                                        <p className="section-intro">Supporting your children's activities</p>
-                                    </div>
-                                </div>
-                                <div className="section-flag">
-                                    <FlagButton
-                                        isFlagged={activitiesAndSchedulingFlag.isFlagged}
-                                        onClick={() => activitiesAndSchedulingFlag.toggleFlag()}
-                                    />
-                                </div>
-                            </div>
+                        <section className="activities-and-scheduling-section">
+                            <SectionHeader
+                                iconClassName="car-icon"
+                                icon={<Calendar size={25} />}
+                                title="Activities & Scheduling"
+                                intro="Supporting your children's activities"
+                                flag={activitiesAndSchedulingFlag}
+                            />
                         </section>
-                        <Card>
-                            <CardHeader className="card-header-with-flag">
-                                <CardDescription >
-                                    <div className="policy-description-group">
-                                        <h3 className="policy-title">Standard Activity Policy: </h3>
-                                        <ul className="policy-description-list">
-                                            <li>
-                                                The scheduling of events, appointments, and activities shall not be done in a manner to 
-                                                cause undue inconvenience or harassment to the other parent.
-                                            </li>
-                                            <li>
-                                                Both parents must understand that the child(ren) need(s) to be able to participate in regular 
-                                                activities without interference and with the support of both parents.
-                                            </li>
-                                            <li>
-                                                Absent other agreement by the parents, the child(ren) shall continue to participate in those 
-                                                extracurricular activities, school-related and other activities in which they are currently enrolled, 
-                                                uninterrupted.
-                                            </li>
-                                            <li>
-                                                Each parent shall provide the other with notice of all extracurricular activities, school-related or otherwise, 
-                                                in which the child(ren) participates, schedules of all activities (handwritten if no formal schedule is provided 
-                                                by the activity) and the name of the activity leader (including address and telephone number if reasonably available).
-                                            </li>
-                                            <li>
-                                                Absent other agreement by the parents, it is the responsibility of the parent in possession of the child(ren) to provide 
-                                                transportation to an activity.
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <Checkbox
-                                    id="hide-checkbox-activity"
-                                    label="I agree to the standard activity policy"
-                                    name="agreeToActivityPolicy"
-                                    checked={formData.agreeToActivityPolicy}
-                                    onChange={handlePolicyChange('agreeToActivityPolicy')}
-                                />
-                                <div className="custom-description-section"
-                                    id="invisibility-target-activity"> 
-                                    <div className="or-divider">OR</div>
-                                    <TextInput className="text-input-long-text"
-                                        id="activityArrangementDescription"
-                                        label="Please describe your preferred activity policy:"
-                                        type="text"
-                                        value={formData.activityArrangementDescription}
-                                        onChange={handleChange('activityArrangementDescription')} 
-                                        placeholder="Describe how you would like activities and scheduling to be handled if you do not agree to the standard policy"
-                                    />
-                                </div>
-                            </CardContent>
-                        </Card>
+                        <PolicyAgreementQuestion
+                            policyTitle="Standard Activity Policy:"
+                            policyItems={[
+                                'The scheduling of events, appointments, and activities shall not be done in a manner to cause undue inconvenience or harassment to the other parent.',
+                                'Both parents must understand that the child(ren) need(s) to be able to participate in regular activities without interference and with the support of both parents.',
+                                'Absent other agreement by the parents, the child(ren) shall continue to participate in those extracurricular activities, school-related and other activities in which they are currently enrolled, uninterrupted.',
+                                'Each parent shall provide the other with notice of all extracurricular activities, school-related or otherwise, in which the child(ren) participates, schedules of all activities (handwritten if no formal schedule is provided by the activity) and the name of the activity leader (including address and telephone number if reasonably available).',
+                                'Absent other agreement by the parents, it is the responsibility of the parent in possession of the child(ren) to provide transportation to an activity.',
+                            ]}
+                            checkboxId="agreeToActivityPolicy"
+                            checkboxLabel="I agree to the standard activity policy"
+                            checked={formData.agreeToActivityPolicy}
+                            onCheckboxChange={handlePolicyChange('agreeToActivityPolicy')}
+                            textInput={{
+                                id: 'activityPolicyDescription',
+                                label: 'Please describe your preferred activity policy:',
+                                value: formData.activityPolicyDescription,
+                                onChange: handleChange('activityPolicyDescription'),
+                                placeholder: 'Describe how you would like activities and scheduling to be handled if you do not agree to the standard policy',
+                                error: errors.activityPolicyDescription,
+                            }}
+                        />
 
                         {/* ScheduleBuilder component -- just put here to show what having a schedule form
                         attached could look like, we can get rid of this after discussing */}
                         <hr className="section-divider" />
                         <section className="parenting-schedule-section">
-                            <div className="section-header-with-flag">
-                                <div className="section-header">
-                                    <div className="car-icon">
-                                        <Calendar size={25} />
-                                    </div>
-                                    <div className="section-title-group">
-                                        <h2 className="section-title">Parenting Schedule</h2>
-                                        <p className="section-intro">Create your monthly parenting schedule</p>
-                                    </div>
-                                </div>
-                                <div className="section-flag">
-                                    <FlagButton
-                                        isFlagged={parentingScheduleFlag.isFlagged}
-                                        onClick={() => parentingScheduleFlag.toggleFlag()}
-                                    />
-                                </div>
-                            </div>
+                            <SectionHeader
+                                iconClassName="car-icon"
+                                icon={<Calendar size={25} />}
+                                title="Parenting Schedule"
+                                intro="Create your monthly parenting schedule"
+                                flag={parentingScheduleFlag}
+                            />
                         </section>
                         <Card>
                             <CardHeader>
@@ -332,136 +239,57 @@ export default function ParentingTimeAndCommunication() {
 
                         <hr className="section-divider" />
                         <section className="communication-section">
-                            <div className="section-header">
-                                <div className="car-icon">
-                                    <Info size={25} />
-                                </div>
-                                <div className="section-title-group">
-                                    <h2 className="section-title">Communication with Co-Parent</h2>
-                                    <p className="section-intro">Phone and communication access</p>
-                                </div>
-                            </div>
+                            <SectionHeader
+                                iconClassName="car-icon"
+                                icon={<Info size={25} />}
+                                title="Communication with Co-Parent"
+                                intro="Phone and communication access"
+                            />
                         </section>
-                        <Card>
-                            <CardHeader className="card-header-with-flag">
-                                <CardDescription className={"card-heading-question-bold"}>
-                                    If your child is with you, are they allowed to talk to your co-parent on the phone?
-                                </CardDescription>
-                                <FlagButton
-                                    isFlagged={communicationWithCoParentOnPhoneFlag.isFlagged}
-                                    onClick={() => communicationWithCoParentOnPhoneFlag.toggleFlag()}
-                                />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="radio-group">
-                                    <RadioButton
-                                        name="communicationWithCoParentOnPhone"
-                                        value="yes"
-                                        onChange={(e) => handleChange('communicationWithCoParentOnPhone')(e.target.value)}
-                                        label="Yes"
-                                        checked={formData.communicationWithCoParentOnPhone === 'yes'}
-                                    />
-                                    <RadioButton
-                                        name="communicationWithCoParentOnPhone"
-                                        value="no"
-                                        onChange={(e) => handleChange('communicationWithCoParentOnPhone')(e.target.value)}
-                                        label="No"
-                                        checked={formData.communicationWithCoParentOnPhone === 'no'}
-                                    />
-                                    <RadioButton
-                                        name="communicationWithCoParentOnPhone"
-                                        value="sometimes"
-                                        onChange={(e) => handleChange('communicationWithCoParentOnPhone')(e.target.value)}
-                                        label="Sometimes (please describe)"
-                                        checked={formData.communicationWithCoParentOnPhone === 'sometimes'}
-                                    />
-                                    {formData.communicationWithCoParentOnPhone === 'sometimes' && (
-                                        <TextInput className="text-input-long-text"
-                                            id="communicationWithCoParentOnPhoneDescription"
-                                            label="Please describe the circumstances under which your child can talk to your co-parent on the phone:"
-                                            type="text"
-                                            value={formData.communicationWithCoParentOnPhoneDescription}
-                                            onChange={handleChange('communicationWithCoParentOnPhoneDescription')}
-                                            placeholder="Describe when your child can talk to your co-parent on the phone"
-                                        />
-                                    )}
-                                    <RadioButton
-                                        name="communicationWithCoParentOnPhone"
-                                        value="needMoreInfo"
-                                        onChange={(e) => handleChange('communicationWithCoParentOnPhone')(e.target.value)}
-                                        label="I need more information"
-                                        checked={formData.communicationWithCoParentOnPhone === 'needMoreInfo'}
-                                    />
-                                    <RadioButton
-                                        name="communicationWithCoParentOnPhone"
-                                        value="defaultToCoParentChoice"
-                                        onChange={(e) => handleChange('communicationWithCoParentOnPhone')(e.target.value)}
-                                        label="Default to my co-parent's choice"
-                                        checked={formData.communicationWithCoParentOnPhone === 'defaultToCoParentChoice'}
-                                    />
-                                </div>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader className="card-header-with-flag">
-                                <CardDescription className={"card-heading-question-bold"}>
-                                    Should your co-parent be told if your children get sick or injured?
-                                </CardDescription>
-                                <FlagButton
-                                    isFlagged={notifyCoParentOfChildRelatedEventsFlag.isFlagged}
-                                    onClick={() => notifyCoParentOfChildRelatedEventsFlag.toggleFlag()}
-                                />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="radio-group">
-                                    <RadioButton
-                                        name="notifyCoParentOfChildRelatedEvents"
-                                        value="yes"
-                                        onChange={(e) => handleChange('notifyCoParentOfChildRelatedEvents')(e.target.value)}
-                                        label="Yes"
-                                        checked={formData.notifyCoParentOfChildRelatedEvents === 'yes'}
-                                    />
-                                    <RadioButton
-                                        name="notifyCoParentOfChildRelatedEvents"
-                                        value="no"
-                                        onChange={(e) => handleChange('notifyCoParentOfChildRelatedEvents')(e.target.value)}
-                                        label="No"
-                                        checked={formData.notifyCoParentOfChildRelatedEvents === 'no'}
-                                    />
-                                    <RadioButton
-                                        name="notifyCoParentOfChildRelatedEvents"
-                                        value="sometimes"
-                                        onChange={(e) => handleChange('notifyCoParentOfChildRelatedEvents')(e.target.value)}
-                                        label="Sometimes (please describe)"
-                                        checked={formData.notifyCoParentOfChildRelatedEvents === 'sometimes'}
-                                    />
-                                    {formData.notifyCoParentOfChildRelatedEvents === 'sometimes' && (
-                                        <TextInput className="text-input-long-text"
-                                            id="notifyCoParentOfChildRelatedEventsDescription"
-                                            label="Please describe the circumstances under which you would notify your co-parent if your child gets sick or injured:"
-                                            type="text"
-                                            value={formData.notifyCoParentOfChildRelatedEventsDescription}
-                                            onChange={handleChange('notifyCoParentOfChildRelatedEventsDescription')}
-                                            placeholder="Describe when you would notify your co-parent if your child gets sick or injured"
-                                        />
-                                    )}
-                                    <RadioButton
-                                        name="notifyCoParentOfChildRelatedEvents"
-                                        value="needMoreInfo"
-                                        onChange={(e) => handleChange('notifyCoParentOfChildRelatedEvents')(e.target.value)}
-                                        label="I need more information"
-                                        checked={formData.notifyCoParentOfChildRelatedEvents === 'needMoreInfo'}
-                                    />
-                                    <RadioButton
-                                        name="notifyCoParentOfChildRelatedEvents"
-                                        value="defaultToCoParentChoice"
-                                        onChange={(e) => handleChange('notifyCoParentOfChildRelatedEvents')(e.target.value)}
-                                        label="Default to my co-parent's choice"
-                                        checked={formData.notifyCoParentOfChildRelatedEvents === 'defaultToCoParentChoice'}
-                                    />
-                                </div>
-                            </CardContent>
-                        </Card>
+                        <RadioQuestion
+                            question="If your child is with you, are they allowed to talk to your co-parent on the phone?"
+                            name="communicationWithCoParentOnPhone"
+                            value={formData.communicationWithCoParentOnPhone}
+                            onChange={handleChange('communicationWithCoParentOnPhone')}
+                            flag={communicationWithCoParentOnPhoneFlag}
+                            options={[
+                                { value: 'yes',                  label: 'Yes' },
+                                { value: 'no',                   label: 'No' },
+                                { value: 'sometimes',            label: 'Sometimes (please describe)' },
+                                { value: 'needMoreInfo',         label: 'I need more information' },
+                                { value: 'defaultToCoParentChoice', label: "Default to my co-parent's choice" },
+                            ]}
+                            conditionalInput={{
+                                triggerValue: 'sometimes',
+                                id: 'communicationWithCoParentOnPhoneDescription',
+                                label: 'Please describe the circumstances under which your child can talk to your co-parent on the phone:',
+                                value: formData.communicationWithCoParentOnPhoneDescription,
+                                onChange: handleChange('communicationWithCoParentOnPhoneDescription'),
+                                placeholder: 'Describe when your child can talk to your co-parent on the phone',
+                            }}
+                        />
+                        <RadioQuestion
+                            question="Should your co-parent be told if your children get sick or injured?"
+                            name="notifyCoParentOfChildRelatedEvents"
+                            value={formData.notifyCoParentOfChildRelatedEvents}
+                            onChange={handleChange('notifyCoParentOfChildRelatedEvents')}
+                            flag={notifyCoParentOfChildRelatedEventsFlag}
+                            options={[
+                                { value: 'yes',                  label: 'Yes' },
+                                { value: 'no',                   label: 'No' },
+                                { value: 'sometimes',            label: 'Sometimes (please describe)' },
+                                { value: 'needMoreInfo',         label: 'I need more information' },
+                                { value: 'defaultToCoParentChoice', label: "Default to my co-parent's choice" },
+                            ]}
+                            conditionalInput={{
+                                triggerValue: 'sometimes',
+                                id: 'notifyCoParentOfChildRelatedEventsDescription',
+                                label: 'Please describe the circumstances under which you would notify your co-parent if your child gets sick or injured:',
+                                value: formData.notifyCoParentOfChildRelatedEventsDescription,
+                                onChange: handleChange('notifyCoParentOfChildRelatedEventsDescription'),
+                                placeholder: 'Describe when you would notify your co-parent if your child gets sick or injured',
+                            }}
+                        />
                     </CardContent>
                 </Card>
             </div>

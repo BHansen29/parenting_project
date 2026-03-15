@@ -3,7 +3,7 @@ import Footer from "../components/common/Footer";
 import { useNavigate } from 'react-router-dom';
 import { useForm } from '../hooks/useForm';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/card';
-import TextInput from '../components/forms/TextInput';
+import TextQuestion from '../components/forms/TextQuestion';
 import './Page.css';
 
 export default function CustodySchedule() {
@@ -86,18 +86,15 @@ export default function CustodySchedule() {
           </CardHeader>
 
           <CardContent>
-            <form noValidate>
-              <TextInput
-                id="residentialParent"
-                label="Primary Residential Parent"
-                type="text"
-                value={formData.residentialParent ?? ''}
-                onChange={handleChange('residentialParent')}
-                required
-                error={errors.residentialParent}
-                placeholder="Full Name"
-              />
-            </form>
+            <TextQuestion
+              question="Primary Residential Parent"
+              id="residentialParent"
+              value={formData.residentialParent ?? ''}
+              onChange={handleChange('residentialParent')}
+              required
+              error={errors.residentialParent}
+              placeholder="Full Name"
+            />
           </CardContent>
         </Card>
       </div>
