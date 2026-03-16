@@ -29,4 +29,6 @@ Thumbs.db
 *.swp
 *.swo
 
+*.override.yml
+
 backend/docs/decision-tree-design.md
