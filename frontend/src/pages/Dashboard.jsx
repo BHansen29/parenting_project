@@ -6,6 +6,7 @@ import { auth } from '../lib/firebase';
 import Header from '../components/common/Header';
 import InviteModal from '../components/common/InviteModal';
 import './Dashboard.css';
+import { API_BASE_URL, buildApiUrl } from '../lib/apiClient';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -13,9 +14,7 @@ export default function Dashboard() {
   const [isInviteOpen, setIsInviteOpen] = useState(false);
 
   // Mock plan data — replace with real data fetching later
-  const [plans, setPlans] = useState([
-    { id: 1, name: 'Untitled Plan', status: 'DRAFT', lastModified: '3/3/2026' },
-  ]);
+  const [plans, setPlans] = useState([{ id: 1, name: 'Loading', status: 'DRAFT', lastModified: '3/3/2026'}]);
 
   const [editingId, setEditingId] = useState(null);
   const [editingName, setEditingName] = useState('');
@@ -28,6 +27,32 @@ export default function Dashboard() {
     window.addEventListener('scroll', close);
     return () => { window.removeEventListener('click', close); window.removeEventListener('scroll', close); };
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    user.getIdToken()
+      .then((idToken) => {
+        return fetch(buildApiUrl("api/plan/" + user.uid), {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${idToken}`,
+          }
+        });
+      })
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error("Failed to retrieve plans");
+        }
+        return res.json();
+      })
+      .then((data) => {
+        setPlans(data);
+      })
+      .catch((err) => {
+        console.error(err.message);
+      });
+  }, [user]);
 
   const handleContextMenu = (e, plan) => {
     e.preventDefault();
@@ -51,12 +76,30 @@ export default function Dashboard() {
     setEditingId(null);
   };
 
-  const handleNewPlan = () => {
-    const today = new Date().toLocaleDateString('en-US');
-    setPlans(prev => [
-      ...prev,
-      { id: Date.now(), name: 'Untitled Plan', status: 'DRAFT', lastModified: today },
-    ]);
+  const handleNewPlan = async () => {
+    if (user) {
+      user.getIdToken().then((idToken) => {
+        fetch(buildApiUrl("api/plan/"), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({userID: user.uid, startQuestionId: "69addc0430d68e5ffdc691f7"})
+        })
+        .then( async (response) => {
+          if (!response.ok) {
+            console.error("Failed to create plan: ", response.message)
+          } else {
+            const plan = await response.json()
+            setPlans(prev => [...prev, plan]);
+          }
+        });
+      })
+      .catch((error) => {
+        console.error("Couldn't retrieve session token: ", error.message)
+      });
+    }
   };
 
   useEffect(() => {

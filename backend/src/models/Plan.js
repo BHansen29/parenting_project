@@ -29,19 +29,29 @@ const planSchema = new mongoose.Schema(
   userID: { 
     type: String, 
     required: true 
-},
+  },
+  name: {
+    type: String,
+    default: 'Untitled Plan'
+  },
   status: { 
-    type: String, enum: ['in_progress', 'completed', 'ready_for_review'], 
+    type: String, enum: ['in_progress', 'completed', 'ready_for_review', 'DRAFT'], 
     default: 'in_progress' 
-},
+  },
   currentQuestion: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Question",
+    default: "69addc0430d68e5ffdc691f7"
   },
   allowSharing: {
     type: Boolean,
     required: true,
     default: false
+  },
+  lastModified: {
+    type: String,
+    required: true,
+    default: new Date().toLocaleDateString('en-US')
   },
   children: [questionResponseSchema],
 })

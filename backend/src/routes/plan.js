@@ -7,8 +7,7 @@ const verifyToken = require('../middleware/verifyToken');
 // POST /api/plan - Start a new plan
 router.post('/', verifyToken, async (req, res) => {
   try {
-    const userID = req.user.uid;
-    const { startQuestionId } = req.body;
+    const { userID, startQuestionId } = req.body;
 
     // startQuestionId is required to know where to begin
     if (!startQuestionId) {
@@ -28,6 +27,19 @@ router.post('/', verifyToken, async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 });
+
+// GET /api/plan/allAdmin -> Get all plans in system
+router.get('/allAdmin', async (req, res) => {
+  const plans = await Plan.find();
+  res.json(plans)
+});
+
+// GET /api/plan/all -> Get all plans a user currently owns
+router.get('/:uid', verifyToken, async (req, res) => {
+  const plans = await Plan.find({userID: req.params.uid});
+  res.status(200).json(plans)
+});
+
 
 // GET /api/plan/:planId/current -> Get the current question for a plan
 router.get('/:planId/current', verifyToken, async (req, res) => {
