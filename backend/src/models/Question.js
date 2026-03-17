@@ -9,6 +9,18 @@ const questionSchema = new mongoose.Schema({
     enum: ["multiple choice", "integer input", "checkbox"], // this restricts our types to the strings listed (will likely grow)
     required: true
   },
+  qTitle: {
+    // this specifies the title that will display for the question
+    type: String,
+    required: true,
+    default: "BLANK"
+  },
+  qIcon: {
+    type: String,
+    required: true,
+    enum: ["scale-icon", "house-icon", "user-icon", "info-icon", "users-icon", "house-icon", "scale-icon", "car-icon"],
+    default: "scale-icon"
+  },
   qText: {
     // this is the content of the question being asked
     type: String,
@@ -23,7 +35,13 @@ const questionSchema = new mongoose.Schema({
   section: {
     // this describes the section of the tree this question falls under (ex: "health insurance coverage", "child support", etc.)
     type: String,
-    enum: ["allocation_of_parental_rights_and_responsibilities", "child_support"],
+    enum: [
+      "getting-started", 
+      "parental-rights", 
+      "parenting-time-communication",
+      "custody-schedule",
+      "transportation",
+      "review"],
     required: true
   },
 

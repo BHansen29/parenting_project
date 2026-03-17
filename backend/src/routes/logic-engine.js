@@ -19,7 +19,7 @@ router.get('/nextQuestion/:qkey/:answer', async (req, res) => {
     ? nextQRules.goToDefault 
     : nextQRules.nextQuestions.find(rule => questionLogicHandler.evaluate(userAnswer, rule.operator, rule.value)).goTo
   try {
-    const nextQ = await Question.find({qKey: next})
+    const nextQ = await Question.findOne({qKey: next})
     console.log("Returning next question of id: " + next)
     res.status(200).json(nextQ)
   } catch(err) {
