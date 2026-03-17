@@ -3,7 +3,7 @@ import Footer from '../components/common/Footer';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from '../hooks/useForm';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/card';
-import TextInput from '../components/forms/TextInput';
+import TextQuestion from '../components/forms/TextQuestion';
 import './Page.css';
 
 export default function Transportation() {
@@ -86,18 +86,15 @@ export default function Transportation() {
           </CardHeader>
 
           <CardContent>
-            <form noValidate>
-              <TextInput
-                id="responsibleParent"
-                label="Parent Responsible for Transportation"
-                type="text"
-                value={formData.responsibleParent ?? ''}
-                onChange={handleChange('responsibleParent')}
-                required
-                error={errors.responsibleParent}
-                placeholder="Full Name"
-              />
-            </form>
+            <TextQuestion
+              question="Parent Responsible for Transportation"
+              id="responsibleParent"
+              value={formData.responsibleParent ?? ''}
+              onChange={handleChange('responsibleParent')}
+              required
+              error={errors.responsibleParent}
+              placeholder="Full Name"
+            />
           </CardContent>
         </Card>
       </div>
