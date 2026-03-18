@@ -62,8 +62,29 @@ export default function Dashboard() {
   const [deleteTarget, setDeleteTarget] = useState(null); // plan pending confirmation
 
   const handleDeletePlan = (id) => {
-    setPlans(prev => prev.filter(plan => plan.id !== id));
-    setDeleteTarget(null);
+    if (user) {
+      user.getIdToken().then((idToken) => {
+        fetch(buildApiUrl("api/plan/delete"), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({userID: user.uid, pID: id})
+        })
+        .then( async (response) => {
+          if (!response.ok) {
+            console.error("Failed to delete plan: ", response.message)
+          } else {
+            setPlans(prev => prev.filter(plan => plan._id !== id));
+            setDeleteTarget(null);
+          }
+        });
+      })
+      .catch((error) => {
+        console.error("Couldn't retrieve session token: ", error.message)
+      });
+    }
   };
 
   const startEditing = (plan) => {
@@ -129,7 +150,7 @@ export default function Dashboard() {
             </p>
             <div className="delete-modal__actions">
               <button className="delete-modal__cancel" onClick={() => setDeleteTarget(null)}>Cancel</button>
-              <button className="delete-modal__confirm" onClick={() => handleDeletePlan(deleteTarget.id)}>Delete</button>
+              <button className="delete-modal__confirm" onClick={() => handleDeletePlan(deleteTarget._id)}>Delete</button>
             </div>
           </div>
         </div>

@@ -28,6 +28,22 @@ router.post('/', verifyToken, async (req, res) => {
   }
 });
 
+// POST /api/plan/delete - Delete a plan with the pid specified in request body
+router.post('/delete', verifyToken, async (req, res) => {
+  try {
+    const { userID, pID } = req.body;
+    
+    const deletedItem = await Plan.findByIdAndDelete({_id: pID, userID: userID});
+    if (deletedItem) {
+      return res.status(200).json({ message: 'Plan deleted successfully' });
+    } else {
+      return res.status(401).json({ message: 'Unauthorized to delete this plan or plan not found' });
+    }
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 // GET /api/plan/allAdmin -> Get all plans in system
 router.get('/allAdmin', async (req, res) => {
   const plans = await Plan.find();
