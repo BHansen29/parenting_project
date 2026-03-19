@@ -131,7 +131,7 @@ describe('SignIn', () => {
     fireEvent.click(screen.getByRole('button', { name: /^sign in$/i }))
     await screen.findByText('Signing in...')
     await vi.waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/getting-started')
+      expect(mockNavigate).toHaveBeenCalledWith('/dashboard')
     }, { timeout: 2000 })
   })
 

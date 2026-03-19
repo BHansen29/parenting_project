@@ -4,100 +4,89 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/card';
 import { useForm } from '../hooks/useForm';
 import { useSectionFlag } from '../hooks/useSectionFlag';
-import { useNavigation } from '../context/NavigationContext';
 import './Page.css';
 import SectionHeader from '../components/forms/SectionHeader';
 import RadioQuestion from '../components/forms/RadioQuestion';
 
 export default function ParentalRights() {
+
     const navigate = useNavigate();
     const { state, dispatch } = useForm();
-    const { setOnNext, setOnBack } = useNavigation();
 
-    const formData = state.parentalRights ?? {
-        appliesToAllChildren: '',
-        livingArrangements: '',
-        decisionMaking: '',
-        errors: {}
-    };
+    //form data and errors for this section
+    const formData = state.parentalRights ?? {appliesToAllChildren: '', livingArrangement: '', decisionMaking: '', errors: {} };
+    const errors = state.parentalRights?.errors ?? {};
 
+    //flag states for this section
     const childrenApplicationFlag = useSectionFlag('childrenApplication');
     const livingArrangementsFlag = useSectionFlag('livingArrangements');
     const decisionMakingFlag = useSectionFlag('decisionMaking');
 
-    // Separate error state for each radio group
-    const [appliesToAllChildrenError, setAppliesToAllChildrenError] = useState('');
-    const [livingArrangementsError, setLivingArrangementsError] = useState('');
-    const [decisionMakingError, setDecisionMakingError] = useState('');
-
-    // ── Clear all errors on mount (e.g. user navigated away and came back) ──
-    useEffect(() => {
-        setAppliesToAllChildrenError('');
-        setLivingArrangementsError('');
-        setDecisionMakingError('');
-    }, []);
-
+    //scroll to first error when validation fails
     const [submitAttempted, setSubmitAttempted] = useState(false);
-
     useEffect(() => {
         if (submitAttempted) {
-            const firstError = document.querySelector('.radio-group-error');
-            if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            const firstError = document.querySelector('.text-input__error-message, .date-picker__error-message');
+            if (firstError) {
+                firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
             setSubmitAttempted(false);
         }
     }, [formData, submitAttempted]);
 
-    const handleFormChange = (field) => (e) => {
-        dispatch({ type: 'UPDATE_SECTION', section: 'parentalRights', payload: { [field]: e.target.value } });
-        // Clear the corresponding error on selection
-        if (field === 'appliesToAllChildren') setAppliesToAllChildrenError('');
-        if (field === 'livingArrangements')   setLivingArrangementsError('');
-        if (field === 'decisionMaking')       setDecisionMakingError('');
+    //generic change handler for form fields in this section
+    const handleFormChange = (section, field) => (value) => {
+        dispatch({
+        type: 'UPDATE_SECTION',
+        section: section,
+        payload: { [field]: value }
+        });
+        if (errors[field]) {
+        dispatch({
+            type: 'UPDATE_SECTION',
+            section: section,
+            payload: { errors: { ...errors, [field]: '' } }
+        });
+        }
     };
 
     const validateForm = () => {
-        let isValid = true;
-
+        const formErrors = {};
         if (!formData.appliesToAllChildren) {
-            setAppliesToAllChildrenError('Please select an option to continue');
-            isValid = false;
-        } else {
-            setAppliesToAllChildrenError('');
+            formErrors.appliesToAllChildren = 'Please select an option';
         }
-
         if (!formData.livingArrangements) {
-            setLivingArrangementsError('Please select an option to continue');
-            isValid = false;
-        } else {
-            setLivingArrangementsError('');
+            formErrors.livingArrangements = 'Please select an option';
         }
-
         if (!formData.decisionMaking) {
-            setDecisionMakingError('Please select an option to continue');
-            isValid = false;
-        } else {
-            setDecisionMakingError('');
+            formErrors.decisionMaking = 'Please select an option';
         }
 
-        return isValid;
-    };
+        dispatch({
+            type: 'UPDATE_SECTION',
+            section: 'parentalRights',
+            payload: { errors: formErrors }
+        });
+
+        return Object.keys(formErrors).length === 0;
+    }
 
     const handleNext = () => {
-        if (validateForm()) {
-            navigate('/parenting-time-communication');
-        } else {
-            setSubmitAttempted(true);
-        }
-    };
+    if (validateForm()) {
+      navigate('/parenting-time-communication');
+    } else {
+      setSubmitAttempted(true);
+    }
+  };
 
-    const handleBack = () => {
-        navigate('/getting-started');
-    };
-
-    useEffect(() => {
-        setOnNext(handleNext);
-        setOnBack(handleBack);
-    }, [state, formData]);
+   const handleBack = () => {
+    dispatch({
+      type: 'UPDATE_SECTION',
+      section: 'parentalRights',
+      payload: { errors: {} }
+    });
+    navigate('/getting-started');
+  };
 
     return (
         <div className="page-container">
@@ -105,15 +94,11 @@ export default function ParentalRights() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Parental Rights</CardTitle>
-                        <CardDescription>
-                            Define where your children live and who will make legal decisions.
-                            Fields marked with <span className="required-asterisk">*</span> are required.
-                        </CardDescription>
+                        <CardDescription>Define where your children live and who will make legal decisions. </CardDescription>
                     </CardHeader>
+
                     <CardContent>
                         <hr className="section-divider" />
-
-                        {/* ── Applies to All Children ── */}
                         <section className="children-application-section">
                             <SectionHeader
                                 iconClassName="scale-icon"
@@ -138,8 +123,6 @@ export default function ParentalRights() {
                         />
 
                         <hr className="section-divider" />
-
-                        {/* ── Living Arrangements ── */}
                         <section className="living-arrangements-section">
                             <SectionHeader
                                 iconClassName="house-icon"
@@ -165,8 +148,6 @@ export default function ParentalRights() {
                         />
 
                         <hr className="section-divider" />
-
-                        {/* ── Legal Decision Making ── */}
                         <section className="decision-making-section">
                             <SectionHeader
                                 iconClassName="scale-icon"
@@ -194,5 +175,5 @@ export default function ParentalRights() {
                 </Card>
             </div>
         </div>
-    );
+    )
 }
