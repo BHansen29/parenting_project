@@ -7,11 +7,14 @@ import Header from '../components/common/Header';
 import InviteModal from '../components/common/InviteModal';
 import './Dashboard.css';
 import { API_BASE_URL, buildApiUrl } from '../lib/apiClient';
+import { useForm } from '../hooks/useForm';
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
+
+  const { dispatch } = useForm();
 
   // Mock plan data — replace with real data fetching later
   const [plans, setPlans] = useState([{ id: 1, name: 'Loading', status: 'DRAFT', lastModified: '3/3/2026'}]);
@@ -106,7 +109,8 @@ export default function Dashboard() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${idToken}`,
           },
-          body: JSON.stringify({userID: user.uid, startQuestionId: "69addc0430d68e5ffdc691f7"})
+          // this will need to be changed to something more resilient
+          body: JSON.stringify({userID: user.uid, startQuestionId: "69bb3f4781085f0fd64772e9"})
         })
         .then( async (response) => {
           if (!response.ok) {
@@ -208,7 +212,7 @@ export default function Dashboard() {
 
           <div className="dashboard__plans-grid">
             {plans.map((plan) => (
-              <div key={plan.id} className="plan-card" onContextMenu={e => handleContextMenu(e, plan)}>
+              <div key={plan._id} className="plan-card" onContextMenu={e => handleContextMenu(e, plan)}>
                 <div className="plan-card__top">
                   <div className="plan-card__icon">
                     <FileText size={24} color="#6b7280" />
@@ -219,13 +223,13 @@ export default function Dashboard() {
                 </div>
 
                 <div className="plan-card__name-row">
-                  {editingId === plan.id ? (
+                  {editingId === plan._id ? (
                     <input
                       className="plan-card__name-input"
                       value={editingName}
                       onChange={e => setEditingName(e.target.value)}
-                      onBlur={() => commitEdit(plan.id)}
-                      onKeyDown={e => e.key === 'Enter' && commitEdit(plan.id)}
+                      onBlur={() => commitEdit(plan._id)}
+                      onKeyDown={e => e.key === 'Enter' && commitEdit(plan._id)}
                       autoFocus
                     />
                   ) : (
@@ -245,7 +249,14 @@ export default function Dashboard() {
 
                 <button
                   className="plan-card__open-btn"
-                  onClick={() => navigate('/getting-started')}
+                  onClick={() => {     
+                    dispatch({
+                        type: 'UPDATE_SECTION',
+                        section: "plan",
+                        payload: plan
+                    });
+                    navigate('/getting-started')
+                  }}
                 >
                   Open Plan &rarr;
                 </button>

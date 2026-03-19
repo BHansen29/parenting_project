@@ -4,12 +4,17 @@ import Sidebar from '../components/common/Sidebar';
 import Header from '../components/common/Header';
 import './Layout.css';
 import Footer from '../components/common/Footer';
+import { buildApiUrl } from '../lib/apiClient';
+import { useForm } from '../hooks/useForm';
 
 export default function Layout({ children }) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
+  const { state, dispatch } = useForm();
+  const plan = state.plan
+  const qMeta = state.question
   // Define the page navigation order
   const pageOrder = [
     '/getting-started',
@@ -53,9 +58,29 @@ export default function Layout({ children }) {
     }
   };
 
-  const handleNext = () => {
-    if (currentPageIndex < pageOrder.length - 1) {
-      navigate(pageOrder[currentPageIndex + 1]);
+  const handleNext = async () => {
+    const apiURL = pageOrder[currentPageIndex] === '/getting-started' 
+      ? '/api/logic-engine/question/' + plan.currentQuestion 
+      : '/api/logic-engine/nextQuestion/' + qMeta.qKey + '/' + qMeta.answer
+    try {
+      console.log(apiURL)
+      const response = await fetch(buildApiUrl(apiURL));
+      if (!response.ok) {
+          throw new Error(`Response status: ${response.status}`);
+      }
+      const data = await response.json()
+      console.log(data)
+      if (currentPageIndex < pageOrder.length - 1) {
+        // update question in context
+        dispatch({
+          type: 'UPDATE_SECTION',
+          section: "question",
+          payload: data
+        });
+        navigate("/" + data.section);
+      }
+    } catch (e) {
+        console.error(e.message)
     }
   };
 

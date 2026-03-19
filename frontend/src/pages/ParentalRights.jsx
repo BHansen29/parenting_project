@@ -12,7 +12,7 @@ export default function ParentalRights() {
 
     const navigate = useNavigate();
     const { state, dispatch } = useForm();
-
+    const question = state.question
     //form data and errors for this section
     const formData = state.parentalRights ?? {appliesToAllChildren: '', livingArrangement: '', decisionMaking: '', errors: {} };
     const errors = state.parentalRights?.errors ?? {};
@@ -99,78 +99,32 @@ export default function ParentalRights() {
 
                     <CardContent>
                         <hr className="section-divider" />
-                        <section className="children-application-section">
+                        <section className={question.qKey + "-section"}>
                             <SectionHeader
-                                iconClassName="scale-icon"
+                                iconClassName={question.qIcon}
                                 icon={<Scale size={25} />}
-                                title="Applies to All Children?"
-                                intro="Simplify by applying answers to all children."
+                                title={question.qTitle}
+                                intro={question.qIntro}
                             />
                         </section>
-                        <RadioQuestion
-                            question="Will your answers apply to all of your children that you share with your co-parent?"
-                            name="appliesToAllChildren"
-                            value={formData.appliesToAllChildren}
-                            onChange={handleFormChange('parentalRights', 'appliesToAllChildren')}
-                            flag={childrenApplicationFlag}
-                            error={errors.appliesToAllChildren}
-                            options={[
-                                { value: 'yes',               label: 'Yes',                          description: 'My answers will be the same for all children' },
-                                { value: 'no',                label: 'No',                           description: 'I need to answer separately for each child' },
-                                { value: 'needMoreInfo',      label: 'I need more information' },
-                                { value: 'defaultToCoParent', label: "Default to my co-parent's choice" },
-                            ]}
-                        />
-
-                        <hr className="section-divider" />
-                        <section className="living-arrangements-section">
-                            <SectionHeader
-                                iconClassName="house-icon"
-                                icon={<House size={25} />}
-                                title="Living Arrangements"
-                                intro="Where will your children live?"
-                            />
-                        </section>
-                        <RadioQuestion
-                            question="Do you want your children to live with you?"
-                            name="livingArrangements"
-                            value={formData.livingArrangements}
-                            onChange={handleFormChange('parentalRights', 'livingArrangements')}
-                            flag={livingArrangementsFlag}
-                            error={errors.livingArrangements}
-                            options={[
-                                { value: 'parent1FullTime',   label: 'Yes, all the time' },
-                                { value: 'parent1Occasional', label: 'Yes, on occasion' },
-                                { value: 'parent1VisitingOnly', label: 'No, I just want visiting time' },
-                                { value: 'needMoreInfo',      label: 'I need more information' },
-                                { value: 'defaultToCoParent', label: "Default to my co-parent's choice" },
-                            ]}
-                        />
-
-                        <hr className="section-divider" />
-                        <section className="decision-making-section">
-                            <SectionHeader
-                                iconClassName="scale-icon"
-                                icon={<Scale size={25} />}
-                                title="Legal Decision Making"
-                                intro="Who makes important decisions?"
-                            />
-                        </section>
-                        <RadioQuestion
-                            question="Do you want to make legal decisions for your children?"
-                            name="decisionMaking"
-                            value={formData.decisionMaking}
-                            onChange={handleFormChange('parentalRights', 'decisionMaking')}
-                            flag={decisionMakingFlag}
-                            error={errors.decisionMaking}
-                            options={[
-                                { value: 'parent1Sole',          label: 'Yes, by myself' },
-                                { value: 'jointWithCoParent',    label: 'Yes, with my co-parent' },
-                                { value: 'noLegalDecisionMaking', label: 'No' },
-                                { value: 'needMoreInfo',         label: 'I need more information' },
-                                { value: 'defaultToCoParent',    label: "Default to my co-parent's choice" },
-                            ]}
-                        />
+                        {(() => {
+                            if (question.type === "multiple choice") {
+                                return (
+                                    <RadioQuestion
+                                        question={question.qText}
+                                        name={question.qKey}
+                                        value={formData.appliesToAllChildren}
+                                        // need to change the 1st & 2nd value in FormContext.jsx maybe?
+                                        // def need to make changes regarding this since i think it broke some things
+                                        onChange={handleFormChange(question.section, question.qKey)}
+                                        //onchange={handleFormChange('parentalRights', 'appliesToAllChildren')}
+                                        flag={childrenApplicationFlag}
+                                        error={errors.appliesToAllChildren}
+                                        options={question.options}
+                                    />
+                                );
+                            }
+                        })()}
                     </CardContent>    
                 </Card>
             </div>

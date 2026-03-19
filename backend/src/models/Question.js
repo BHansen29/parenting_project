@@ -2,11 +2,29 @@
 
 const mongoose = require('mongoose');
 
+const optionSchema = new mongoose.Schema(
+{
+  value: { 
+    type: String, 
+    // required: true,
+    default: ''
+  },
+  label: { 
+    type: String,
+    // required: true,
+    default: '' 
+  },
+  description: {
+    type: String,
+    default: '' 
+  },
+});
+
 const questionSchema = new mongoose.Schema({
   type: {
     // this specifies if question is multiple choice, integer input, checkbox, etc.
     type: String,
-    enum: ["multiple choice", "integer input", "checkbox"], // this restricts our types to the strings listed (will likely grow)
+    enum: ["multiple choice", "integer input", "checkbox", "text input"], // this restricts our types to the strings listed (will likely grow)
     required: true
   },
   qTitle: {
@@ -15,10 +33,14 @@ const questionSchema = new mongoose.Schema({
     required: true,
     default: "BLANK"
   },
+  qIntro: {
+    type: String,
+    default: "blank"
+  },
   qIcon: {
     type: String,
     required: true,
-    enum: ["scale-icon", "house-icon", "user-icon", "info-icon", "users-icon", "house-icon", "scale-icon", "car-icon"],
+    enum: ["scale-icon", "user-icon", "info-icon", "users-icon", "house-icon", "car-icon"],
     default: "scale-icon"
   },
   qText: {
@@ -47,7 +69,7 @@ const questionSchema = new mongoose.Schema({
 
   // the followings field is dependant on the type of question
   // options will contain different multiple choice/checkbox options a user can select
-  options: [String],
+  options: [optionSchema],
 }, { timestamps: true});
 
 module.exports = mongoose.model('Question', questionSchema);
