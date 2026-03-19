@@ -1,6 +1,5 @@
-import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ChevronLeftIcon, ChevronRightIcon, UserIcon, CalendarIcon, CarIcon, CheckCircleIcon, ShareIcon, ReceiptIcon } from 'lucide-react';
+import { ChevronLeftIcon, ChevronRightIcon, UserIcon, CalendarIcon, CarIcon, CheckCircleIcon, LayoutDashboard, ShareIcon, ReceiptIcon } from 'lucide-react';
 import './Sidebar.css';
 
 export default function Sidebar({ isCollapsed, onToggle }) {
@@ -73,6 +72,17 @@ export default function Sidebar({ isCollapsed, onToggle }) {
           })}
         </ul>
       </nav>
+      <div className="sidebar__back">
+        <Link
+          to="/dashboard"
+          className="sidebar__back-link"
+          title={isCollapsed ? 'Back to Dashboard' : ''}
+        >
+          <LayoutDashboard className="sidebar__back-icon" />
+          {!isCollapsed && <span>Back to Dashboard</span>}
+        </Link>
+      </div>
+
       {isFormStep && !isCollapsed && currentStepIndex >= 0 && (
         <div className="sidebar__progress">
           <div className="sidebar__progress-text">

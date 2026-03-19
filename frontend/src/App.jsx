@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
 import LandingPage from './pages/LandingPage';
+import Dashboard from './pages/Dashboard';
 import SignIn from './pages/auth/SignIn';
 import SignUp from './pages/auth/SignUp';
 import GettingStarted from './pages/GettingStarted';
@@ -22,9 +23,12 @@ function App() {
             {/* Landing page (no sidebar) */}
             <Route path="/" element={<LandingPage />} />
 
-            {/* Auth routes without sidebar */}
-            <Route path="/signin" element={<SignIn />} />
-            <Route path="/signup" element={<SignUp />} />
+        {/* Auth routes without sidebar */}
+        <Route path="/signin" element={<SignIn />} />
+        <Route path="/signup" element={<SignUp />} />
+
+        {/* Dashboard (no sidebar) */}
+        <Route path="/dashboard" element={<Dashboard />} />
 
             {/* Form routes with sidebar */}
             <Route path="/getting-started" element={

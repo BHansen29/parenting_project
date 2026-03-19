@@ -2,26 +2,6 @@
 
 const mongoose = require('mongoose');
 
-const conditionSchema = new mongoose.Schema({
-  operator: {
-    type: String,
-    enum: ["eq", "neq", "gt", "gte", "lt", "lte", "in", "nin", "exists"],
-    required: true,
-  },
-  value: mongoose.Schema.Types.Mixed, // number, string, boolean, array, etc.
-});
-
-const nextRuleSchema = new mongoose.Schema({
-  condition: {
-    type: conditionSchema
-  },
-  // if a user response evaluates to true using the condition, we go to the question specified
-  goTo: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: "Question"
-  }
-});
-
 const questionSchema = new mongoose.Schema({
   type: {
     // this specifies if question is multiple choice, integer input, checkbox, etc.
@@ -43,29 +23,13 @@ const questionSchema = new mongoose.Schema({
   section: {
     // this describes the section of the tree this question falls under (ex: "health insurance coverage", "child support", etc.)
     type: String,
-    enum: ["health insurance coverage", "child support"],
+    enum: ["allocation_of_parental_rights_and_responsibilities", "child_support"],
     required: true
-  }, 
-  nextQuestions: {
-    // this allows for branching depending on the user's answer to the current question
-    type: [nextRuleSchema],
-    required: true
-  },
-  isDefault: {
-    // true if there is a default next question no matter the answer
-    type: Boolean,
-    required: true,
-    default: true
   },
 
   // the followings field is dependant on the type of question
   // options will contain different multiple choice/checkbox options a user can select
-  options: [
-    {
-      label: String,
-      value: mongoose.Schema.Types.Mixed
-    }
-  ],
+  options: [String],
 }, { timestamps: true});
 
 module.exports = mongoose.model('Question', questionSchema);

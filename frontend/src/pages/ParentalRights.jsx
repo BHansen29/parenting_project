@@ -6,8 +6,8 @@ import { useForm } from '../hooks/useForm';
 import { useSectionFlag } from '../hooks/useSectionFlag';
 import { useNavigation } from '../context/NavigationContext';
 import './Page.css';
-import FlagButton from '../components/forms/FlagButton';
-import RadioButton from '../components/forms/RadioButton';
+import SectionHeader from '../components/forms/SectionHeader';
+import RadioQuestion from '../components/forms/RadioQuestion';
 
 export default function ParentalRights() {
     const navigate = useNavigate();
@@ -115,146 +115,82 @@ export default function ParentalRights() {
 
                         {/* ── Applies to All Children ── */}
                         <section className="children-application-section">
-                            <div className="section-header">
-                                <div className="scale-icon"><Scale size={25} /></div>
-                                <div className="section-title-group">
-                                    <h2 className="section-title">Applies to All Children?</h2>
-                                    <p className="section-intro">Simplify by applying answers to all children.</p>
-                                </div>
-                            </div>
+                            <SectionHeader
+                                iconClassName="scale-icon"
+                                icon={<Scale size={25} />}
+                                title="Applies to All Children?"
+                                intro="Simplify by applying answers to all children."
+                            />
                         </section>
-                        <Card>
-                            <CardHeader className="card-header-with-flag">
-                                <CardDescription className="card-heading-question-bold">
-                                    Will your answers apply to all of your children that you share with your co-parent?
-                                    <span className="required-asterisk"> *</span>
-                                </CardDescription>
-                                <FlagButton isFlagged={childrenApplicationFlag.isFlagged} onClick={childrenApplicationFlag.toggleFlag} />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="radio-group">
-                                    <RadioButton name="appliesToAllChildren" value="yes"
-                                        checked={formData.appliesToAllChildren === 'yes'}
-                                        onChange={handleFormChange('appliesToAllChildren')}
-                                        label="Yes" description="My answers will be the same for all children" />
-                                    <RadioButton name="appliesToAllChildren" value="no"
-                                        checked={formData.appliesToAllChildren === 'no'}
-                                        onChange={handleFormChange('appliesToAllChildren')}
-                                        label="No" description="I need to answer separately for each child" />
-                                    <RadioButton name="appliesToAllChildren" value="needMoreInfo"
-                                        checked={formData.appliesToAllChildren === 'needMoreInfo'}
-                                        onChange={handleFormChange('appliesToAllChildren')}
-                                        label="I need more information" />
-                                    <RadioButton name="appliesToAllChildren" value="defaultToCoParent"
-                                        checked={formData.appliesToAllChildren === 'defaultToCoParent'}
-                                        onChange={handleFormChange('appliesToAllChildren')}
-                                        label="Default to my co-parent's choice" />
-                                </div>
-                                {appliesToAllChildrenError && (
-                                    <p className="radio-group-error" role="alert">{appliesToAllChildrenError}</p>
-                                )}
-                            </CardContent>
-                        </Card>
+                        <RadioQuestion
+                            question="Will your answers apply to all of your children that you share with your co-parent?"
+                            name="appliesToAllChildren"
+                            value={formData.appliesToAllChildren}
+                            onChange={handleFormChange('parentalRights', 'appliesToAllChildren')}
+                            flag={childrenApplicationFlag}
+                            error={errors.appliesToAllChildren}
+                            options={[
+                                { value: 'yes',               label: 'Yes',                          description: 'My answers will be the same for all children' },
+                                { value: 'no',                label: 'No',                           description: 'I need to answer separately for each child' },
+                                { value: 'needMoreInfo',      label: 'I need more information' },
+                                { value: 'defaultToCoParent', label: "Default to my co-parent's choice" },
+                            ]}
+                        />
 
                         <hr className="section-divider" />
 
                         {/* ── Living Arrangements ── */}
                         <section className="living-arrangements-section">
-                            <div className="section-header">
-                                <div className="house-icon"><House size={25} /></div>
-                                <div className="section-title-group">
-                                    <h2 className="section-title">Living Arrangements</h2>
-                                    <p className="section-intro">Where will your children live?</p>
-                                </div>
-                            </div>
+                            <SectionHeader
+                                iconClassName="house-icon"
+                                icon={<House size={25} />}
+                                title="Living Arrangements"
+                                intro="Where will your children live?"
+                            />
                         </section>
-                        <Card>
-                            <CardHeader className="card-header-with-flag">
-                                <CardDescription className="card-heading-question-bold">
-                                    Do you want your children to live with you?
-                                    <span className="required-asterisk"> *</span>
-                                </CardDescription>
-                                <FlagButton isFlagged={livingArrangementsFlag.isFlagged} onClick={livingArrangementsFlag.toggleFlag} />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="radio-group">
-                                    <RadioButton name="livingArrangements" value="parent1FullTime"
-                                        checked={formData.livingArrangements === 'parent1FullTime'}
-                                        onChange={handleFormChange('livingArrangements')}
-                                        label="Yes, all the time" />
-                                    <RadioButton name="livingArrangements" value="parent1Occasional"
-                                        checked={formData.livingArrangements === 'parent1Occasional'}
-                                        onChange={handleFormChange('livingArrangements')}
-                                        label="Yes, on occasion" />
-                                    <RadioButton name="livingArrangements" value="parent1VisitingOnly"
-                                        checked={formData.livingArrangements === 'parent1VisitingOnly'}
-                                        onChange={handleFormChange('livingArrangements')}
-                                        label="No, I just want visiting time" />
-                                    <RadioButton name="livingArrangements" value="needMoreInfo"
-                                        checked={formData.livingArrangements === 'needMoreInfo'}
-                                        onChange={handleFormChange('livingArrangements')}
-                                        label="I need more information" />
-                                    <RadioButton name="livingArrangements" value="defaultToCoParent"
-                                        checked={formData.livingArrangements === 'defaultToCoParent'}
-                                        onChange={handleFormChange('livingArrangements')}
-                                        label="Default to my co-parent's choice" />
-                                </div>
-                                {livingArrangementsError && (
-                                    <p className="radio-group-error" role="alert">{livingArrangementsError}</p>
-                                )}
-                            </CardContent>
-                        </Card>
+                        <RadioQuestion
+                            question="Do you want your children to live with you?"
+                            name="livingArrangements"
+                            value={formData.livingArrangements}
+                            onChange={handleFormChange('parentalRights', 'livingArrangements')}
+                            flag={livingArrangementsFlag}
+                            error={errors.livingArrangements}
+                            options={[
+                                { value: 'parent1FullTime',   label: 'Yes, all the time' },
+                                { value: 'parent1Occasional', label: 'Yes, on occasion' },
+                                { value: 'parent1VisitingOnly', label: 'No, I just want visiting time' },
+                                { value: 'needMoreInfo',      label: 'I need more information' },
+                                { value: 'defaultToCoParent', label: "Default to my co-parent's choice" },
+                            ]}
+                        />
 
                         <hr className="section-divider" />
 
                         {/* ── Legal Decision Making ── */}
                         <section className="decision-making-section">
-                            <div className="section-header">
-                                <div className="scale-icon"><Scale size={25} /></div>
-                                <div className="section-title-group">
-                                    <h2 className="section-title">Legal Decision Making</h2>
-                                    <p className="section-intro">Who makes important decisions?</p>
-                                </div>
-                            </div>
+                            <SectionHeader
+                                iconClassName="scale-icon"
+                                icon={<Scale size={25} />}
+                                title="Legal Decision Making"
+                                intro="Who makes important decisions?"
+                            />
                         </section>
-                        <Card>
-                            <CardHeader className="card-header-with-flag">
-                                <CardDescription className="card-heading-question-bold">
-                                    Do you want to make legal decisions for your children?
-                                    <span className="required-asterisk"> *</span>
-                                </CardDescription>
-                                <FlagButton isFlagged={decisionMakingFlag.isFlagged} onClick={decisionMakingFlag.toggleFlag} />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="radio-group">
-                                    <RadioButton name="decisionMaking" value="parent1Sole"
-                                        checked={formData.decisionMaking === 'parent1Sole'}
-                                        onChange={handleFormChange('decisionMaking')}
-                                        label="Yes, by myself" />
-                                    <RadioButton name="decisionMaking" value="jointWithCoParent"
-                                        checked={formData.decisionMaking === 'jointWithCoParent'}
-                                        onChange={handleFormChange('decisionMaking')}
-                                        label="Yes, with my co-parent" />
-                                    <RadioButton name="decisionMaking" value="noLegalDecisionMaking"
-                                        checked={formData.decisionMaking === 'noLegalDecisionMaking'}
-                                        onChange={handleFormChange('decisionMaking')}
-                                        label="No" />
-                                    <RadioButton name="decisionMaking" value="needMoreInfo"
-                                        checked={formData.decisionMaking === 'needMoreInfo'}
-                                        onChange={handleFormChange('decisionMaking')}
-                                        label="I need more information" />
-                                    <RadioButton name="decisionMaking" value="defaultToCoParent"
-                                        checked={formData.decisionMaking === 'defaultToCoParent'}
-                                        onChange={handleFormChange('decisionMaking')}
-                                        label="Default to my co-parent's choice" />
-                                </div>
-                                {decisionMakingError && (
-                                    <p className="radio-group-error" role="alert">{decisionMakingError}</p>
-                                )}
-                            </CardContent>
-                        </Card>
-
-                    </CardContent>
+                        <RadioQuestion
+                            question="Do you want to make legal decisions for your children?"
+                            name="decisionMaking"
+                            value={formData.decisionMaking}
+                            onChange={handleFormChange('parentalRights', 'decisionMaking')}
+                            flag={decisionMakingFlag}
+                            error={errors.decisionMaking}
+                            options={[
+                                { value: 'parent1Sole',          label: 'Yes, by myself' },
+                                { value: 'jointWithCoParent',    label: 'Yes, with my co-parent' },
+                                { value: 'noLegalDecisionMaking', label: 'No' },
+                                { value: 'needMoreInfo',         label: 'I need more information' },
+                                { value: 'defaultToCoParent',    label: "Default to my co-parent's choice" },
+                            ]}
+                        />
+                    </CardContent>    
                 </Card>
             </div>
         </div>
