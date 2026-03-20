@@ -6,7 +6,7 @@ const questionResponseSchema = new mongoose.Schema(
     type: mongoose.Schema.Types.ObjectId, 
     ref: "Question",
     required: true 
-},
+  },
   answer: { 
     type: mongoose.Schema.Types.Mixed, 
     required: true },
@@ -35,11 +35,15 @@ const planSchema = new mongoose.Schema(
     default: 'in_progress' 
 },
   currentQuestion: {
-    type: mongoose.Schema.Types.ObjectId, 
+    type: mongoose.Schema.Types.ObjectId,
     ref: "Question",
-    required: true 
   },
-  children: [questionResponseSchema]
+  allowSharing: {
+    type: Boolean,
+    required: true,
+    default: false
+  },
+  children: [questionResponseSchema],
 })
 
 module.exports = mongoose.model('Plan', planSchema);

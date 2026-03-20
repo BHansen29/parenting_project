@@ -7,7 +7,7 @@ export default function LandingPage() {
   const navigate = useNavigate();
 
   const handleGetStarted = () => {
-    navigate('/dashboard');
+    navigate('/signin');
   };
 
   const handleSignIn = () => {

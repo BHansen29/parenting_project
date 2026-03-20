@@ -4,7 +4,7 @@ require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env'
 // Import the packages we need
 const express = require('express');  // Web framework for creating APIs
 const cors = require('cors');        // Allows frontend to talk to backend
-const connectDB = require('./config/database');
+const { connectDB } = require('./config/database');
 const routes = require('./routes');
 
 // Create our Express app
@@ -25,7 +25,8 @@ app.get('/', (req, res) => {
 
 // Start the server
 async function startServer() {
-  await connectDB();  // Connect to database first
+  // Attempt DB connection, but keep API available even if DB is temporarily down.
+  connectDB();
 
   app.listen(PORT, () => {
     console.log(`Server running at http://localhost:${PORT}`);

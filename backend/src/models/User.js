@@ -5,16 +5,43 @@ const mongoose = require('mongoose');
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: true   // User must have a name
+    required: function isNameRequired() {
+      return this.authProvider !== 'firebase';
+    }   // User must have a name for local auth
   },
   email: {
     type: String,
     required: true,
-    unique: true     // No two users can have the same email
+    unique: true,     // No two users can have the same email, firebase also takes care of this but it is a good precaution
+    lowercase: true,
+    trim: true
   },
   password: {
     type: String,
-    required: true,
+    required: function isPasswordRequired() {
+      return this.authProvider !== 'firebase';
+    }
+  },
+  firebaseUid: { // This helps sync firebase auth with MongoDB
+    type: String,
+    unique: true,
+    sparse: true
+  },
+  authProvider: { // This shows how user authenticated, either through local or firebase. May be redundant since auth will be handled by firebase but this field can help if we do local token verification when doing API calls.
+    type: String,
+    enum: ['local', 'firebase'],
+    default: 'local'
+  },
+  emailVerified: { // Makes sure only firebase-verified emails can access application
+    type: Boolean,
+    default: false
+  },
+  photoURL: {
+    type: String,
+    default: ''
+  },
+  lastLoginAt: {
+    type: Date
   },
   createdAt: {
     type: Date,

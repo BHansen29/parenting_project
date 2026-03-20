@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-// import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { Users, FileText, Calendar, UserPlus, Plus, Trash2, Pencil } from 'lucide-react';
-// import { auth } from '../lib/firebase';
+import { auth } from '../lib/firebase';
 import Header from '../components/common/Header';
 import InviteModal from '../components/common/InviteModal';
 import './Dashboard.css';
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const [user, setUser] = useState(null);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
 
   // Mock plan data — replace with real data fetching later
@@ -58,23 +59,22 @@ export default function Dashboard() {
     ]);
   };
 
-  // TODO: restore auth guard when Firebase is connected
-  // useEffect(() => {
-  //   const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-  //     if (!currentUser) navigate('/signin');
-  //     else setUser(currentUser);
-  //   });
-  //   return unsubscribe;
-  // }, [navigate]);
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (!currentUser) navigate('/signin');
+      else setUser(currentUser);
+    });
+    return unsubscribe;
+  }, [navigate]);
 
-  // const handleSignOut = async () => {
-  //   await signOut(auth);
-  //   navigate('/signin');
-  // };
+  const handleSignOut = async () => {
+    await signOut(auth);
+    navigate('/');
+  };
 
   return (
     <div className="dashboard" onClick={() => setContextMenu(null)}>
-      <Header />
+      <Header user={user} onSignOut={handleSignOut} />
       <InviteModal isOpen={isInviteOpen} onClose={() => setIsInviteOpen(false)} />
 
       {deleteTarget && (
