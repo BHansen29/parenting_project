@@ -1,5 +1,6 @@
-import { LogOut } from 'lucide-react';
 import './Header.css';
+import { useNavigate } from 'react-router-dom';
+import { LogOut } from 'lucide-react';
 import logo from '../../assets/logos/ShareCare_Symmetrical Diamond Logo (1120 x 310 px).png';
 
 export default function Header({
@@ -7,10 +8,21 @@ export default function Header({
   user = null,
   onSignOut = null,
 }) {
+  const navigate = useNavigate();
+
+  const handleLogoClick = () => {
+    navigate('/landing-page');
+  };
+
   return (
     <header className="header">
       <div className="header__top-bar">
-        <img src={logo} alt="ShareCare" className="header__logo" />
+        <img
+          src={logo}
+          alt="ShareCare"
+          className="header__logo"
+          onClick={handleLogoClick}
+        />
 
         <div className="header__right">
           {saved && (
