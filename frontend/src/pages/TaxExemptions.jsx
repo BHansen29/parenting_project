@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/card';
 import { useForm } from '../hooks/useForm';
+import { useNavigation } from '../context/NavigationContext';
 import {
   ClaimEveryYearDisclaimers,
   ClaimSomeYearsDisclaimers,
@@ -13,7 +14,8 @@ import Checkbox from '../components/forms/Checkbox';
 import RadioButton from '../components/forms/RadioButton';
 import FlagButton from '../components/forms/FlagButton';
 import { useSectionFlag } from '../hooks/useSectionFlag';
-import { useNavigation } from '../context/NavigationContext';
+import SectionHeader from '../components/forms/SectionHeader';
+import RadioQuestion from '../components/forms/RadioQuestion';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -42,13 +44,22 @@ const CheckCircleIcon = () => (
   </svg>
 );
 
+// ─── Constants ────────────────────────────────────────────────────────────────
+
 const TAX_YEAR_OPTIONS = [
   { value: 'odd',    label: 'Odd-numbered tax years (e.g. 2025, 2027, 2029…)' },
   { value: 'even',   label: 'Even-numbered tax years (e.g. 2026, 2028, 2030…)' },
   { value: 'custom', label: 'Custom — I will specify the years' },
 ];
 
+const PARENT_ROLE_OPTIONS = [
+  { value: 'residential',    label: 'I am the residential parent' },
+  { value: 'nonresidential', label: 'I am the non-residential parent' },
+];
+
 // ─── Per-child question block ─────────────────────────────────────────────────
+// NOTE: ChildTaxBlock has conditional sub-questions and disclaimer components
+// that don't map cleanly to RadioQuestion, so it keeps its hand-rolled structure.
 
 function ChildTaxBlock({ childName, childIndex, childData = {}, parentRole, onUpdate, errors = {}, isFlagged, onToggleFlag }) {
   const intent      = childData.intent ?? '';
@@ -171,12 +182,12 @@ function ChildTaxBlock({ childName, childIndex, childData = {}, parentRole, onUp
   );
 }
 
-// Validates a string is a comma-separated list of 4-digit years
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 const isValidYearList = (value) => {
   const trimmed = value.trim();
   if (!trimmed) return false;
-  const parts = trimmed.split(',').map(p => p.trim());
-  return parts.every(p => /^\d{4}$/.test(p));
+  return trimmed.split(',').map(p => p.trim()).every(p => /^\d{4}$/.test(p));
 };
 
 // ─── Main component ───────────────────────────────────────────────────────────
@@ -196,7 +207,6 @@ export default function TaxExemptions() {
   // ── Flag hooks ────────────────────────────────────────────────────────────
   const parentalRoleFlag     = useSectionFlag('taxParentalRole');
   const claimingChildrenFlag = useSectionFlag('taxClaimingChildren');
-  const taxDetailsFlag       = useSectionFlag('taxDetails');
 
   const allChildNames = children.map(c =>
     `${c.firstName} ${c.lastName}`.trim() || `Child ${c.id}`
@@ -204,20 +214,13 @@ export default function TaxExemptions() {
 
   // ── Sync: remove deleted children from claimingChildren and childAnswers ──
   useEffect(() => {
-    const removedFromClaiming = claimingChildren.filter(
-      name => !allChildNames.includes(name)
-    );
-    const removedFromAnswers = Object.keys(childAnswers).filter(
-      name => !allChildNames.includes(name)
-    );
+    const removedFromClaiming = claimingChildren.filter(name => !allChildNames.includes(name));
+    const removedFromAnswers  = Object.keys(childAnswers).filter(name => !allChildNames.includes(name));
 
     if (removedFromClaiming.length > 0 || removedFromAnswers.length > 0) {
-      const nextClaimingChildren = claimingChildren.filter(
-        name => allChildNames.includes(name)
-      );
+      const nextClaimingChildren = claimingChildren.filter(name => allChildNames.includes(name));
       const nextChildAnswers = { ...childAnswers };
       removedFromAnswers.forEach(name => delete nextChildAnswers[name]);
-
       dispatch({
         type: 'UPDATE_SECTION',
         section: 'taxExemptions',
@@ -226,6 +229,8 @@ export default function TaxExemptions() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allChildNames.join(',')]);
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
 
   const update = (payload) =>
     dispatch({ type: 'UPDATE_SECTION', section: 'taxExemptions', payload });
@@ -253,16 +258,23 @@ export default function TaxExemptions() {
   };
 
   // ── Validation ────────────────────────────────────────────────────────────
+  // Reads directly from state to avoid stale closure in NavigationContext
 
-  const validateForm = () => {
+  const validateForm = useCallback(() => {
+    const current         = state.taxExemptions ?? {};
+    const currentRole     = current.parentRole ?? '';
+    const currentClaiming = current.claimingChildren ?? [];
+    const currentAnswers  = current.childAnswers ?? {};
+
     const newErrors = {};
-    if (!parentRole) newErrors.parentRole = 'Please indicate your parental role.';
-    if (claimingChildren.length === 0)
+    if (!currentRole)
+      newErrors.parentRole = 'Please indicate your parental role.';
+    if (currentClaiming.length === 0)
       newErrors.claimingChildren = 'Please select at least one child, or indicate you are not claiming any.';
 
-    const newChildAnswerErrors = { ...childAnswers };
-    claimingChildren.forEach(name => {
-      const ans = childAnswers[name] ?? {};
+    const newChildAnswerErrors = { ...currentAnswers };
+    currentClaiming.forEach(name => {
+      const ans = currentAnswers[name] ?? {};
       const childErrors = {};
       if (!ans.intent) childErrors.intent = 'Please select an option for this child.';
       if (ans.intent === 'someYears' && !ans.taxYears) childErrors.taxYears = 'Please select which tax years.';
@@ -274,13 +286,18 @@ export default function TaxExemptions() {
         }
       }
       if (Object.keys(childErrors).length > 0)
-        newChildAnswerErrors[name] = { ...(childAnswers[name] ?? {}), errors: childErrors };
+        newChildAnswerErrors[name] = { ...(currentAnswers[name] ?? {}), errors: childErrors };
     });
 
-    update({ errors: newErrors, childAnswers: newChildAnswerErrors });
+    dispatch({
+      type: 'UPDATE_SECTION',
+      section: 'taxExemptions',
+      payload: { errors: newErrors, childAnswers: newChildAnswerErrors },
+    });
+
     return Object.keys(newErrors).length === 0 &&
-      claimingChildren.every(name => {
-        const ans = childAnswers[name] ?? {};
+      currentClaiming.every(name => {
+        const ans = currentAnswers[name] ?? {};
         if (!ans.intent) return false;
         if (ans.intent === 'someYears' && !ans.taxYears) return false;
         if (ans.intent === 'someYears' && ans.taxYears === 'custom') {
@@ -288,29 +305,27 @@ export default function TaxExemptions() {
         }
         return true;
       });
-  };
+  }, [state]);
 
   const [submitAttempted, setSubmitAttempted] = useState(false);
 
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     if (validateForm()) {
       navigate('/review');
     } else {
       setSubmitAttempted(true);
     }
-  };
+  }, [validateForm, state]);
 
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     update({ errors: {} });
     navigate('/informationsharing');
-  };
+  }, []);
 
-  // ── Register handlers with Layout footer on every state change ────────────
   useEffect(() => {
     setOnNext(handleNext);
     setOnBack(handleBack);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state]);
+  }, [handleNext, handleBack]);
 
   useEffect(() => {
     if (submitAttempted) {
@@ -319,8 +334,6 @@ export default function TaxExemptions() {
       setSubmitAttempted(false);
     }
   }, [formData, submitAttempted]);
-
-  const showChildQuestions = claimingChildren.length > 0;
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -348,115 +361,91 @@ export default function TaxExemptions() {
               </div>
             </div>
 
-            {/* ── Parental role ── */}
-            <div className="info-section">
-              <div className="info-section__header">
-                <div className="info-section__icon" style={{ color: '#1bb0dd', backgroundColor: '#1bb0dd1a' }}>
-                  <FileTextIcon />
-                </div>
-                <div>
-                  <p className="info-section__title">Your Parental Role</p>
-                  <p className="info-section__description">
-                    This determines which tax forms and deadlines apply to you.
+            <hr className="section-divider" />
+
+            {/* ── Parental Role ──
+                SectionHeader replaces the hand-rolled icon + title + description div.
+                RadioQuestion replaces the hand-rolled Card + FlagButton + RadioButton loop.
+                onChange receives a plain string value — RadioQuestion unwraps the event internally. */}
+            <SectionHeader
+              icon={<FileTextIcon />}
+              iconClassName="file-icon"
+              title="Your Parental Role"
+              intro="This determines which tax forms and deadlines apply to you."
+            />
+            <RadioQuestion
+              question="Are you the residential or non-residential parent?"
+              name="parentRole"
+              value={parentRole}
+              onChange={(value) => { update({ parentRole: value }); clearError('parentRole'); }}
+              flag={parentalRoleFlag}
+              error={errors.parentRole}
+              options={PARENT_ROLE_OPTIONS}
+            />
+
+            <hr className="section-divider" />
+
+            {/* ── Children to Claim ──
+                SectionHeader replaces the hand-rolled icon + title + description div.
+                The flag is passed to SectionHeader directly via its flag prop.
+                The checkbox list doesn't map to a shared component so it stays as-is. */}
+            <SectionHeader
+              icon={<FileTextIcon />}
+              iconClassName="file-icon"
+              title="Children You Plan to Claim"
+              intro="Select all children you plan to claim on your taxes at any point — even if only in certain years."
+              flag={claimingChildrenFlag}
+            />
+            <Card>
+              <CardHeader>
+                <CardDescription className="card-heading-question-bold">
+                  Which children do you plan to claim on your tax forms (now or in the future)?
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {allChildNames.length === 0 ? (
+                  <p className="text-input__error-message">
+                    No children found. Please go back and add children first.
                   </p>
-                </div>
-              </div>
-              <Card>
-                <CardHeader className="card-header-with-flag">
-                  <CardDescription className="card-heading-question-bold">
-                    Are you the residential or non-residential parent?
-                  </CardDescription>
-                  <FlagButton isFlagged={parentalRoleFlag.isFlagged} onClick={parentalRoleFlag.toggleFlag} />
-                </CardHeader>
-                <CardContent>
-                  <div className="radio-group">
-                    {[
-                      { value: 'residential',    label: 'I am the residential parent' },
-                      { value: 'nonresidential', label: 'I am the non-residential parent' },
-                    ].map(({ value, label }) => (
-                      <RadioButton
-                        key={value}
-                        name="parentRole"
-                        value={value}
-                        checked={parentRole === value}
-                        onChange={() => { update({ parentRole: value }); clearError('parentRole'); }}
-                        label={label}
+                ) : (
+                  <div className="tax-child-list">
+                    {allChildNames.map(name => (
+                      <Checkbox
+                        key={name}
+                        id={`claim-child-${name}`}
+                        name="claimingChildren"
+                        value={name}
+                        label={name}
+                        checked={claimingChildren.includes(name)}
+                        onChange={() => toggleChild(name)}
+                        variant="card"
                       />
                     ))}
                   </div>
-                  {errors.parentRole && (
-                    <p className="text-input__error-message">{errors.parentRole}</p>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* ── Children to claim ── */}
-            <div className="info-section">
-              <div className="info-section__header">
-                <div className="info-section__icon" style={{ color: '#1bb0dd', backgroundColor: '#1bb0dd1a' }}>
-                  <FileTextIcon />
-                </div>
-                <div>
-                  <p className="info-section__title">Children You Plan to Claim</p>
-                  <p className="info-section__description">
-                    Select all children you plan to claim on your taxes at any point — even if only in certain years.
+                )}
+                {errors.claimingChildren && (
+                  <p className="text-input__error-message">{errors.claimingChildren}</p>
+                )}
+                {allChildNames.length > 0 && claimingChildren.length === 0 && (
+                  <p className="tax-none-note">
+                    If you do not plan to claim any children, leave all boxes unchecked and proceed to the next step.
                   </p>
-                </div>
-              </div>
-              <Card>
-                <CardHeader className="card-header-with-flag">
-                  <CardDescription className="card-heading-question-bold">
-                    Which children do you plan to claim on your tax forms (now or in the future)?
-                  </CardDescription>
-                  <FlagButton isFlagged={claimingChildrenFlag.isFlagged} onClick={claimingChildrenFlag.toggleFlag} />
-                </CardHeader>
-                <CardContent>
-                  {allChildNames.length === 0 ? (
-                    <p className="text-input__error-message">No children found. Please go back and add children first.</p>
-                  ) : (
-                    <div className="tax-child-list">
-                      {allChildNames.map(name => (
-                        <Checkbox
-                          key={name}
-                          id={`claim-child-${name}`}
-                          name="claimingChildren"
-                          value={name}
-                          label={name}
-                          checked={claimingChildren.includes(name)}
-                          onChange={() => toggleChild(name)}
-                          variant="card"
-                        />
-                      ))}
-                    </div>
-                  )}
-                  {errors.claimingChildren && (
-                    <p className="text-input__error-message">{errors.claimingChildren}</p>
-                  )}
-                  {allChildNames.length > 0 && claimingChildren.length === 0 && (
-                    <p className="tax-none-note">
-                      If you do not plan to claim any children, leave all boxes unchecked and proceed to the next step.
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+                )}
+              </CardContent>
+            </Card>
 
-            {/* ── Per-child details ── */}
-            {showChildQuestions && (
-              <div className="info-section">
-                <div className="info-section__header">
-                  <div className="info-section__icon" style={{ color: '#55c77e', backgroundColor: '#55c77e1a' }}>
-                    <FileTextIcon />
-                  </div>
-                  <div>
-                    <p className="info-section__title">Tax Claiming Details</p>
-                    <p className="info-section__description">
-                      For each child you selected, indicate how you will claim them.
-                    </p>
-                  </div>
-                </div>
-
+            {/* ── Per-child details ──
+                ChildTaxBlock has conditional sub-questions and disclaimers that don't
+                map cleanly to the shared components, so it keeps its own structure. */}
+            {claimingChildren.length > 0 && (
+              <>
+                <hr className="section-divider" />
+                <SectionHeader
+                  icon={<FileTextIcon />}
+                  iconClassName="file-icon"
+                  title="Tax Claiming Details"
+                  intro="For each child you selected, indicate how you will claim them."
+                />
                 {claimingChildren.map((name) => (
                   <ChildTaxBlock
                     key={name}
@@ -470,7 +459,7 @@ export default function TaxExemptions() {
                     onToggleFlag={() => updateChildAnswer(name, { flagged: !childAnswers[name]?.flagged })}
                   />
                 ))}
-              </div>
+              </>
             )}
 
           </CardContent>

@@ -1,12 +1,14 @@
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/card';
 import { useForm } from '../hooks/useForm';
 import { useNavigation } from '../context/NavigationContext';
-import './Page.css';
-import RadioButton from '../components/forms/RadioButton';
-import FlagButton from '../components/forms/FlagButton';
 import { useSectionFlag } from '../hooks/useSectionFlag';
+import './Page.css';
+import SectionHeader from '../components/forms/SectionHeader';
+import RadioQuestion from '../components/forms/RadioQuestion';
+
+// ─── Icons ────────────────────────────────────────────────────────────────────
 
 const HeartIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
@@ -39,7 +41,8 @@ const TrophyIcon = () => (
 const CalendarIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
     fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M8 2v4" /><path d="M16 2v4" />
+    <path d="M8 2v4" />
+    <path d="M16 2v4" />
     <rect width="18" height="18" x="3" y="4" rx="2" />
     <path d="M3 10h18" />
   </svg>
@@ -50,9 +53,13 @@ const FileTextIcon = () => (
     fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
     <path d="M14 2v4a2 2 0 0 0 2 2h4" />
-    <path d="M10 9H8" /><path d="M16 13H8" /><path d="M16 17H8" />
+    <path d="M10 9H8" />
+    <path d="M16 13H8" />
+    <path d="M16 17H8" />
   </svg>
 );
+
+// ─── Section definitions ──────────────────────────────────────────────────────
 
 const INFO_SECTIONS = [
   {
@@ -60,7 +67,7 @@ const INFO_SECTIONS = [
     title: 'Medical Information Access',
     description: 'Who can access doctor visits and medical information?',
     icon: <HeartIcon />,
-    iconColor: '#ec0c24',
+    iconClassName: 'heart-icon',
     question: "Who should get copies of any doctor's visits that your children may have? This parent can also contact the doctor and ask questions.",
   },
   {
@@ -68,7 +75,7 @@ const INFO_SECTIONS = [
     title: 'School Contact Rights',
     description: 'Who can communicate with the school?',
     icon: <GraduationCapIcon />,
-    iconColor: '#1bb0dd',
+    iconClassName: 'graduation-icon',
     question: "Who should be able to call your child's school? This parent may also get copies of your child's academic records, like report cards, attendance, and teacher's comments.",
   },
   {
@@ -76,7 +83,7 @@ const INFO_SECTIONS = [
     title: 'School Reports & Notices',
     description: 'Who receives school communications?',
     icon: <FileTextIcon />,
-    iconColor: '#55c77e',
+    iconClassName: 'file-icon',
     question: "Who should get copies of your child's school reports, calendars of school events, notices of parent-teacher conferences, and school programs?",
   },
   {
@@ -84,7 +91,7 @@ const INFO_SECTIONS = [
     title: 'School Activity Participation',
     description: 'Who may attend school events?',
     icon: <CalendarIcon />,
-    iconColor: '#ff9c27',
+    iconClassName: 'calendar-icon',
     question: 'Who has the right to attend and participate in parent-teacher conferences, school trips, school programs, and other school activities that parents get invited to?',
   },
   {
@@ -92,18 +99,20 @@ const INFO_SECTIONS = [
     title: 'Extracurricular Activities',
     description: 'Who may attend activities outside school?',
     icon: <TrophyIcon />,
-    iconColor: '#a855f7',
+    iconClassName: 'trophy-icon',
     question: 'Who has the right to attend and participate with the child(ren) in athletic programs and other extracurricular activities?',
   },
 ];
 
 const RADIO_OPTIONS = [
-  { value: 'parent1', label: 'Just me' },
-  { value: 'parent2', label: 'Just my co-parent' },
-  { value: 'both', label: 'Both me and my co-parent' },
+  { value: 'parent1',  label: 'Just me' },
+  { value: 'parent2',  label: 'Just my co-parent' },
+  { value: 'both',     label: 'Both me and my co-parent' },
   { value: 'needInfo', label: 'I need more information' },
-  { value: 'defer', label: "Default to my co-parent's choice" },
+  { value: 'defer',    label: "Default to my co-parent's choice" },
 ];
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export default function InformationSharing() {
   const navigate = useNavigate();
@@ -111,51 +120,76 @@ export default function InformationSharing() {
   const { setOnNext, setOnBack } = useNavigation();
 
   const formData = state.informationSharing ?? {};
-  const errors = state.informationSharing?.errors ?? {};
+  const errors   = state.informationSharing?.errors ?? {};
 
-  const medicalRecordsFlag = useSectionFlag('medicalRecords');
-  const schoolContactFlag = useSectionFlag('schoolContact');
-  const schoolReportsFlag = useSectionFlag('schoolReports');
-  const schoolActivitiesFlag = useSectionFlag('schoolActivities');
+  // ── Flag hooks ────────────────────────────────────────────────────────────
+  const medicalRecordsFlag            = useSectionFlag('medicalRecords');
+  const schoolContactFlag             = useSectionFlag('schoolContact');
+  const schoolReportsFlag             = useSectionFlag('schoolReports');
+  const schoolActivitiesFlag          = useSectionFlag('schoolActivities');
   const extracurricularActivitiesFlag = useSectionFlag('extracurricularActivities');
 
   const flagMap = {
-    medicalRecords: medicalRecordsFlag,
-    schoolContact: schoolContactFlag,
-    schoolReports: schoolReportsFlag,
-    schoolActivities: schoolActivitiesFlag,
+    medicalRecords:            medicalRecordsFlag,
+    schoolContact:             schoolContactFlag,
+    schoolReports:             schoolReportsFlag,
+    schoolActivities:          schoolActivitiesFlag,
     extracurricularActivities: extracurricularActivitiesFlag,
   };
 
+  // ── Handlers ──────────────────────────────────────────────────────────────
+
+  // RadioQuestion already unwraps e.target.value before calling onChange,
+  // so this handler receives a plain string value — not an event.
   const handleChange = (field) => (value) => {
-    dispatch({ type: 'UPDATE_SECTION', section: 'informationSharing', payload: { [field]: value } });
+    dispatch({
+      type: 'UPDATE_SECTION',
+      section: 'informationSharing',
+      payload: { [field]: value },
+    });
     if (errors[field]) {
-      dispatch({ type: 'UPDATE_SECTION', section: 'informationSharing', payload: { errors: { ...errors, [field]: '' } } });
+      dispatch({
+        type: 'UPDATE_SECTION',
+        section: 'informationSharing',
+        payload: { errors: { ...errors, [field]: '' } },
+      });
     }
   };
 
-  const validateForm = () => {
+  // Reads directly from state to avoid stale closure in NavigationContext
+  const validateForm = useCallback(() => {
+    const current = state.informationSharing ?? {};
     const newErrors = {};
     INFO_SECTIONS.forEach(({ key }) => {
-      if (!formData[key]) newErrors[key] = 'Please select an option.';
+      if (!current[key]) newErrors[key] = 'Please select an option.';
     });
-    dispatch({ type: 'UPDATE_SECTION', section: 'informationSharing', payload: { errors: newErrors } });
+    dispatch({
+      type: 'UPDATE_SECTION',
+      section: 'informationSharing',
+      payload: { errors: newErrors },
+    });
     return Object.keys(newErrors).length === 0;
-  };
+  }, [state]);
 
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     if (validateForm()) navigate('/tax-exemptions');
-  };
+  }, [validateForm, state]);
 
-  const handleBack = () => {
-    dispatch({ type: 'UPDATE_SECTION', section: 'informationSharing', payload: { errors: {} } });
-    navigate('/parenting-time-communication');
-  };
+  const handleBack = useCallback(() => {
+    dispatch({
+      type: 'UPDATE_SECTION',
+      section: 'informationSharing',
+      payload: { errors: {} },
+    });
+    navigate('/transportation');
+  }, []);
 
   useEffect(() => {
     setOnNext(handleNext);
     setOnBack(handleBack);
-  }, [state]);
+  }, [handleNext, handleBack]);
+
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <div className="page-container">
@@ -163,37 +197,33 @@ export default function InformationSharing() {
         <Card>
           <CardHeader>
             <CardTitle>Information Sharing</CardTitle>
-            <CardDescription>Determine who has access to medical, school, and activity information.</CardDescription>
+            <CardDescription>
+              Determine who has access to medical, school, and activity information.
+            </CardDescription>
           </CardHeader>
+
           <CardContent>
-            {INFO_SECTIONS.map(({ key, title, description, icon, iconColor, question }) => (
+            {INFO_SECTIONS.map(({ key, title, description, icon, iconClassName, question }) => (
               <div key={key} className="info-section">
-                <div className="info-section__header">
-                  <div className="info-section__icon" style={{ color: iconColor, backgroundColor: `${iconColor}1a` }}>
-                    {icon}
-                  </div>
-                  <div>
-                    <p className="info-section__title">{title}</p>
-                    <p className="info-section__description">{description}</p>
-                  </div>
-                </div>
-                <Card>
-                  <CardHeader className="card-header-with-flag">
-                    <CardDescription className="card-heading-question-bold">{question}</CardDescription>
-                    <FlagButton isFlagged={flagMap[key].isFlagged} onClick={flagMap[key].toggleFlag} />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="radio-group">
-                      {RADIO_OPTIONS.map(({ value, label }) => (
-                        <RadioButton key={value} name={key} value={value}
-                          checked={formData[key] === value}
-                          onChange={(e) => handleChange(key)(e.target.value)}
-                          label={label} />
-                      ))}
-                    </div>
-                    {errors[key] && <p className="text-input__error-message">{errors[key]}</p>}
-                  </CardContent>
-                </Card>
+                <hr className="section-divider" />
+
+                <SectionHeader
+                  icon={icon}
+                  iconClassName={iconClassName}
+                  title={title}
+                  intro={description}
+                />
+
+                {/* onChange receives a plain string value — RadioQuestion unwraps the event internally */}
+                <RadioQuestion
+                  question={question}
+                  name={key}
+                  value={formData[key] ?? ''}
+                  onChange={handleChange(key)}
+                  flag={flagMap[key]}
+                  error={errors[key]}
+                  options={RADIO_OPTIONS}
+                />
               </div>
             ))}
           </CardContent>
