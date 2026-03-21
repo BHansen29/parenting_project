@@ -161,7 +161,7 @@ export default function ParentingTimeAndCommunication() {
     useEffect(() => {
         setOnNext(handleNext);
         setOnBack(handleBack);
-    }, [state]);
+    }, [state, communicationError, notifyError]);
 
     return (
         <div className="page-container">

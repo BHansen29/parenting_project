@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/card';
 import { useForm } from '../hooks/useForm';
 import { useSectionFlag } from '../hooks/useSectionFlag';
+import { useNavigation } from '../context/NavigationContext';
 import './Page.css';
 import SectionHeader from '../components/forms/SectionHeader';
 import RadioQuestion from '../components/forms/RadioQuestion';
@@ -12,9 +13,10 @@ export default function ParentalRights() {
 
     const navigate = useNavigate();
     const { state, dispatch } = useForm();
+    const { setOnNext, setOnBack } = useNavigation();
 
     //form data and errors for this section
-    const formData = state.parentalRights ?? {appliesToAllChildren: '', livingArrangement: '', decisionMaking: '', errors: {} };
+    const formData = state.parentalRights ?? { appliesToAllChildren: '', livingArrangement: '', decisionMaking: '', errors: {} };
     const errors = state.parentalRights?.errors ?? {};
 
     //flag states for this section
@@ -37,16 +39,16 @@ export default function ParentalRights() {
     //generic change handler for form fields in this section
     const handleFormChange = (section, field) => (value) => {
         dispatch({
-        type: 'UPDATE_SECTION',
-        section: section,
-        payload: { [field]: value }
-        });
-        if (errors[field]) {
-        dispatch({
             type: 'UPDATE_SECTION',
             section: section,
-            payload: { errors: { ...errors, [field]: '' } }
+            payload: { [field]: value }
         });
+        if (errors[field]) {
+            dispatch({
+                type: 'UPDATE_SECTION',
+                section: section,
+                payload: { errors: { ...errors, [field]: '' } }
+            });
         }
     };
 
@@ -69,24 +71,29 @@ export default function ParentalRights() {
         });
 
         return Object.keys(formErrors).length === 0;
-    }
+    };
 
     const handleNext = () => {
-    if (validateForm()) {
-      navigate('/parenting-time-communication');
-    } else {
-      setSubmitAttempted(true);
-    }
-  };
+        if (validateForm()) {
+            navigate('/parenting-time-communication');
+        } else {
+            setSubmitAttempted(true);
+        }
+    };
 
-   const handleBack = () => {
-    dispatch({
-      type: 'UPDATE_SECTION',
-      section: 'parentalRights',
-      payload: { errors: {} }
-    });
-    navigate('/getting-started');
-  };
+    const handleBack = () => {
+        dispatch({
+            type: 'UPDATE_SECTION',
+            section: 'parentalRights',
+            payload: { errors: {} }
+        });
+        navigate('/getting-started');
+    };
+
+    useEffect(() => {
+        setOnNext(handleNext);
+        setOnBack(handleBack);
+    }, [state]);
 
     return (
         <div className="page-container">
@@ -94,7 +101,7 @@ export default function ParentalRights() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Parental Rights</CardTitle>
-                        <CardDescription>Define where your children live and who will make legal decisions. </CardDescription>
+                        <CardDescription>Define where your children live and who will make legal decisions.</CardDescription>
                     </CardHeader>
 
                     <CardContent>
@@ -115,8 +122,8 @@ export default function ParentalRights() {
                             flag={childrenApplicationFlag}
                             error={errors.appliesToAllChildren}
                             options={[
-                                { value: 'yes',               label: 'Yes',                          description: 'My answers will be the same for all children' },
-                                { value: 'no',                label: 'No',                           description: 'I need to answer separately for each child' },
+                                { value: 'yes',               label: 'Yes',                             description: 'My answers will be the same for all children' },
+                                { value: 'no',                label: 'No',                              description: 'I need to answer separately for each child' },
                                 { value: 'needMoreInfo',      label: 'I need more information' },
                                 { value: 'defaultToCoParent', label: "Default to my co-parent's choice" },
                             ]}
@@ -139,11 +146,11 @@ export default function ParentalRights() {
                             flag={livingArrangementsFlag}
                             error={errors.livingArrangements}
                             options={[
-                                { value: 'parent1FullTime',   label: 'Yes, all the time' },
-                                { value: 'parent1Occasional', label: 'Yes, on occasion' },
+                                { value: 'parent1FullTime',    label: 'Yes, all the time' },
+                                { value: 'parent1Occasional',  label: 'Yes, on occasion' },
                                 { value: 'parent1VisitingOnly', label: 'No, I just want visiting time' },
-                                { value: 'needMoreInfo',      label: 'I need more information' },
-                                { value: 'defaultToCoParent', label: "Default to my co-parent's choice" },
+                                { value: 'needMoreInfo',       label: 'I need more information' },
+                                { value: 'defaultToCoParent',  label: "Default to my co-parent's choice" },
                             ]}
                         />
 
@@ -164,16 +171,16 @@ export default function ParentalRights() {
                             flag={decisionMakingFlag}
                             error={errors.decisionMaking}
                             options={[
-                                { value: 'parent1Sole',          label: 'Yes, by myself' },
-                                { value: 'jointWithCoParent',    label: 'Yes, with my co-parent' },
+                                { value: 'parent1Sole',           label: 'Yes, by myself' },
+                                { value: 'jointWithCoParent',     label: 'Yes, with my co-parent' },
                                 { value: 'noLegalDecisionMaking', label: 'No' },
-                                { value: 'needMoreInfo',         label: 'I need more information' },
-                                { value: 'defaultToCoParent',    label: "Default to my co-parent's choice" },
+                                { value: 'needMoreInfo',          label: 'I need more information' },
+                                { value: 'defaultToCoParent',     label: "Default to my co-parent's choice" },
                             ]}
                         />
-                    </CardContent>    
+                    </CardContent>
                 </Card>
             </div>
         </div>
-    )
+    );
 }
