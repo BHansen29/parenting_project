@@ -181,7 +181,7 @@ export default function InformationSharing() {
       section: 'informationSharing',
       payload: { errors: {} },
     });
-    navigate('/transportation');
+    navigate('/parenting-time-communication');
   }, []);
 
   useEffect(() => {
