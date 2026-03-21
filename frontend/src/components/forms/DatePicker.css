@@ -79,7 +79,24 @@
 
 /* Dark mode specific styles */
 @media (prefers-color-scheme: dark) {
-  .date-picker--disabled .date-picker__field {
-    background-color: rgba(255, 255, 255, 0.05);
+  .date-picker__field {
+    background-color: #1f2937;
+    border-color: #374151;
+    color: #d1d5db;
   }
+
+  .date-picker__field:focus {
+    border-color: #14abdd;
+    box-shadow: 0 0 0 3px rgba(20, 171, 221, 0.1);
+    color: #d1d5db;
+  }
+
+  .date-picker--error .date-picker__field:focus {
+    box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+  }
+
+  .date-picker__field {
+    color: #9ca3af;
+  }
+
 }

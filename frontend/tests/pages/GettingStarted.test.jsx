@@ -153,6 +153,13 @@ describe('GettingStarted', () => {
     expect(screen.getByLabelText(/Address/i)).toBeInTheDocument()
   })
 
+  it('renders parent information placeholder text', () => {
+    renderWithRouter(<GettingStarted />)
+    expect(screen.getByPlaceholderText(/enter your first name/i)).toBeInTheDocument()
+    expect(screen.getByPlaceholderText(/enter your last name/i)).toBeInTheDocument()
+    expect(screen.getByPlaceholderText(/enter your phone number/i)).toBeInTheDocument()
+  })
+
   it('can type into the First Name input', async () => {
     renderWithRouter(<GettingStarted />)
     const input = document.querySelector('#firstParentFirstName')
@@ -251,7 +258,7 @@ describe('GettingStarted', () => {
     expect(yes).not.toBeChecked()
   })
 
-  // ─── Children Section ─────────────────────────────────────────────────────
+  // ─── Children Section — Initial State ────────────────────────────────────
 
   it('renders one child card by default', () => {
     renderWithRouter(<GettingStarted />)
@@ -261,7 +268,6 @@ describe('GettingStarted', () => {
 
   it('renders child First Name and Last Name fields', () => {
     renderWithRouter(<GettingStarted />)
-    // There are parent + child name fields; ensure at least two of each
     expect(screen.getAllByLabelText(/First Name/i).length).toBeGreaterThanOrEqual(1)
     expect(screen.getAllByLabelText(/Last Name/i).length).toBeGreaterThanOrEqual(1)
   })
@@ -314,6 +320,13 @@ describe('GettingStarted', () => {
     expect(radio).toBeChecked()
   })
 
+  it('updates child date of birth', () => {
+    renderWithRouter(<GettingStarted />)
+    const dateInput = screen.getByLabelText(/Date of Birth/i)
+    fireEvent.change(dateInput, { target: { value: '2015-06-15' } })
+    expect(dateInput).toHaveValue('2015-06-15')
+  })
+
   it('does not show Remove button when there is only one child', () => {
     renderWithRouter(<GettingStarted />)
     expect(screen.queryByRole('button', { name: /remove child 1/i })).not.toBeInTheDocument()
@@ -324,11 +337,60 @@ describe('GettingStarted', () => {
     expect(screen.getByRole('button', { name: /add another child/i })).toBeInTheDocument()
   })
 
+  // ─── Children Section — Add Children ─────────────────────────────────────
+
   it('adds a second child card when Add Another Child is clicked', async () => {
     renderWithRouter(<GettingStarted />)
     await userEvent.click(screen.getByRole('button', { name: /add another child/i }))
     expect(screen.getByText('Child 2')).toBeInTheDocument()
   })
+
+  it('adds multiple children sequentially', async () => {
+    renderWithRouter(<GettingStarted />)
+    const addButton = screen.getByRole('button', { name: /add another child/i })
+    await userEvent.click(addButton)
+    await userEvent.click(addButton)
+    await userEvent.click(addButton)
+    expect(screen.getByText('Child 1')).toBeInTheDocument()
+    expect(screen.getByText('Child 2')).toBeInTheDocument()
+    expect(screen.getByText('Child 3')).toBeInTheDocument()
+    expect(screen.getByText('Child 4')).toBeInTheDocument()
+  })
+
+  it('newly added children have empty input fields', async () => {
+    renderWithRouter(<GettingStarted />)
+    await userEvent.click(screen.getByRole('button', { name: /add another child/i }))
+    const firstNameInputs = screen.getAllByLabelText(/First Name/i)
+    const secondChildFirstName = firstNameInputs[firstNameInputs.length - 1]
+    expect(secondChildFirstName).toHaveValue('')
+  })
+
+  it('each child has unique IDs for their inputs', async () => {
+    renderWithRouter(<GettingStarted />)
+    await userEvent.click(screen.getByRole('button', { name: /add another child/i }))
+    const firstNameInputs = screen.getAllByLabelText(/First Name/i)
+    expect(firstNameInputs[0]).toHaveAttribute('id', 'child-1-firstName')
+    expect(firstNameInputs[1]).toHaveAttribute('id', 'child-2-firstName')
+  })
+
+  it('renders classification radios for a newly added child', async () => {
+    renderWithRouter(<GettingStarted />)
+    await userEvent.click(screen.getByRole('button', { name: /add another child/i }))
+    expect(document.querySelector('input[name="child-2-classification"][value="minor"]')).toBeInTheDocument()
+    expect(document.querySelector('input[name="child-2-classification"][value="emancipated"]')).toBeInTheDocument()
+  })
+
+  it('each child has independent input fields', async () => {
+    renderWithRouter(<GettingStarted />)
+    await userEvent.click(screen.getByRole('button', { name: /add another child/i }))
+    const firstNameInputs = screen.getAllByLabelText(/First Name/i)
+    fireEvent.change(firstNameInputs[0], { target: { value: 'Alice' } })
+    fireEvent.change(firstNameInputs[1], { target: { value: 'Bob' } })
+    expect(firstNameInputs[0]).toHaveValue('Alice')
+    expect(firstNameInputs[1]).toHaveValue('Bob')
+  })
+
+  // ─── Children Section — Remove Children ──────────────────────────────────
 
   it('shows Remove buttons when there are two children', async () => {
     renderWithRouter(<GettingStarted />)
@@ -345,17 +407,64 @@ describe('GettingStarted', () => {
     expect(screen.getByText('Child 1')).toBeInTheDocument()
   })
 
-  it('cannot remove the last remaining child', async () => {
+  it('can remove any child, not just the last one', async () => {
     renderWithRouter(<GettingStarted />)
-    // Only one child — Remove button should not appear
+    const addButton = screen.getByRole('button', { name: /add another child/i })
+    await userEvent.click(addButton)
+    await userEvent.click(addButton)
+    await userEvent.click(screen.getByRole('button', { name: /remove child 2/i }))
+    expect(screen.queryByText('Child 2')).not.toBeInTheDocument()
+    expect(screen.getByText('Child 1')).toBeInTheDocument()
+    expect(screen.getByText('Child 3')).toBeInTheDocument()
+  })
+
+  it('cannot remove the last remaining child', () => {
+    renderWithRouter(<GettingStarted />)
     expect(screen.queryByRole('button', { name: /remove/i })).not.toBeInTheDocument()
   })
 
-  it('renders classification radios for a newly added child', async () => {
+  it('hides Remove button when back down to one child', async () => {
     renderWithRouter(<GettingStarted />)
     await userEvent.click(screen.getByRole('button', { name: /add another child/i }))
-    expect(document.querySelector('input[name="child-2-classification"][value="minor"]')).toBeInTheDocument()
-    expect(document.querySelector('input[name="child-2-classification"][value="emancipated"]')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /remove child 2/i }))
+    expect(screen.queryByRole('button', { name: /remove child 1/i })).not.toBeInTheDocument()
+  })
+
+  it('maintains data for remaining children after removal', async () => {
+    renderWithRouter(<GettingStarted />)
+    const addButton = screen.getByRole('button', { name: /add another child/i })
+    await userEvent.click(addButton)
+    await userEvent.click(addButton)
+    const firstNameInputs = screen.getAllByLabelText(/First Name/i)
+    fireEvent.change(firstNameInputs[0], { target: { value: 'John' } })
+    await userEvent.click(screen.getByRole('button', { name: /remove child 2/i }))
+    const remainingFirstNameInputs = screen.getAllByLabelText(/First Name/i)
+    expect(remainingFirstNameInputs[0]).toHaveValue('John')
+  })
+
+  // ─── Children Section — Complex Workflows ────────────────────────────────
+
+  it('can add, remove, and add again', async () => {
+    renderWithRouter(<GettingStarted />)
+    const addButton = screen.getByRole('button', { name: /add another child/i })
+    await userEvent.click(addButton)
+    expect(screen.getByText('Child 2')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /remove child 2/i }))
+    expect(screen.queryByText('Child 2')).not.toBeInTheDocument()
+    await userEvent.click(addButton)
+    expect(screen.getByText('Child 2')).toBeInTheDocument()
+  })
+
+  it('renumbers children labels after removal', async () => {
+    renderWithRouter(<GettingStarted />)
+    const addButton = screen.getByRole('button', { name: /add another child/i })
+    await userEvent.click(addButton)
+    await userEvent.click(addButton)
+    expect(screen.getByText('Child 3')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /remove child 1/i }))
+    expect(screen.getByText('Child 1')).toBeInTheDocument()
+    expect(screen.getByText('Child 2')).toBeInTheDocument()
+    expect(screen.queryByText('Child 3')).not.toBeInTheDocument()
   })
 
   // ─── Validation ───────────────────────────────────────────────────────────
@@ -475,7 +584,7 @@ describe('GettingStarted', () => {
     // Case filing
     await userEvent.click(document.querySelector('input[name="caseFilingStatus"][value="yes"]'))
 
-    // Child info — find child-specific fields by ID
+    // Child info
     await userEvent.type(document.querySelector('#child-1-firstName'), 'Alex')
     await userEvent.type(document.querySelector('#child-1-lastName'), 'Doe')
     fireEvent.change(document.querySelector('#child-1-dateOfBirth'), { target: { value: '2015-06-15' } })

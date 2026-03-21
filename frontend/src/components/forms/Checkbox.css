@@ -142,7 +142,7 @@
 /* Dark mode */
 @media (prefers-color-scheme: dark) {
   .checkbox__label-text {
-    color: #e5e7eb;
+    color: #d1d5db;
   }
 
   .checkbox__description {
@@ -150,22 +150,22 @@
   }
 
   .checkbox--card .checkbox__label {
-    border-color: #4b5563;
+    border-color: #374151;
     background-color: transparent;
   }
 
   .checkbox--card .checkbox__label:hover {
     border-color: #14abdd;
-    background-color: rgba(20, 171, 221, 0.1);
+    background-color: #1f2937;
   }
 
   .checkbox--card.checkbox--checked .checkbox__label {
     border-color: #14abdd;
-    background-color: rgba(20, 171, 221, 0.15);
+    background-color: #1f2937;
   }
 
   .checkbox--card .checkbox__label-text {
-    color: #e5e7eb;
+    color: #d1d5db;
   }
 
   .checkbox--card .checkbox__description {
