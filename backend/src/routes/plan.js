@@ -7,21 +7,8 @@ const verifyToken = require('../middleware/verifyToken');
 // POST /api/plan - Start a new plan
 router.post('/', verifyToken, async (req, res) => {
   try {
-    const { userID, startQuestionId } = req.body;
-
-    // startQuestionId is required to know where to begin
-    if (!startQuestionId) {
-      return res.status(400).json({ error: 'startQuestionId is required' });
-    }
-
-    // Make sure that question actually exists
-    const startQuestion = await Question.findById(startQuestionId);
-    if (!startQuestion) {
-      const errorMessage = { error: 'Starting question not found' };
-      return res.status(400).json(errorMessage);
-    }
-
-    const plan = await Plan.create({ userID, currentQuestion: startQuestionId });
+    const { userID } = req.body;
+    const plan = await Plan.create({ userID });
     res.status(201).json(plan);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -79,6 +66,27 @@ router.get('/:planId/current', verifyToken, async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+// POST /api/plan/updateCurrent/:planId/:currQId - Update a plan's currentQuestion field to be currQId
+router.post('/updateCurrent/:planId/:currQId', verifyToken, async (req, res) => {
+  try {
+    const { planId, currQId } = req.params;
+    const { userID } = req.body;
+    const plan = await Plan.findById(planId);
+    if (!plan) {
+      return res.status(404).json({ message: 'Plan not found'})
+    }
+    if (plan.userID !== userID) {
+      return res.status(401).json({ message: 'Unauthorized to update this plan' }); 
+    }
+    plan.currentQuestion = currQId;
+    await plan.save()
+    return res.status(200).json({ message: 'Plan updated successfully' });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 
 // Add an answer to the plan
 // POST/api/plan/:planId/answer

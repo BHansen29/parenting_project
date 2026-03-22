@@ -37,10 +37,6 @@ const initialState = {
     errors: {}
   },
   plan: {},
-  qMeta: {
-    qKey: '',
-    answer: ''
-  },
   question: {}
 };
 

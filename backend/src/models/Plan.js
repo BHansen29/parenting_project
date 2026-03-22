@@ -40,8 +40,7 @@ const planSchema = new mongoose.Schema(
   },
   currentQuestion: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Question",
-    default: "69addc0430d68e5ffdc691f7"
+    ref: "Question"
   },
   allowSharing: {
     type: Boolean,

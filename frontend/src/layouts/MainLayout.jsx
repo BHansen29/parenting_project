@@ -6,15 +6,18 @@ import './Layout.css';
 import Footer from '../components/common/Footer';
 import { buildApiUrl } from '../lib/apiClient';
 import { useForm } from '../hooks/useForm';
+import { auth } from '../lib/firebase';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 
 export default function Layout({ children }) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
+  const [user, setUser] = useState(null);
   const { state, dispatch } = useForm();
   const plan = state.plan
-  const qMeta = state.question
+  const q = state.question
   // Define the page navigation order
   const pageOrder = [
     '/getting-started',
@@ -42,6 +45,14 @@ export default function Layout({ children }) {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (!currentUser) navigate('/signin');
+      else setUser(currentUser);
+    });
+    return unsubscribe;
+  }, [navigate]);
+
   // Determine if current page should show navigation
   const shouldShowNavigation = ['/getting-started', '/parental-rights', '/parenting-time', '/custody-schedule', '/transportation', '/review'].includes(location.pathname);
 
@@ -60,25 +71,44 @@ export default function Layout({ children }) {
 
   const handleNext = async () => {
     const apiURL = pageOrder[currentPageIndex] === '/getting-started' 
-      ? '/api/logic-engine/question/' + plan.currentQuestion 
-      : '/api/logic-engine/nextQuestion/' + qMeta.qKey + '/' + qMeta.answer
+      ? '/api/logic-engine/question/69c04a555c958122e4d898bd' // default starting question (probably change to const or something)
+      : '/api/logic-engine/nextQuestion/' + q.qKey + '/' + q.answer
     try {
-      console.log(apiURL)
+      // get the next 'question' object
       const response = await fetch(buildApiUrl(apiURL));
       if (!response.ok) {
           throw new Error(`Response status: ${response.status}`);
       }
       const data = await response.json()
-      console.log(data)
-      if (currentPageIndex < pageOrder.length - 1) {
-        // update question in context
-        dispatch({
-          type: 'UPDATE_SECTION',
-          section: "question",
-          payload: data
-        });
-        navigate("/" + data.section);
+      if (pageOrder[currentPageIndex] !== '/getting-started') {
+        // update currentQuestion field in plan
+        plan.currentQuestion = q._id
+        if (user) {
+          user.getIdToken().then((idToken) => {
+            fetch(buildApiUrl('api/plan/updateCurrent/' + plan._id + '/' + plan.currentQuestion), {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${idToken}`,
+              },
+              body: JSON.stringify({userID: user.uid})
+            })
+            .then( async (response) => {
+              const data = await response.json()
+              if (!response.ok) {
+                console.error("Failed to update plan: ", response.message)
+              }
+            });
+          })
+        }
       }
+      // update question in context
+      dispatch({
+        type: 'UPDATE_SECTION',
+        section: "question",
+        payload: data
+      });
+      navigate("/" + data.section);
     } catch (e) {
         console.error(e.message)
     }

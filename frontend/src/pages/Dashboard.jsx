@@ -110,7 +110,7 @@ export default function Dashboard() {
             Authorization: `Bearer ${idToken}`,
           },
           // this will need to be changed to something more resilient
-          body: JSON.stringify({userID: user.uid, startQuestionId: "69bb3f4781085f0fd64772e9"})
+          body: JSON.stringify({userID: user.uid})
         })
         .then( async (response) => {
           if (!response.ok) {
@@ -246,20 +246,58 @@ export default function Dashboard() {
                   <Calendar size={14} color="#9ca3af" />
                   <span>Last modified: {plan.lastModified}</span>
                 </div>
-
-                <button
-                  className="plan-card__open-btn"
-                  onClick={() => {     
-                    dispatch({
-                        type: 'UPDATE_SECTION',
-                        section: "plan",
-                        payload: plan
-                    });
-                    navigate('/getting-started')
-                  }}
-                >
-                  Open Plan &rarr;
-                </button>
+                {(() => {
+                    if (plan.currentQuestion) { // maybe use status field of plan for this?
+                      return (
+                        <button
+                          className="plan-card__open-btn"
+                          onClick={() => {     
+                            dispatch({
+                                type: 'UPDATE_SECTION',
+                                section: "plan",
+                                payload: plan
+                            });
+                            fetch(buildApiUrl("/api/logic-engine/question/" + plan.currentQuestion), {
+                              method: "GET",
+                              headers: {
+                                "Content-Type": "application/json",
+                              }
+                            })
+                            .then(res => {
+                              if (!res.ok) {
+                                throw new Error("Failed to retrieve question");
+                              }
+                              res.json().then(q => {
+                                dispatch({
+                                  type: 'UPDATE_SECTION',
+                                  section: "question",
+                                  payload: q
+                                });
+                                navigate('/' + q.section)})
+                            })
+                          }}
+                        >
+                          Resume Plan &rarr;
+                        </button>
+                      );
+                    } else {
+                      return (
+                        <button
+                          className="plan-card__open-btn"
+                          onClick={() => {     
+                            dispatch({
+                                type: 'UPDATE_SECTION',
+                                section: "plan",
+                                payload: plan
+                            });
+                            navigate('/getting-started')
+                          }}
+                        >
+                          Open Plan &rarr;
+                        </button>
+                      );
+                    }
+                })()}
 
                 <button className="plan-card__invite-btn" onClick={() => setIsInviteOpen(true)}>
                   <UserPlus size={14} />

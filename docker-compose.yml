@@ -19,9 +19,8 @@ services:
       dockerfile: backend/Dockerfile
     container_name: parenting-backend
     volumes:
-      # - .:/app
+      - .:/app
       - /app/backend/node_modules
-      - ./backend:/app/backend
     ports:
       - "3000:3000"
     environment:
@@ -36,7 +35,7 @@ services:
       dockerfile: frontend/Dockerfile
     container_name: parenting-frontend
     volumes:
-      - ./frontend:/app/frontend
+      - .:/app
       - /app/frontend/node_modules
     ports:
       - "5173:5173"
