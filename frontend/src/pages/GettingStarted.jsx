@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { AlertCircle, Info, Shield, Users, MapPin, Phone, UserCheck } from 'lucide-react';
+import { Info, Shield, Users, UserCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Footer from '../components/common/Footer';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/card';
@@ -8,8 +8,8 @@ import DatePicker from '../components/forms/DatePicker';
 import { useForm } from '../hooks/useForm';
 import { useSectionFlag } from '../hooks/useSectionFlag';
 import './Page.css';
-import FlagButton from '../components/forms/FlagButton';
-import RadioButton from '../components/forms/RadioButton';
+import SectionHeader from '../components/forms/SectionHeader';
+import RadioQuestion from '../components/forms/RadioQuestion';
 import ToolTip from '../components/common/ToolTip';
 
 /**
@@ -44,11 +44,11 @@ export default function GettingStarted() {
     dispatch({ type: 'UPDATE_CHILDREN', payload: children });
   }, [children]);
 
-  const handleRadioChange = (section) => (e) => {
+  const handleRadioChange = (section) => (value) => {
     dispatch({
       type: 'UPDATE_SECTION',
       section: section,
-      payload: e.target.value
+      payload: value
     });
   };
 
@@ -188,53 +188,32 @@ export default function GettingStarted() {
           <CardContent>
             <hr className="section-divider" />
             <section className="safety-privacy-section">
-              <div className="section-header">
-                <div className="shield-icon">
-                  <Shield size={25} />
-                </div>
-                <div className="section-title-group">
-                  <h2 className="section-title">Safety & Privacy</h2>
-                  <p className="section-intro">Your safety is our priority.</p>
-                </div>
-              </div>
-              <Card>
-                <CardHeader>
-                  <CardDescription className={"card-heading-question-bold"}>Would sharing information from this questionnaire with your co-parent make you fear for your safety in any way?</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="radio-group">
-                    <RadioButton
-                      name="safetyConcern"
-                      value="yes"
-                      checked={safetyConcern === 'yes'}
-                      onChange={handleRadioChange('safetyConcern')}
-                      label="Yes, please keep my information private"
-                      description="You and your co-parent will fill out the form separately"
-                    />
-                    <RadioButton
-                      name="safetyConcern"
-                      value="no"
-                      checked={safetyConcern === 'no'}
-                      onChange={handleRadioChange('safetyConcern')}
-                      label="No, I wish to collaborate with my co-parent"
-                      description="Your answers will be shared with your co-parent"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
+              <SectionHeader
+                iconClassName="shield-icon"
+                icon={<Shield size={25} />}
+                title="Safety & Privacy"
+                intro="Your safety is our priority."
+              />
+              <RadioQuestion
+                question="Would sharing information from this questionnaire with your co-parent make you fear for your safety in any way?"
+                name="safetyConcern"
+                value={safetyConcern}
+                onChange={handleRadioChange('safetyConcern')}
+                options={[
+                  { value: 'yes', label: 'Yes, please keep my information private', description: 'You and your co-parent will fill out the form separately' },
+                  { value: 'no',  label: 'No, I wish to collaborate with my co-parent', description: 'Your answers will be shared with your co-parent' },
+                ]}
+              />
             </section>
             <hr className="section-divider" />
 
-             <section className="parent-information-section">
-              <div className="section-header">
-                <div className="user-icon">
-                  <UserCheck size={25} />
-                </div>
-                <div className="section-title-group">
-                  <h2 className="section-title">Your Information</h2>
-                  <p className="section-intro">Please provide your contact details.</p>
-                </div>
-              </div>
+            <section className="parent-information-section">
+              <SectionHeader
+                iconClassName="user-icon"
+                icon={<UserCheck size={25} />}
+                title="Your Information"
+                intro="Please provide your contact details."
+              />
               <Card>
                 <CardContent>
                   <div className="form-row">
@@ -289,73 +268,35 @@ export default function GettingStarted() {
             <hr className="section-divider" />
 
             <section className="case-filing-status-section">
-              <div className="section-header">
-                <div className="info-icon">
-                  <Info size={25} />
-                </div>
-                <div className="section-title-group">
-                  <h2 className="section-title">Case Filing Status</h2>
-                  <p className="section-intro">Help us understand your legal situation.</p>
-                </div>
-              </div>
-              <Card>
-                <CardHeader>
-                  <div className="card-header-with-flag">
-                    <CardDescription className={"card-heading-question-bold"}>Did you file the divorce, separation, or child custody case that led to this parenting plan?</CardDescription>
-                    <FlagButton
-                      isFlagged={caseFilingFlag.isFlagged}
-                      onClick={caseFilingFlag.toggleFlag}
-                    />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="radio-group">
-                    <RadioButton
-                      name="caseFilingStatus"
-                      value="yes"
-                      checked={caseFilingStatus === 'yes'}
-                      onChange={handleRadioChange('caseFilingStatus')}
-                      label="Yes, it was me"
-                      description="You will be identified as Parent 1/Petitioner 1/Plaintiff in the parenting plan"
-                    />
-                    <RadioButton
-                      name="caseFilingStatus"
-                      value="no"
-                      checked={caseFilingStatus === 'no'}
-                      onChange={handleRadioChange('caseFilingStatus')}
-                      label="No, my co-parent filed"
-                      description="You will be identified as Parent 2/Petitioner 2/Defendant in the parenting plan"
-                    />
-                    <RadioButton
-                      name="caseFilingStatus"
-                      value="flagged"
-                      checked={caseFilingStatus === 'flagged'}
-                      onChange={handleRadioChange('caseFilingStatus')}
-                      label="I need more information"
-                    />
-                    <RadioButton
-                      name="caseFilingStatus"
-                      value="defer"
-                      checked={caseFilingStatus === 'defer'}
-                      onChange={handleRadioChange('caseFilingStatus')}
-                      label="Defer to co-parent"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
+              <SectionHeader
+                iconClassName="info-icon"
+                icon={<Info size={25} />}
+                title="Case Filing Status"
+                intro="Help us understand your legal situation."
+              />
+              <RadioQuestion
+                question="Did you file the divorce, separation, or child custody case that led to this parenting plan?"
+                name="caseFilingStatus"
+                value={caseFilingStatus}
+                onChange={handleRadioChange('caseFilingStatus')}
+                flag={caseFilingFlag}
+                options={[
+                  { value: 'yes',     label: 'Yes, it was me',         description: 'You will be identified as Parent 1/Petitioner 1/Plaintiff in the parenting plan' },
+                  { value: 'no',      label: 'No, my co-parent filed', description: 'You will be identified as Parent 2/Petitioner 2/Defendant in the parenting plan' },
+                  { value: 'flagged', label: 'I need more information' },
+                  { value: 'defer',   label: 'Defer to co-parent' },
+                ]}
+              />
             </section>
             <hr className="section-divider" />
 
             <section className="children-section">
-              <div className="section-header">
-                <div className="users-icon">
-                  <Users size={25} />
-                </div>
-                <div className="section-title-group">
-                  <h2 className="section-title">Your Children</h2>
-                  <p className="section-intro">Please list the children you are including in this shared parenting plan.</p>
-                </div>
-              </div>
+              <SectionHeader
+                iconClassName="users-icon"
+                icon={<Users size={25} />}
+                title="Your Children"
+                intro="Please list the children you are including in this shared parenting plan."
+              />
                 {children.map((child, index) => (
                   <Card key={child.id}>
                     <CardHeader>

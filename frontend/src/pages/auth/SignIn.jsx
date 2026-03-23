@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../lib/firebase';
+import { syncFirebaseUserProfileSafely } from '../../lib/authApi';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/common/card';
 import TextInput from '../../components/forms/TextInput';
 import '../Page.css';
@@ -52,7 +53,11 @@ export default function SignIn() {
       setIsLoading(true);
       try {
         // Sign in the user in Firebase Auth with email + password
-        await signInWithEmailAndPassword(auth, formData.email, formData.password);
+        const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
+
+        // Try to sync Mongo profile, but do not block sign-in if backend/database is down.
+        await syncFirebaseUserProfileSafely(userCredential.user);
+
         // Next Step
         navigate('/dashboard');
       } catch (err) {
@@ -107,6 +112,12 @@ export default function SignIn() {
                   Forgot password?
                 </Link>
               </div>
+
+              {errors.general && (
+                <p role="alert" className="text-red-600 text-sm mb-4">
+                  {errors.general}
+                </p>
+              )}
 
               <button
                 type="submit"
