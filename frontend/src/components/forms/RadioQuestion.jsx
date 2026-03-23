@@ -66,7 +66,7 @@ export default function RadioQuestion({
         </div>
 
         {error && (
-          <div className="text-input__error-message" role="alert">
+          <div className="radio-group-error" role="alert">
             {error}
           </div>
         )}

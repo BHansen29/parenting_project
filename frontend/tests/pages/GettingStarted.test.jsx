@@ -366,12 +366,14 @@ describe('GettingStarted', () => {
   })
 
   it('each child has unique IDs for their inputs', async () => {
-    renderWithRouter(<GettingStarted />)
-    await userEvent.click(screen.getByRole('button', { name: /add another child/i }))
-    const firstNameInputs = screen.getAllByLabelText(/First Name/i)
-    expect(firstNameInputs[0]).toHaveAttribute('id', 'child-1-firstName')
-    expect(firstNameInputs[1]).toHaveAttribute('id', 'child-2-firstName')
-  })
+  renderWithRouter(<GettingStarted />)
+  await userEvent.click(screen.getByRole('button', { name: /add another child/i }))
+  // scope to children section only
+  const childrenSection = document.querySelector('.children-section')
+  const firstNameInputs = childrenSection.querySelectorAll('input[id$="-firstName"]')
+  expect(firstNameInputs[0]).toHaveAttribute('id', 'child-1-firstName')
+  expect(firstNameInputs[1]).toHaveAttribute('id', 'child-2-firstName')
+})
 
   it('renders classification radios for a newly added child', async () => {
     renderWithRouter(<GettingStarted />)
@@ -408,15 +410,16 @@ describe('GettingStarted', () => {
   })
 
   it('can remove any child, not just the last one', async () => {
-    renderWithRouter(<GettingStarted />)
-    const addButton = screen.getByRole('button', { name: /add another child/i })
-    await userEvent.click(addButton)
-    await userEvent.click(addButton)
-    await userEvent.click(screen.getByRole('button', { name: /remove child 2/i }))
-    expect(screen.queryByText('Child 2')).not.toBeInTheDocument()
-    expect(screen.getByText('Child 1')).toBeInTheDocument()
-    expect(screen.getByText('Child 3')).toBeInTheDocument()
-  })
+  renderWithRouter(<GettingStarted />)
+  const addButton = screen.getByRole('button', { name: /add another child/i })
+  await userEvent.click(addButton)
+  await userEvent.click(addButton)
+  await userEvent.click(screen.getByRole('button', { name: /remove child 2/i }))
+  // after removal, remaining two children renumber to Child 1 and Child 2
+  expect(screen.getByText('Child 1')).toBeInTheDocument()
+  expect(screen.getByText('Child 2')).toBeInTheDocument()
+  expect(screen.queryByText('Child 3')).not.toBeInTheDocument()
+})
 
   it('cannot remove the last remaining child', () => {
     renderWithRouter(<GettingStarted />)

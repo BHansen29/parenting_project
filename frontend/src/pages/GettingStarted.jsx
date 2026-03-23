@@ -11,12 +11,6 @@ import './Page.css';
 import SectionHeader from '../components/forms/SectionHeader';
 import RadioQuestion from '../components/forms/RadioQuestion';
 
-/**
- * "Getting Started" page component for the parenting plan application.
- * This page collects basic information about the parents, their safety concerns, case filing status, and their children.
- * It uses local state for managing the list of children and global context for other form data.
- * The page includes validation logic to ensure all required fields are filled out before proceeding to the next step.
- */
 export default function GettingStarted() {
   const navigate = useNavigate();
   const { state, dispatch } = useForm();
@@ -27,7 +21,6 @@ export default function GettingStarted() {
   const caseFilingStatus = state.caseFilingStatus ?? '';
   const errors = formData.errors ?? {};
 
-  // Separate error states for radio groups (not stored in formData.errors)
   const [safetyConcernError, setSafetyConcernError] = useState('');
   const [caseFilingError, setCaseFilingError] = useState('');
 
@@ -40,7 +33,6 @@ export default function GettingStarted() {
       : [{ id: 1, firstName: '', lastName: '', dateOfBirth: '', classification: '', errors: {} }];
   });
 
-  // ── Clear all errors on mount (e.g. user navigated away and came back) ──
   useEffect(() => {
     dispatch({ type: 'UPDATE_SECTION', section: 'parents', payload: { errors: {} } });
     setSafetyConcernError('');
@@ -53,11 +45,10 @@ export default function GettingStarted() {
   }, [children]);
 
   const handleRadioChange = (section) => (value) => {
-    dispatch({
-      type: 'UPDATE_SECTION',
-      section: section,
-      payload: value
-    });
+    dispatch({ type: 'UPDATE_SECTION', section: section, payload: value });
+    //clear the relevant error when user makes a selection
+    if (section === 'safetyConcern') setSafetyConcernError('');
+    if (section === 'caseFilingStatus') setCaseFilingError('');
   };
 
   const handleFormChange = (section, field) => (value) => {
@@ -89,7 +80,6 @@ export default function GettingStarted() {
   const validateForm = () => {
     let isValid = true;
 
-    // --- Safety & Privacy (radio) ---
     if (!safetyConcern) {
       setSafetyConcernError('Please select an option to continue');
       isValid = false;
@@ -97,7 +87,6 @@ export default function GettingStarted() {
       setSafetyConcernError('');
     }
 
-    // --- Parent fields ---
     const parentErrors = {};
     if (!formData.firstName?.trim()) { parentErrors.firstName = 'First name is required'; isValid = false; }
     if (!formData.lastName?.trim())  { parentErrors.lastName  = 'Last name is required';  isValid = false; }
@@ -106,7 +95,6 @@ export default function GettingStarted() {
 
     dispatch({ type: 'UPDATE_SECTION', section: 'parents', payload: { errors: parentErrors } });
 
-    // --- Case Filing Status (radio) ---
     if (!caseFilingStatus) {
       setCaseFilingError('Please select an option to continue');
       isValid = false;
@@ -114,13 +102,12 @@ export default function GettingStarted() {
       setCaseFilingError('');
     }
 
-    // --- Children ---
     const updatedChildren = children.map((child, index) => {
       const childErrors = {};
-      if (!child.firstName.trim())  { childErrors.firstName    = `Child ${index + 1} first name is required`;    isValid = false; }
-      if (!child.lastName.trim())   { childErrors.lastName     = `Child ${index + 1} last name is required`;     isValid = false; }
-      if (!child.dateOfBirth)       { childErrors.dateOfBirth  = `Child ${index + 1} date of birth is required`; isValid = false; }
-      if (!child.classification)    { childErrors.classification = `Child ${index + 1} classification is required`; isValid = false; }
+      if (!child.firstName.trim())  { childErrors.firstName       = `Child ${index + 1} first name is required`;    isValid = false; }
+      if (!child.lastName.trim())   { childErrors.lastName        = `Child ${index + 1} last name is required`;     isValid = false; }
+      if (!child.dateOfBirth)       { childErrors.dateOfBirth     = `Child ${index + 1} date of birth is required`; isValid = false; }
+      if (!child.classification)    { childErrors.classification  = `Child ${index + 1} classification is required`; isValid = false; }
       return { ...child, errors: childErrors };
     });
     setChildren(updatedChildren);
@@ -138,7 +125,7 @@ export default function GettingStarted() {
       if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
       setSubmitAttempted(false);
     }
-  }, [children, submitAttempted]);
+  }, [submitAttempted]); 
 
   const handleNext = () => {
     const valid = validateForm();
@@ -176,7 +163,6 @@ export default function GettingStarted() {
           <CardContent>
             <hr className="section-divider" />
 
-            {/* ── Safety & Privacy ── */}
             <section className="safety-privacy-section">
               <SectionHeader
                 iconClassName="shield-icon"
@@ -189,6 +175,7 @@ export default function GettingStarted() {
                 name="safetyConcern"
                 value={safetyConcern}
                 onChange={handleRadioChange('safetyConcern')}
+                error={safetyConcernError}
                 options={[
                   { value: 'yes', label: 'Yes, please keep my information private', description: 'You and your co-parent will fill out the form separately' },
                   { value: 'no',  label: 'No, I wish to collaborate with my co-parent', description: 'Your answers will be shared with your co-parent' },
@@ -246,7 +233,6 @@ export default function GettingStarted() {
             </section>
             <hr className="section-divider" />
 
-            {/* ── Case Filing Status ── */}
             <section className="case-filing-status-section">
               <SectionHeader
                 iconClassName="info-icon"
@@ -259,6 +245,7 @@ export default function GettingStarted() {
                 name="caseFilingStatus"
                 value={caseFilingStatus}
                 onChange={handleRadioChange('caseFilingStatus')}
+                error={caseFilingError}
                 flag={caseFilingFlag}
                 options={[
                   { value: 'yes',     label: 'Yes, it was me',         description: 'You will be identified as Parent 1/Petitioner 1/Plaintiff in the parenting plan' },
@@ -270,7 +257,6 @@ export default function GettingStarted() {
             </section>
             <hr className="section-divider" />
 
-            {/* ── Children ── */}
             <section className="children-section">
               <SectionHeader
                 iconClassName="users-icon"
@@ -278,104 +264,107 @@ export default function GettingStarted() {
                 title="Your Children"
                 intro="Please list the children you are including in this shared parenting plan."
               />
-                {children.map((child, index) => (
-                  <Card key={child.id}>
-                    <CardHeader>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <CardTitle>{`Child ${index + 1}`}</CardTitle>
-                        {children.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => removeChild(child.id)}
-                            className="remove-child-btn"
-                            aria-label={`Remove Child ${index + 1}`}
-                          >
-                            Remove
-                          </button>
+              {children.map((child, index) => (
+                <Card key={child.id}>
+                  <CardHeader>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <CardTitle>{`Child ${index + 1}`}</CardTitle>
+                      {children.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeChild(child.id)}
+                          className="remove-child-btn"
+                          aria-label={`Remove Child ${index + 1}`}
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                  </CardHeader>
+
+                  <CardContent>
+                    <form noValidate>
+                      <div className="form-row">
+                        <TextInput
+                          id={`child-${child.id}-firstName`}
+                          label="First Name"
+                          type="text"
+                          value={child.firstName}
+                          onChange={handleChildChange(child.id, 'firstName')}
+                          required
+                          placeholder="First Name"
+                          autoComplete="given-name"
+                          error={child.errors?.firstName ?? ''}
+                        />
+                        <TextInput
+                          id={`child-${child.id}-lastName`}
+                          label="Last Name"
+                          type="text"
+                          value={child.lastName}
+                          onChange={handleChildChange(child.id, 'lastName')}
+                          required
+                          placeholder="Last Name"
+                          autoComplete="family-name"
+                          error={child.errors?.lastName ?? ''}
+                        />
+                      </div>
+
+                      <DatePicker
+                        id={`child-${child.id}-dateOfBirth`}
+                        label="Date of Birth"
+                        value={child.dateOfBirth}
+                        onChange={handleChildChange(child.id, 'dateOfBirth')}
+                        required
+                        max={new Date().toISOString().split('T')[0]}
+                        error={child.errors?.dateOfBirth ?? ''}
+                      />
+
+                      <div className="child-classification">
+                        <label className="classification-label">Child Classification</label>
+                        <div className="radio-group">
+                          <label className="radio-option">
+                            <input
+                              type="radio"
+                              name={`child-${child.id}-classification`}
+                              value="minor"
+                              checked={child.classification === 'minor'}
+                              onChange={(e) => handleChildChange(child.id, 'classification')(e.target.value)}
+                            />
+                            <span>
+                              The child is a minor and/or mentally or physically disabled
+                              incapable of supporting or maintaining themselves
+                            </span>
+                          </label>
+                          <label className="radio-option">
+                            <input
+                              type="radio"
+                              name={`child-${child.id}-classification`}
+                              value="emancipated"
+                              checked={child.classification === 'emancipated'}
+                              onChange={(e) => handleChildChange(child.id, 'classification')(e.target.value)}
+                            />
+                            <span>The child is an emancipated adult</span>
+                          </label>
+                        </div>
+                        {child.errors?.classification && (
+                          <p className="child-classification-error">
+                            {child.errors.classification}
+                          </p>
                         )}
                       </div>
-                    </CardHeader>
+                    </form>
+                  </CardContent>
+                </Card>
+              ))}
 
-                    <CardContent>
-                      <form noValidate>
-                        <div className="form-row">
-                          <TextInput
-                            id={`child-${child.id}-firstName`}
-                            label="First Name"
-                            type="text"
-                            value={child.firstName}
-                            onChange={handleChildChange(child.id, 'firstName')}
-                            required
-                            placeholder="First Name"
-                            autoComplete="given-name"
-                            error={submitAttempted ? child.errors?.firstName : ''}
-                          />
-
-                          <TextInput
-                            id={`child-${child.id}-lastName`}
-                            label="Last Name"
-                            type="text"
-                            value={child.lastName}
-                            onChange={handleChildChange(child.id, 'lastName')}
-                            required
-                            placeholder="Last Name"
-                            autoComplete="family-name"
-                            error={submitAttempted ? child.errors?.lastName : ''}
-                          />
-                        </div>
-
-                        <DatePicker
-                          id={`child-${child.id}-dateOfBirth`}
-                          label="Date of Birth"
-                          value={child.dateOfBirth}
-                          onChange={handleChildChange(child.id, 'dateOfBirth')}
-                          required
-                          max={new Date().toISOString().split('T')[0]}
-                          error={submitAttempted ? child.errors?.dateOfBirth : ''}
-                        />
-
-                        <div className="child-classification">
-                          <label className="classification-label">Child Classification</label>
-                          <div className="radio-group">
-                            <label className="radio-option">
-                              <input
-                                type="radio"
-                                name={`child-${child.id}-classification`}
-                                value="minor"
-                                checked={child.classification === 'minor'}
-                                onChange={(e) => handleChildChange(child.id, 'classification')(e.target.value)}
-                              />
-                              <span>
-                                The child is a minor and/or mentally or physically disabled
-                                incapable of supporting or maintaining themselves
-                              </span>
-                            </label>
-
-                            <label className="radio-option">
-                              <input
-                                type="radio"
-                                name={`child-${child.id}-classification`}
-                                value="emancipated"
-                                checked={child.classification === 'emancipated'}
-                                onChange={(e) => handleChildChange(child.id, 'classification')(e.target.value)}
-                              />
-                              <span>The child is an emancipated adult</span>
-                            </label>
-                          </div>
-                        </div>
-                      </form>
-                    </CardContent>
-                  </Card>
-                ))}
-
-                <button
-                  type="button"
-                  onClick={addChild}
-                  className="add-child-btn"
-                >
-                  + Add Another Child
-                </button>
-              </section>
+              <button
+                type="button"
+                onClick={addChild}
+                className="add-child-btn"
+              >
+                + Add Another Child
+              </button>
+            </section>
           </CardContent>
         </Card>
       </div>
