@@ -10,6 +10,7 @@ import { useSectionFlag } from '../hooks/useSectionFlag';
 import './Page.css';
 import FlagButton from '../components/forms/FlagButton';
 import RadioButton from '../components/forms/RadioButton';
+import ToolTip from '../components/common/ToolTip';
 
 /**
  * "Getting Started" page component for the parenting plan application.
@@ -175,9 +176,13 @@ export default function GettingStarted() {
       <div className="page-content">
         <Card>
           <CardHeader>
-            <CardTitle>Getting Started</CardTitle>
+            <div  className="card-header-with-tooltip">
+              <CardTitle>Getting Started</CardTitle>
+              <ToolTip content="Additional information about this question to help you answer it correctly.
+               This is just an example of how to use the tooltip."/>
+            </div>
             <CardDescription>
-              Let's start by gathering some basic information about your family and situation.            </CardDescription>
+              Let's start by gathering some basic information about your family and situation.</CardDescription>
           </CardHeader>
 
           <CardContent>
@@ -194,8 +199,7 @@ export default function GettingStarted() {
               </div>
               <Card>
                 <CardHeader>
-                  <CardDescription className={"card-heading-question-bold"}>Would sharing information from this questionnaire
-                     with your co-parent make you fear for your safety in any way?</CardDescription>
+                  <CardDescription className={"card-heading-question-bold"}>Would sharing information from this questionnaire with your co-parent make you fear for your safety in any way?</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="radio-group">

@@ -127,6 +127,13 @@
   flex-direction: row;
 }
 
+.card-header-with-tooltip {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  flex-direction: row;
+}
+
 [data-slot="card-title"] {
   margin: 0 0 0.5rem 0;
   font-size: 2rem;
