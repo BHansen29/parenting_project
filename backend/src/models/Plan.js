@@ -2,9 +2,8 @@ const mongoose = require('mongoose');
 
 const questionResponseSchema = new mongoose.Schema(
 {
-  questionID: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: "Question",
+  qKey: { 
+    type: String, 
     required: true 
   },
   answer: { 

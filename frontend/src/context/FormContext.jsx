@@ -20,11 +20,10 @@ const initialState = {
   communication: { errors: {} },
   education: { errors: {} },
   transportation: { errors: {} },
-  parentalRights: { 
-    appliesToAllChildren: '',
-    livingArrangement: '',
-    decisionMaking: '',
-    errors: {} 
+  parental_rights: {
+    planID: '',
+    responses: [],
+    errors: {}
   },
   timeAndCommunication: {
     agreeToTransportationPolicy: false,
@@ -37,7 +36,8 @@ const initialState = {
     errors: {}
   },
   plan: {},
-  question: {}
+  question: {},
+  currAnswer: ''
 };
 
 function formReducer(state, action) {

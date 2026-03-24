@@ -14,8 +14,28 @@ export default function ParentalRights() {
     const { state, dispatch } = useForm();
     const question = state.question
     //form data and errors for this section
-    const formData = state.parentalRights ?? {appliesToAllChildren: '', livingArrangement: '', decisionMaking: '', errors: {} };
-    const errors = state.parentalRights?.errors ?? {};
+    if (state.parental_rights.planID !== state.plan._id) {
+        let res = state.plan.children.map((qAnswer) => {return {qKey: qAnswer.qKey, answer: qAnswer.answer}})
+        if (!res) {
+            res = []
+        }
+        dispatch({
+            type: 'UPDATE_SECTION',
+            section: "parental_rights",
+            payload: {planID: state.plan._id, responses: res, errors: {}}
+        });
+    }
+    const formData = state.parental_rights
+    let curr = formData.responses.find((response) => {return response.qKey === question.qKey})
+    if (!curr) {
+        curr = {qKey: question.qKey, answer: ''}
+        formData.responses.push(curr)
+    }
+    const currAnswer = curr.answer
+    console.log(formData)
+
+    // const formData = state.parental_rights ?? {currAnswer: '', errors: {}}
+    const errors = state.parental_rights?.errors ?? {};
 
     //flag states for this section
     const childrenApplicationFlag = useSectionFlag('childrenApplication');
@@ -36,35 +56,39 @@ export default function ParentalRights() {
 
     //generic change handler for form fields in this section
     const handleFormChange = (section, field) => (value) => {
-        dispatch({
-        type: 'UPDATE_SECTION',
-        section: section,
-        payload: { [field]: value }
-        });
-        if (errors[field]) {
+        // update the answer in the responses field
+        const updated = formData.responses.map((res) => {return res.qKey === question.qKey ? {qKey: res.qKey, answer: value} : res})
+        console.log(updated)
         dispatch({
             type: 'UPDATE_SECTION',
             section: section,
-            payload: { errors: { ...errors, [field]: '' } }
+            payload: { [field]: updated }
         });
+        if (errors[field]) {
+            dispatch({
+                type: 'UPDATE_SECTION',
+                section: section,
+                payload: { errors: { ...errors, [field]: '' } }
+            });
         }
+        // update question answer field
+        dispatch({
+            type: 'UPDATE_SECTION',
+            section: 'currAnswer',
+            payload: value
+        });
     };
 
     const validateForm = () => {
         const formErrors = {};
-        if (!formData.appliesToAllChildren) {
-            formErrors.appliesToAllChildren = 'Please select an option';
-        }
-        if (!formData.livingArrangements) {
-            formErrors.livingArrangements = 'Please select an option';
-        }
-        if (!formData.decisionMaking) {
-            formErrors.decisionMaking = 'Please select an option';
+
+        if (!currAnswer) {
+            formErrors.currAnswer = 'Please select an option';
         }
 
         dispatch({
             type: 'UPDATE_SECTION',
-            section: 'parentalRights',
+            section: question.section.replaceAll("-", "_"),
             payload: { errors: formErrors }
         });
 
@@ -113,13 +137,13 @@ export default function ParentalRights() {
                                     <RadioQuestion
                                         question={question.qText}
                                         name={question.qKey}
-                                        value={formData.appliesToAllChildren}
+                                        value={currAnswer}
                                         // need to change the 1st & 2nd value in FormContext.jsx maybe?
                                         // def need to make changes regarding this since i think it broke some things
-                                        onChange={handleFormChange(question.section, question.qKey)}
+                                        onChange={handleFormChange(question.section.replaceAll("-", "_"), 'responses')}
                                         //onchange={handleFormChange('parentalRights', 'appliesToAllChildren')}
                                         flag={childrenApplicationFlag}
-                                        error={errors.appliesToAllChildren}
+                                        error={errors.currAnswer}
                                         options={question.options}
                                     />
                                 );

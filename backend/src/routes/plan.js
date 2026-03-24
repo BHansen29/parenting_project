@@ -71,12 +71,11 @@ router.get('/:planId/current', verifyToken, async (req, res) => {
 router.post('/updateCurrent/:planId/:currQId', verifyToken, async (req, res) => {
   try {
     const { planId, currQId } = req.params;
-    const { userID } = req.body;
     const plan = await Plan.findById(planId);
     if (!plan) {
       return res.status(404).json({ message: 'Plan not found'})
     }
-    if (plan.userID !== userID) {
+    if (plan.userID !== req.user.uid) {
       return res.status(401).json({ message: 'Unauthorized to update this plan' }); 
     }
     plan.currentQuestion = currQId;
@@ -102,8 +101,8 @@ router.post('/:planId/answer', verifyToken, async (req, res) => {
     }
 
     //Store the question into the plan
-    const {questionID, answer} = req.body
-    plan.children.push({questionID, answer})
+    const {qKey, answer} = req.body
+    plan.children.push({qKey, answer})
 
     //Save the plan and write back to DB
     await plan.save();

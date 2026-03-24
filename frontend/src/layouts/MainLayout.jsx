@@ -18,6 +18,7 @@ export default function Layout({ children }) {
   const { state, dispatch } = useForm();
   const plan = state.plan
   const q = state.question
+  const answer = state.currAnswer
   // Define the page navigation order
   const pageOrder = [
     '/getting-started',
@@ -72,7 +73,7 @@ export default function Layout({ children }) {
   const handleNext = async () => {
     const apiURL = pageOrder[currentPageIndex] === '/getting-started' 
       ? '/api/logic-engine/question/69c04a555c958122e4d898bd' // default starting question (probably change to const or something)
-      : '/api/logic-engine/nextQuestion/' + q.qKey + '/' + q.answer
+      : '/api/logic-engine/nextQuestion/' + q.qKey + '/' + answer
     try {
       // get the next 'question' object
       const response = await fetch(buildApiUrl(apiURL));
@@ -85,19 +86,38 @@ export default function Layout({ children }) {
         plan.currentQuestion = q._id
         if (user) {
           user.getIdToken().then((idToken) => {
+            // api call to set current question of plan to question just answered 
             fetch(buildApiUrl('api/plan/updateCurrent/' + plan._id + '/' + plan.currentQuestion), {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${idToken}`,
-              },
-              body: JSON.stringify({userID: user.uid})
+              }
             })
             .then( async (response) => {
-              const data = await response.json()
               if (!response.ok) {
                 console.error("Failed to update plan: ", response.message)
               }
+              // api call to update user's answer to current question in plan
+              fetch(buildApiUrl('api/plan/' + plan._id + '/answer'), {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${idToken}`,
+                },
+                body: JSON.stringify({qKey: q.qKey, answer: answer})
+              })
+              .then( async (response) => {
+                if (!response.ok) {
+                  console.error("Failed to add answer to user plan: ", response.message)
+                }
+                const data = await response.json()
+                dispatch({
+                  type: 'UPDATE_SECTION',
+                  section: "plan",
+                  payload: data
+                });
+              });
             });
           })
         }
