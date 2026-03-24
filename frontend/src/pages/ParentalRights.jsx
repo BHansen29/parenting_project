@@ -32,9 +32,7 @@ export default function ParentalRights() {
         formData.responses.push(curr)
     }
     const currAnswer = curr.answer
-    console.log(formData)
 
-    // const formData = state.parental_rights ?? {currAnswer: '', errors: {}}
     const errors = state.parental_rights?.errors ?? {};
 
     //flag states for this section
@@ -58,7 +56,6 @@ export default function ParentalRights() {
     const handleFormChange = (section, field) => (value) => {
         // update the answer in the responses field
         const updated = formData.responses.map((res) => {return res.qKey === question.qKey ? {qKey: res.qKey, answer: value} : res})
-        console.log(updated)
         dispatch({
             type: 'UPDATE_SECTION',
             section: section,
@@ -81,7 +78,6 @@ export default function ParentalRights() {
 
     const validateForm = () => {
         const formErrors = {};
-
         if (!currAnswer) {
             formErrors.currAnswer = 'Please select an option';
         }
