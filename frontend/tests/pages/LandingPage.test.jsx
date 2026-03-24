@@ -89,7 +89,7 @@ describe('LandingPage', () => {
   it('navigates to /signup when Begin Your Plan is clicked', async () => {
     renderWithRouter(<LandingPage />)
     await userEvent.click(screen.getByRole('button', { name: /begin your plan/i }))
-    expect(mockNavigate).toHaveBeenCalledWith('/getting-started')
+    expect(mockNavigate).toHaveBeenCalledWith('/signup')
   })
 
   it('navigates to /signin when Sign In is clicked', async () => {
