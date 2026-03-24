@@ -36,9 +36,14 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
-  photoURL: {
+  role: {
     type: String,
-    default: ''
+    enum: ['admin', 'user'],
+    default: 'user'
+  },
+  permissions: {
+    type: [String],
+    default: []
   },
   lastLoginAt: {
     type: Date

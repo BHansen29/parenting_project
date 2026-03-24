@@ -115,7 +115,8 @@ router.post('/auth/firebase/session', requireDatabaseConnection, async (req, res
         name: displayName || email.split('@')[0],
         authProvider: 'firebase',
         emailVerified: Boolean(decodedToken.email_verified),
-        photoURL: decodedToken.picture || '',
+        role: 'user',
+        permissions: [],
         lastLoginAt: now
       });
     } else { // Else refresh key fields
@@ -123,8 +124,15 @@ router.post('/auth/firebase/session', requireDatabaseConnection, async (req, res
       syncedUser.email = email;
       syncedUser.authProvider = 'firebase';
       syncedUser.emailVerified = Boolean(decodedToken.email_verified);
-      syncedUser.photoURL = decodedToken.picture || '';
       syncedUser.lastLoginAt = now;
+
+      if (!syncedUser.role) {
+        syncedUser.role = 'user';
+      }
+
+      if (!Array.isArray(syncedUser.permissions)) {
+        syncedUser.permissions = [];
+      }
 
       if (displayName) {
         syncedUser.name = displayName;
@@ -142,7 +150,8 @@ router.post('/auth/firebase/session', requireDatabaseConnection, async (req, res
         email: syncedUser.email,
         name: syncedUser.name,
         emailVerified: syncedUser.emailVerified,
-        photoURL: syncedUser.photoURL,
+        role: syncedUser.role,
+        permissions: syncedUser.permissions,
         authProvider: syncedUser.authProvider,
         lastLoginAt: syncedUser.lastLoginAt
       }
