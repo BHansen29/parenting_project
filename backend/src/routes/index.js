@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const router = express.Router();
 const Document = require('../models/Document');
 const User = require('../models/User');
+const emailRoutes = require('./email');
 const planRoutes = require('./plan');
 const logicRoutes = require('./logic-engine');
 const { getFirebaseAuth } = require('../config/firebaseAdmin');
@@ -180,11 +181,13 @@ router.get('/', (req, res) => {
       document: 'GET /api/documents/:id - Get a document by ID',
       createDocument: 'POST /api/documents - Create a new document',
       firebaseSession: 'POST /api/auth/firebase/session - Verify Firebase token and sync user profile',
+      sendTestEmail: 'POST /api/email/test - Send a Gmail SMTP test email to the signed-in user',
       users: 'GET /api/users - List all users'
     }
   });
 });
 
+router.use('/email', emailRoutes);
 router.use('/plan', requireDatabaseConnection, planRoutes);
 router.use('/logic-engine', requireDatabaseConnection, logicRoutes);
 
