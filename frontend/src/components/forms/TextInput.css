@@ -87,4 +87,24 @@
   .text-input--disabled .text-input__field {
     background-color: rgba(255, 255, 255, 0.05);
   }
+
+  .text-input__field{
+    background-color: #1f2937;
+    border: 1.5px solid #374151;
+    color: #d1d5db;
+  }
+
+  .text-input__field--textarea {
+    background-color: #1f2937;
+    border: 1.5px solid #374151;
+    color: #d1d5db;
+  }
+
+  .text-input__help-text {
+    color: #9ca3af;
+  }
+
+  .text-input__label {
+    color: #d1d5db;
+  }
 }

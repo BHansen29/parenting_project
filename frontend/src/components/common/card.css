@@ -37,14 +37,17 @@
 /* Dark mode */
 @media (prefers-color-scheme: dark) {
     .card {
-        background-color: #2a2a2a;
-        box-shadow: 0 2px 8px rgba(0, 0,
-        0, 0.3);
-        border: 1px solid #444;
+        background-color: #1f2937;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        border: 1px solid #374151;
+    }
+
+    .card-title {
+        color: #d1d5db;
     }
 
     .card-description {
-        color: #aaa;
+        color: #9ca3af;
     }
 }
 

@@ -89,14 +89,14 @@ describe('SignUp', () => {
   })
 
   // Navigation behavior
-  it('navigates to /household-info after successful sign up', async () => {
+  it('navigates to /getting-started after successful sign up', async () => {
     renderWithRouter(<SignUp />)
     await userEvent.type(screen.getByLabelText(/email/i), 'valid@email.com')
     await userEvent.type(screen.getByLabelText(/password/i), 'password123')
     fireEvent.click(screen.getByRole('button', { name: /^sign up$/i }))
     await screen.findByText('Creating account...')
     await vi.waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/household-info')
+      expect(mockNavigate).toHaveBeenCalledWith('/getting-started')
     }, { timeout: 2000 })
   })
 

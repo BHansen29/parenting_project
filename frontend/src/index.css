@@ -61,7 +61,8 @@ body {
 
 @media (prefers-color-scheme: dark) {
   body {
-    background-color: #1a1a1a;
+    background-color: #1f2937;
+    color: #d1d5db;
   }
 }
 
@@ -106,6 +107,32 @@ button:hover {
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --input-border: #444;
+    color: #d1d5db;
+    background-color: #1f2937;
+    --input-border: #374151;
+    --input-background: #1f2937;
+    --help-text-color: #9ca3af;
+  }
+
+  a {
+    color: #14abdd;
+  }
+
+  a:hover {
+    color: #0c7a9e;
+  }
+
+  button {
+    color: #ffffff;
+    background-color: #14abdd;
+  }
+
+  button:hover {
+    background-color: #0c7a9e;
+    border-color: #14abdd;
+  }
+
+  h1 {
+    color: #e5e7eb;
   }
 }

@@ -185,18 +185,32 @@
 
 /* Dark mode */
 @media (prefers-color-scheme: dark) {
+  .dropdown__button {
+    background-color: #1f2937;
+    border-color: #374151;
+    color: #e5e7eb;
+  }
+
+  .dropdown__button:hover {
+    border-color: #14abdd;
+  }
+
   .dropdown__menu {
-    background-color: #2a2a2a;
-    border-color: #444;
+    background-color: #1f2937;
+    border-color: #374151;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   }
 
   .dropdown__button--placeholder {
-    color: #666;
+    color: #9ca3af;
   }
 
   .dropdown__button-icon {
-    color: #999;
+    color: #9ca3af;
+  }
+
+  .dropdown__item {
+    color: #e5e7eb;
   }
 
   .dropdown__item:hover {
@@ -216,11 +230,11 @@
   }
 
   .dropdown__divider {
-    border-top-color: #444;
+    border-top-color: #374151;
   }
 
   .dropdown__empty {
-    color: #666;
+    color: #9ca3af;
   }
 }
 
