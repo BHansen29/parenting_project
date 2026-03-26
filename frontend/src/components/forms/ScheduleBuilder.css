@@ -450,6 +450,152 @@
   line-height: 1.5;
 }
 
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .schedule-builder {
+    background-color: #4b5563;
+    border-color: #374151;
+  }
+
+  .schedule-builder__legend {
+    background-color: #374151;
+  }
+
+  .schedule-builder__legend-item {
+    color: #e5e7eb;
+  }
+
+  .schedule-builder__day-cell {
+    background-color: #374151;
+    border-color: #4b5563;
+  }
+
+  .schedule-builder__day-cell:hover {
+    background-color: rgba(20, 171, 221, 0.1);
+    border-color: #14abdd;
+    box-shadow: 0 2px 8px rgba(20, 171, 221, 0.2);
+  }
+
+  .schedule-builder__stats {
+    background-color: #374151;
+  }
+
+  .schedule-builder__stat-label {
+    color: #e5e7eb;
+  }
+
+  .schedule-builder__stat-value {
+    color: #d1d5db;
+  }
+
+  .schedule-builder__clear-button {
+    background-color: transparent;
+    border-color: #ef4444;
+    color: #ef4444;
+  }
+
+  .schedule-builder__clear-button:hover {
+    background-color: #ef4444;
+    border-color: #ef4444;
+  }
+
+  .schedule-builder__modal {
+    background-color: #1f2937;
+    border-color: #374151;
+  }
+
+  .schedule-builder__modal-header h3 {
+    color: #d1d5db;
+  }
+
+  .schedule-builder__checkbox-label {
+    color: #d1d5db;
+  }
+
+  .schedule-builder__modal-header {
+    border-bottom-color: #374151;
+  }
+
+  .schedule-builder__modal-close {
+    color: #9ca3af;
+  }
+
+  .schedule-builder__week-label,
+  .schedule-builder__weekday {
+    color: #9ca3af;
+  }
+
+  .schedule-builder__modal-close:hover {
+    background-color: #374151;
+    color: #d1d5db;
+  }
+
+  .schedule-builder__modal-content {
+    background-color: #1f2937;
+  }
+
+  .schedule-builder__modal-footer {
+    background-color: #1f2937;
+    border-color: #374151;
+  }
+
+  .schedule-builder__modal-button--primary {
+    background-color: #14abdd;
+    border-color: #14abdd;
+    color: #ffffff;
+  }
+
+  .schedule-builder__modal-button--primary:hover {
+    background-color: #0c7a9e;
+    border-color: #0c7a9e;
+  }
+
+  .schedule-builder__modal-button--secondary {
+    background-color: transparent;
+    border-color: #374151;
+    color: #9ca3af;
+  }
+
+  .schedule-builder__modal-button--secondary:hover {
+    background-color: #374151;
+    border-color: #14abdd;
+    color: #14abdd;
+  }
+
+  .schedule-builder__add-slot {
+    background-color: transparent;
+    border-color: #374151;
+    color: #9ca3af;
+  }
+  
+  .schedule-builder__time-slot, 
+  .schedule-builder__time-slot-controls {
+    background-color: #374151;  
+    border-color: #1f2937;
+  }
+
+  .schedule-builder__remove-slot {
+    background-color: transparent;
+    border-color: #ef4444;
+    color: #ef4444;
+  }
+
+  .schedule-builder__remove-slot:hover {
+    background-color: #ef4444;
+    border-color: #ef4444;
+  }
+
+  .schedule-builder__label {
+    color: #d1d5db;
+  }
+  .schedule-builder__select,
+  .schedule-builder__input {
+    background-color: #1f2937;
+    border-color: #374151;
+    color: #d1d5db;   
+  }
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .schedule-builder {

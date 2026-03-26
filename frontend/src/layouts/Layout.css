@@ -30,6 +30,16 @@
   width: 100%;
 }
 
+@media (prefers-color-scheme: dark) {
+  .layout {
+    background-color: #374151;
+  }
+
+  .layout__main {
+    background-color: #374151;
+  }
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
   .layout__main {

@@ -378,6 +378,175 @@
   background-color: #ffffff;
 }
 
+/* ── Dark Mode ── */
+@media (prefers-color-scheme: dark) {
+  /* Delete modal */
+  .delete-modal__overlay {
+    background: rgba(0, 0, 0, 0.6);
+  }
+
+  .delete-modal {
+    background: #1f2937;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  }
+
+  .delete-modal__title {
+    color: #e5e7eb;
+  }
+
+  .delete-modal__body {
+    color: #9ca3af;
+  }
+
+  .delete-modal__cancel {
+    background: #374151;
+    border-color: #4b5563;
+    color: #d1d5db;
+  }
+
+  .delete-modal__cancel:hover {
+    background-color: #4b5563;
+  }
+
+  .delete-modal__confirm {
+    background: #ef4444;
+  }
+
+  .delete-modal__confirm:hover {
+    background-color: #dc2626;
+  }
+
+  /* Context menu */
+  .context-menu {
+    background: #1f2937;
+    border-color: #374151;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  }
+
+  .context-menu li {
+    color: #d1d5db;
+  }
+
+  .context-menu li:hover {
+    background-color: #374151;
+  }
+
+  .context-menu__delete:hover {
+    background-color: rgba(239, 68, 68, 0.1) !important;
+  }
+
+  /* Dashboard page */
+  .dashboard {
+    background-color: #374151;
+  }
+
+  /* Invite banner */
+  .dashboard__invite-banner {
+    background-color: #1f2937;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  .dashboard__invite-icon {
+    background-color: rgba(20, 171, 221, 0.15);
+  }
+
+  .dashboard__invite-title {
+    color: #e5e7eb;
+  }
+
+  .dashboard__invite-description {
+    color: #9ca3af;
+  }
+
+  .dashboard__invite-btn {
+    background-color: #14abdd;
+  }
+
+  .dashboard__invite-btn:hover {
+    background-color: #0c7a9e;
+  }
+
+  .dashboard__invite-note {
+    color: #9ca3af;
+  }
+
+  /* Plans section */
+  .dashboard__plans-title {
+    color: #e5e7eb;
+  }
+
+  .dashboard__new-plan-btn {
+    background-color: transparent;
+    color: #14abdd;
+    border-color: #14abdd;
+  }
+
+  .dashboard__new-plan-btn:hover {
+    background-color: #14abdd;
+    color: #ffffff;
+  }
+
+  /* Plan card */
+  .plan-card {
+    background-color: #1f2937;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  .plan-card__icon {
+    background-color: #374151;
+  }
+
+  .plan-card__delete-btn {
+    color: #6b7280;
+  }
+
+  .plan-card__delete-btn:hover {
+    color: #ef4444;
+    background-color: rgba(239, 68, 68, 0.1);
+  }
+
+  .plan-card__name {
+    color: #e5e7eb;
+  }
+
+  .plan-card__edit-btn {
+    color: #6b7280;
+  }
+
+  .plan-card__edit-btn:hover {
+    color: #9ca3af;
+  }
+
+  .plan-card__name-input {
+    color: #e5e7eb;
+    border-bottom-color: #14abdd;
+  }
+
+  .plan-card__meta {
+    color: #9ca3af;
+  }
+
+  .plan-card__open-btn {
+    background-color: #14abdd;
+  }
+
+  .plan-card__open-btn:hover {
+    background-color: #0c7a9e;
+  }
+
+  .plan-card__invite-btn {
+    background-color: #374151;
+    border-color: #4b5563;
+    color: #d1d5db;
+  }
+
+  .plan-card__invite-btn:hover {
+    border-color: #14abdd;
+    color: #14abdd;
+    background-color: #374151;
+  }
+}
+
 /* ── Responsive ── */
 @media (max-width: 768px) {
   .dashboard__main {
