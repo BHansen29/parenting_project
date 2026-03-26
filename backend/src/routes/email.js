@@ -1,31 +1,38 @@
 const express = require('express');
 const verifyToken = require('../middleware/verifyToken');
-const { sendExampleEmail } = require('../services/emailService');
+const { sendInviteEmail } = require('../services/emailService');
 
 const router = express.Router();
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// POST /api/email/test - send a sample email to the signed-in Firebase user's email.
-router.post('/test', verifyToken, async (req, res) => {
+// POST /api/email/invite - send an invite-style email to the submitted recipient.
+router.post('/invite', verifyToken, async (req, res) => {
   try {
-    const recipientEmail = req.user.email;
+    const recipientEmail = typeof req.body?.email === 'string'
+      ? req.body.email.trim()
+      : '';
 
     if (!recipientEmail) {
-      return res.status(400).json({ error: 'Firebase token is missing an email claim' });
+      return res.status(400).json({ error: 'Please enter an email address.' });
     }
 
-    const delivery = await sendExampleEmail(recipientEmail);
+    if (!EMAIL_REGEX.test(recipientEmail)) {
+      return res.status(400).json({ error: 'Please enter a valid email address.' });
+    }
+
+    const delivery = await sendInviteEmail(recipientEmail);
 
     return res.status(200).json({
-      message: 'Test email sent',
+      message: 'Invite email sent',
       to: recipientEmail,
       delivery,
     });
   } catch (error) {
-    console.error('Failed to send test email:', error.message);
+    console.error('Failed to send invite email:', error.message);
     return res.status(500).json({
       error: process.env.NODE_ENV === 'development'
         ? error.message
-        : 'Failed to send test email',
+        : 'Failed to send invite email',
     });
   }
 });

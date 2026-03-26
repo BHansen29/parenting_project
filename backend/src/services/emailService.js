@@ -62,8 +62,8 @@ function getTransporter() {
   return transporter;
 }
 
-// Send a simple example email that confirms Gmail SMTP is working end to end.
-async function sendExampleEmail(toAddress) {
+// Send a simple invite-style email. The body is still placeholder content for now.
+async function sendInviteEmail(toAddress) {
   if (!toAddress) {
     throw new Error('A recipient email address is required');
   }
@@ -85,4 +85,4 @@ async function sendExampleEmail(toAddress) {
   };
 }
 
-module.exports = { sendExampleEmail };
+module.exports = { sendInviteEmail };
