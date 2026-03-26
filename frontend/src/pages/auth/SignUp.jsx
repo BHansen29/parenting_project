@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
 import { auth } from '../../lib/firebase';
 import { syncFirebaseUserProfileSafely } from '../../lib/authApi';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/common/card';
@@ -54,12 +54,16 @@ export default function SignUp() {
       try {
         // Create the user in Firebase Auth with email + password
         const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+        const firebaseUser = userCredential.user;
+
+        // Send Firebase's built-in verification email after account creation.
+        await sendEmailVerification(firebaseUser);
 
         // Try to sync Mongo profile, but do not block sign-up if backend/database is down.
-        await syncFirebaseUserProfileSafely(userCredential.user);
+        await syncFirebaseUserProfileSafely(firebaseUser);
 
-        // On success, send them to the next step
-        navigate('/household-info');
+        // On success, send them to the first onboarding step.
+        navigate('/getting-started');
       } catch (err) {
         // Show Firebase error in the form
         setErrors({ general: err.message });

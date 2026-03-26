@@ -1,24 +1,39 @@
 import { useState } from 'react';
 import { X, UserPlus, Mail, Copy, Check } from 'lucide-react';
+import { sendInviteEmailRequest } from '../../lib/inviteApi';
 import './InviteModal.css';
 
-// Mock collaboration link — replace with a real generated link later
+// Mock collaboration link - replace with a real generated link later.
 const MOCK_COLLAB_LINK = 'https://2dc42780-c3c8-4249-89d0-1ce28f8ac2f1.sharecare.app/join';
 
 export default function InviteModal({ isOpen, onClose }) {
   const [email, setEmail] = useState('');
   const [copied, setCopied] = useState(false);
   const [sent, setSent] = useState(false);
+  const [isSending, setIsSending] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleSend = (e) => {
+  const handleSend = async (e) => {
     e.preventDefault();
-    if (!email.trim()) return;
-    // TODO: wire up real email invite
-    setSent(true);
-    setEmail('');
-    setTimeout(() => setSent(false), 3000);
+    const recipientEmail = email.trim();
+
+    if (!recipientEmail) {
+      return;
+    }
+
+    setIsSending(true);
+
+    try {
+      await sendInviteEmailRequest(recipientEmail);
+      setSent(true);
+      setEmail('');
+      setTimeout(() => setSent(false), 3000);
+    } catch (error) {
+      console.error('Failed to send invite email:', error);
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const handleCopy = () => {
@@ -27,7 +42,7 @@ export default function InviteModal({ isOpen, onClose }) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Close when clicking the backdrop
+  // Close when clicking the backdrop.
   const handleBackdropClick = (e) => {
     if (e.target === e.currentTarget) onClose();
   };
@@ -35,8 +50,6 @@ export default function InviteModal({ isOpen, onClose }) {
   return (
     <div className="modal-backdrop" onClick={handleBackdropClick}>
       <div className="invite-modal" role="dialog" aria-modal="true" aria-labelledby="invite-modal-title">
-
-        {/* Header */}
         <div className="invite-modal__header">
           <div className="invite-modal__title-row">
             <div className="invite-modal__icon">
@@ -52,7 +65,6 @@ export default function InviteModal({ isOpen, onClose }) {
           </button>
         </div>
 
-        {/* How it works */}
         <div className="invite-modal__info-box">
           <p>
             <strong>How it works:</strong> Each parent fills out the parenting plan independently.
@@ -62,7 +74,6 @@ export default function InviteModal({ isOpen, onClose }) {
           </p>
         </div>
 
-        {/* Email invite */}
         <div className="invite-modal__section">
           <label className="invite-modal__label" htmlFor="invite-email">
             Send invite via email
@@ -79,20 +90,18 @@ export default function InviteModal({ isOpen, onClose }) {
             <button
               type="submit"
               className={`invite-modal__send-btn ${sent ? 'invite-modal__send-btn--sent' : ''}`}
-              disabled={sent}
+              disabled={sent || isSending}
             >
               <Mail size={16} />
-              {sent ? 'Sent!' : 'Send'}
+              {isSending ? 'Sending...' : sent ? 'Sent!' : 'Send'}
             </button>
           </form>
         </div>
 
-        {/* Divider */}
         <div className="invite-modal__divider">
           <span>or share link</span>
         </div>
 
-        {/* Collaboration link */}
         <div className="invite-modal__section">
           <p className="invite-modal__label">Share collaboration link</p>
           <div className="invite-modal__link-row">
@@ -106,12 +115,10 @@ export default function InviteModal({ isOpen, onClose }) {
           </div>
         </div>
 
-        {/* Privacy note */}
         <p className="invite-modal__privacy">
           <strong>Privacy Note:</strong> Neither parent will see the other's specific responses.
           Only areas of agreement and disagreement will be highlighted in the comparison summary.
         </p>
-
       </div>
     </div>
   );

@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const router = express.Router();
 const Document = require('../models/Document');
 const User = require('../models/User');
+const emailRoutes = require('./email');
 const planRoutes = require('./plan');
 const logicRoutes = require('./logic-engine');
 const { getFirebaseAuth } = require('../config/firebaseAdmin');
@@ -115,7 +116,8 @@ router.post('/auth/firebase/session', requireDatabaseConnection, async (req, res
         name: displayName || email.split('@')[0],
         authProvider: 'firebase',
         emailVerified: Boolean(decodedToken.email_verified),
-        photoURL: decodedToken.picture || '',
+        role: 'user',
+        permissions: [],
         lastLoginAt: now
       });
     } else { // Else refresh key fields
@@ -123,8 +125,15 @@ router.post('/auth/firebase/session', requireDatabaseConnection, async (req, res
       syncedUser.email = email;
       syncedUser.authProvider = 'firebase';
       syncedUser.emailVerified = Boolean(decodedToken.email_verified);
-      syncedUser.photoURL = decodedToken.picture || '';
       syncedUser.lastLoginAt = now;
+
+      if (!syncedUser.role) {
+        syncedUser.role = 'user';
+      }
+
+      if (!Array.isArray(syncedUser.permissions)) {
+        syncedUser.permissions = [];
+      }
 
       if (displayName) {
         syncedUser.name = displayName;
@@ -142,7 +151,8 @@ router.post('/auth/firebase/session', requireDatabaseConnection, async (req, res
         email: syncedUser.email,
         name: syncedUser.name,
         emailVerified: syncedUser.emailVerified,
-        photoURL: syncedUser.photoURL,
+        role: syncedUser.role,
+        permissions: syncedUser.permissions,
         authProvider: syncedUser.authProvider,
         lastLoginAt: syncedUser.lastLoginAt
       }
@@ -171,11 +181,13 @@ router.get('/', (req, res) => {
       document: 'GET /api/documents/:id - Get a document by ID',
       createDocument: 'POST /api/documents - Create a new document',
       firebaseSession: 'POST /api/auth/firebase/session - Verify Firebase token and sync user profile',
+      sendInviteEmail: 'POST /api/email/invite - Send a Gmail SMTP invite email to a submitted recipient',
       users: 'GET /api/users - List all users'
     }
   });
 });
 
+router.use('/email', emailRoutes);
 router.use('/plan', requireDatabaseConnection, planRoutes);
 router.use('/logic-engine', requireDatabaseConnection, logicRoutes);
 
