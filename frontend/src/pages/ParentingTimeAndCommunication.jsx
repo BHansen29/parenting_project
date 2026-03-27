@@ -197,6 +197,7 @@ export default function ParentingTimeAndCommunication() {
                             checkboxLabel="I agree to the standard transportation policy"
                             checked={formData.agreeToTransportationPolicy}
                             onCheckboxChange={handlePolicyChange('agreeToTransportationPolicy')}
+                            requiredNote="You must either agree to the standard policy or describe your preferred arrangement"
                             textInput={{
                                 id: 'transportationArrangementDescription',
                                 label: 'Please describe your preferred transportation arrangement:',
@@ -287,6 +288,7 @@ export default function ParentingTimeAndCommunication() {
                             value={formData.communicationWithCoParentOnPhone}
                             onChange={handleChange('communicationWithCoParentOnPhone')}
                             flag={communicationWithCoParentOnPhoneFlag}
+                            error={communicationError}
                             options={[
                                 { value: 'yes',                  label: 'Yes' },
                                 { value: 'no',                   label: 'No' },
@@ -301,6 +303,7 @@ export default function ParentingTimeAndCommunication() {
                                 value: formData.communicationWithCoParentOnPhoneDescription,
                                 onChange: handleChange('communicationWithCoParentOnPhoneDescription'),
                                 placeholder: 'Describe when your child can talk to your co-parent on the phone',
+                                error: errors.communicationWithCoParentOnPhoneDescription,
                             }}
                         />
                         <RadioQuestion
@@ -309,6 +312,7 @@ export default function ParentingTimeAndCommunication() {
                             value={formData.notifyCoParentOfChildRelatedEvents}
                             onChange={handleChange('notifyCoParentOfChildRelatedEvents')}
                             flag={notifyCoParentOfChildRelatedEventsFlag}
+                            error={notifyError}
                             options={[
                                 { value: 'yes',                  label: 'Yes' },
                                 { value: 'no',                   label: 'No' },
@@ -323,6 +327,7 @@ export default function ParentingTimeAndCommunication() {
                                 value: formData.notifyCoParentOfChildRelatedEventsDescription,
                                 onChange: handleChange('notifyCoParentOfChildRelatedEventsDescription'),
                                 placeholder: 'Describe when you would notify your co-parent if your child gets sick or injured',
+                                error: errors.notifyCoParentOfChildRelatedEventsDescription,
                             }}
                         />
                     </CardContent>

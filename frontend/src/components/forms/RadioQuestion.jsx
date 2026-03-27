@@ -61,6 +61,7 @@ export default function RadioQuestion({
               value={conditionalInput.value}
               onChange={conditionalInput.onChange}
               placeholder={conditionalInput.placeholder}
+              error={conditionalInput.error}
             />
           )}
         </div>

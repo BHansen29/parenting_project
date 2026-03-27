@@ -19,8 +19,8 @@ window.HTMLElement.prototype.scrollIntoView = vi.fn()
 
 // Helper: fill in the minimum valid form to allow navigation
 const fillValidForm = async () => {
-  await userEvent.click(document.querySelector('#hide-checkbox-transportation'))
-  await userEvent.click(document.querySelector('#hide-checkbox-activity'))
+  await userEvent.click(document.querySelector('#agreeToTransportationPolicy'))
+  await userEvent.click(document.querySelector('#agreeToActivityPolicy'))
   await userEvent.click(document.querySelector('input[name="communicationWithCoParentOnPhone"][value="yes"]'))
   await userEvent.click(document.querySelector('input[name="notifyCoParentOfChildRelatedEvents"][value="yes"]'))
 }
@@ -96,7 +96,7 @@ describe('ParentingTimeAndCommunication', () => {
 
     it('renders the transportation agreement checkbox unchecked by default', () => {
       renderWithRouter(<ParentingTimeAndCommunication />)
-      expect(document.querySelector('#hide-checkbox-transportation')).not.toBeChecked()
+      expect(document.querySelector('#agreeToTransportationPolicy')).not.toBeChecked()
     })
 
     it('renders the transportation agreement checkbox with accessible label', () => {
@@ -145,14 +145,14 @@ describe('ParentingTimeAndCommunication', () => {
 
     it('can check the transportation agreement checkbox', async () => {
       renderWithRouter(<ParentingTimeAndCommunication />)
-      const checkbox = document.querySelector('#hide-checkbox-transportation')
+      const checkbox = document.querySelector('#agreeToTransportationPolicy')
       await userEvent.click(checkbox)
       expect(checkbox).toBeChecked()
     })
 
     it('can uncheck the transportation agreement checkbox', async () => {
       renderWithRouter(<ParentingTimeAndCommunication />)
-      const checkbox = document.querySelector('#hide-checkbox-transportation')
+      const checkbox = document.querySelector('#agreeToTransportationPolicy')
       await userEvent.click(checkbox)
       await userEvent.click(checkbox)
       expect(checkbox).not.toBeChecked()
@@ -176,7 +176,7 @@ describe('ParentingTimeAndCommunication', () => {
 
     it('renders the activity agreement checkbox unchecked by default', () => {
       renderWithRouter(<ParentingTimeAndCommunication />)
-      expect(document.querySelector('#hide-checkbox-activity')).not.toBeChecked()
+      expect(document.querySelector('#agreeToActivityPolicy')).not.toBeChecked()
     })
 
     it('renders the activity agreement checkbox with accessible label', () => {
@@ -188,7 +188,7 @@ describe('ParentingTimeAndCommunication', () => {
 
     it('renders the activity description text input', () => {
       renderWithRouter(<ParentingTimeAndCommunication />)
-      expect(document.querySelector('#activityArrangementDescription')).toBeInTheDocument()
+      expect(document.querySelector('#activityPolicyDescription')).toBeInTheDocument()
     })
 
     it('renders the activity description placeholder text', () => {
@@ -225,14 +225,14 @@ describe('ParentingTimeAndCommunication', () => {
 
     it('can check the activity agreement checkbox', async () => {
       renderWithRouter(<ParentingTimeAndCommunication />)
-      const checkbox = document.querySelector('#hide-checkbox-activity')
+      const checkbox = document.querySelector('#agreeToActivityPolicy')
       await userEvent.click(checkbox)
       expect(checkbox).toBeChecked()
     })
 
     it('can type into the activity description field', async () => {
       renderWithRouter(<ParentingTimeAndCommunication />)
-      const input = document.querySelector('#activityArrangementDescription')
+      const input = document.querySelector('#activityPolicyDescription')
       await userEvent.type(input, 'Both parents may attend all events')
       expect(input).toHaveValue('Both parents may attend all events')
     })
@@ -502,9 +502,10 @@ describe('ParentingTimeAndCommunication', () => {
     it('shows transportation error when Next is clicked with no transportation input', async () => {
       renderWithRouter(<ParentingTimeAndCommunication />)
       fireEvent.click(screen.getByRole('button', { name: /next/i }))
-      expect(
-        await screen.findByText('Please agree to the standard policy or describe your preferred arrangement')
-      ).toBeInTheDocument()
+      const errors = await screen.findAllByText(
+        'Please agree to the standard policy or describe your preferred arrangement'
+      )
+      expect(errors.length).toBeGreaterThanOrEqual(1)
     })
 
     it('shows two errors on empty submit — one per text-based policy section', async () => {
@@ -525,7 +526,7 @@ describe('ParentingTimeAndCommunication', () => {
 
     it('does not show transportation error when checkbox is checked', async () => {
       renderWithRouter(<ParentingTimeAndCommunication />)
-      await userEvent.click(document.querySelector('#hide-checkbox-transportation'))
+      await userEvent.click(document.querySelector('#agreeToTransportationPolicy'))
       fireEvent.click(screen.getByRole('button', { name: /next/i }))
       const policyErrors = await screen.findAllByText(
         'Please agree to the standard policy or describe your preferred arrangement'
@@ -548,7 +549,7 @@ describe('ParentingTimeAndCommunication', () => {
 
     it('does not show activity error when checkbox is checked', async () => {
       renderWithRouter(<ParentingTimeAndCommunication />)
-      await userEvent.click(document.querySelector('#hide-checkbox-activity'))
+      await userEvent.click(document.querySelector('#agreeToActivityPolicy'))
       fireEvent.click(screen.getByRole('button', { name: /next/i }))
       const policyErrors = await screen.findAllByText(
         'Please agree to the standard policy or describe your preferred arrangement'
@@ -578,8 +579,8 @@ describe('ParentingTimeAndCommunication', () => {
 
     it('shows "Sometimes" description error when phone description is empty', async () => {
       renderWithRouter(<ParentingTimeAndCommunication />)
-      await userEvent.click(document.querySelector('#hide-checkbox-transportation'))
-      await userEvent.click(document.querySelector('#hide-checkbox-activity'))
+      await userEvent.click(document.querySelector('#agreeToTransportationPolicy'))
+      await userEvent.click(document.querySelector('#agreeToActivityPolicy'))
       await userEvent.click(
         document.querySelector('input[name="communicationWithCoParentOnPhone"][value="sometimes"]')
       )
@@ -592,8 +593,8 @@ describe('ParentingTimeAndCommunication', () => {
 
     it('shows notify "Sometimes" description error when notify description is empty', async () => {
       renderWithRouter(<ParentingTimeAndCommunication />)
-      await userEvent.click(document.querySelector('#hide-checkbox-transportation'))
-      await userEvent.click(document.querySelector('#hide-checkbox-activity'))
+      await userEvent.click(document.querySelector('#agreeToTransportationPolicy'))
+      await userEvent.click(document.querySelector('#agreeToActivityPolicy'))
       await userEvent.click(
         document.querySelector('input[name="communicationWithCoParentOnPhone"][value="yes"]')
       )
@@ -612,15 +613,15 @@ describe('ParentingTimeAndCommunication', () => {
 
     it('does not navigate when only transportation is filled', async () => {
       renderWithRouter(<ParentingTimeAndCommunication />)
-      await userEvent.click(document.querySelector('#hide-checkbox-transportation'))
+      await userEvent.click(document.querySelector('#agreeToTransportationPolicy'))
       fireEvent.click(screen.getByRole('button', { name: /next/i }))
       expect(mockNavigate).not.toHaveBeenCalled()
     })
 
     it('does not navigate when "Sometimes" is selected but description is empty', async () => {
       renderWithRouter(<ParentingTimeAndCommunication />)
-      await userEvent.click(document.querySelector('#hide-checkbox-transportation'))
-      await userEvent.click(document.querySelector('#hide-checkbox-activity'))
+      await userEvent.click(document.querySelector('#agreeToTransportationPolicy'))
+      await userEvent.click(document.querySelector('#agreeToActivityPolicy'))
       await userEvent.click(
         document.querySelector('input[name="communicationWithCoParentOnPhone"][value="sometimes"]')
       )
@@ -661,7 +662,7 @@ describe('ParentingTimeAndCommunication', () => {
         'We will alternate pick-up'
       )
       await userEvent.type(
-        document.querySelector('#activityArrangementDescription'),
+        document.querySelector('#activityPolicyDescription'),
         'Both parents attend all events'
       )
       await userEvent.click(
@@ -676,8 +677,8 @@ describe('ParentingTimeAndCommunication', () => {
 
     it('navigates to /informationsharing when "Sometimes" is selected with a description filled', async () => {
       renderWithRouter(<ParentingTimeAndCommunication />)
-      await userEvent.click(document.querySelector('#hide-checkbox-transportation'))
-      await userEvent.click(document.querySelector('#hide-checkbox-activity'))
+      await userEvent.click(document.querySelector('#agreeToTransportationPolicy'))
+      await userEvent.click(document.querySelector('#agreeToActivityPolicy'))
       await userEvent.click(
         document.querySelector('input[name="communicationWithCoParentOnPhone"][value="sometimes"]')
       )
@@ -698,10 +699,10 @@ describe('ParentingTimeAndCommunication', () => {
   describe('Global State / Persistence', () => {
     it('persists transportation checkbox when returning to the page', async () => {
       const { unmount } = renderWithRouter(<ParentingTimeAndCommunication />)
-      await userEvent.click(document.querySelector('#hide-checkbox-transportation'))
+      await userEvent.click(document.querySelector('#agreeToTransportationPolicy'))
       unmount()
       renderWithRouter(<ParentingTimeAndCommunication />)
-      expect(document.querySelector('#hide-checkbox-transportation')).toBeChecked()
+      expect(document.querySelector('#agreeToTransportationPolicy')).toBeChecked()
     })
 
     it('persists transportation description text when returning to the page', async () => {

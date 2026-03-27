@@ -13,21 +13,24 @@ import RadioQuestion from '../components/forms/RadioQuestion';
 
 export default function GettingStarted() {
   const navigate = useNavigate();
-  const { state, dispatch } = useForm();
+  const { state, dispatch } = useForm(); //state reads data, dispatch writes data
   const { setOnNext, setOnBack } = useNavigation();
 
-  const formData = state.parents ?? { name: '', secondParentName: '', errors: {} };
+  const formData = state.parents ?? { name: '', secondParentName: '', errors: {} }; //pull data from the stored state
   const safetyConcern = state.safetyConcern ?? '';
   const caseFilingStatus = state.caseFilingStatus ?? '';
   const errors = formData.errors ?? {};
 
+  //these errors use the local useState
   const [safetyConcernError, setSafetyConcernError] = useState('');
   const [caseFilingError, setCaseFilingError] = useState('');
 
   const caseFilingFlag = useSectionFlag('caseFilingStatus');
   const childrenFlag = useSectionFlag('children');
 
+  //pull children from the stored state, calling setChildren will add a new child to the existing list
   const [children, setChildren] = useState(() => {
+    //if no existing children, create a blank one
     return state.children?.length > 0
       ? state.children
       : [{ id: 1, firstName: '', lastName: '', dateOfBirth: '', classification: '', errors: {} }];
@@ -38,11 +41,11 @@ export default function GettingStarted() {
     setSafetyConcernError('');
     setCaseFilingError('');
     setChildren(prev => prev.map(c => ({ ...c, errors: {} })));
-  }, []);
+  }, []); //clears all errors as soon as the page loads
 
   useEffect(() => {
     dispatch({ type: 'UPDATE_CHILDREN', payload: children });
-  }, [children]);
+  }, [children]); //every time the children array changes. save to formCOntext
 
   const handleRadioChange = (section) => (value) => {
     dispatch({ type: 'UPDATE_SECTION', section: section, payload: value });
@@ -52,14 +55,19 @@ export default function GettingStarted() {
   };
 
   const handleFormChange = (section, field) => (value) => {
+    //updates the formContext with the new returned value
     dispatch({ type: 'UPDATE_SECTION', section: section, payload: { [field]: value } });
     if (errors[field]) {
+      //clear previous errors for a field since it has been changed
       dispatch({ type: 'UPDATE_SECTION', section: section, payload: { errors: { ...errors, [field]: '' } } });
     }
   };
 
+  
   const handleChildChange = (childId, field) => (value) => {
+    //looks through previous list of children to find the current one to update
     setChildren(prev => prev.map(child =>
+      //once the child to update is found, return child with a new value and errors cleared
       child.id === childId
         ? { ...child, [field]: value, errors: { ...(child.errors ?? {}), [field]: '' } }
         : child
@@ -93,6 +101,7 @@ export default function GettingStarted() {
     if (!formData.phone?.trim())     { parentErrors.phone     = 'Phone number is required'; isValid = false; }
     if (!formData.address?.trim())   { parentErrors.address   = 'Address is required';    isValid = false; }
 
+    //if validation for any of the parenting section fails, write the  parentErrors to the FormContext
     dispatch({ type: 'UPDATE_SECTION', section: 'parents', payload: { errors: parentErrors } });
 
     if (!caseFilingStatus) {
@@ -115,6 +124,7 @@ export default function GettingStarted() {
     return isValid;
   };
 
+  //helps remember and update values for components: submitAttempted is the value, setSubmitAttempted is a function to chnage the value
   const [submitAttempted, setSubmitAttempted] = useState(false);
 
   useEffect(() => {

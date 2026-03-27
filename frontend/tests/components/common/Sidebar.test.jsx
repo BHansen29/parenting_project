@@ -25,8 +25,8 @@ describe('Sidebar', () => {
     expect(screen.getByText('Getting Started')).toBeInTheDocument();
     expect(screen.getByText('Parental Rights')).toBeInTheDocument();
     expect(screen.getByText('Parenting Time & Communication')).toBeInTheDocument();
-    expect(screen.getByText('Custody Schedule')).toBeInTheDocument();
-    expect(screen.getByText('Transportation')).toBeInTheDocument();
+    expect(screen.getByText('Information Sharing')).toBeInTheDocument();
+    expect(screen.getByText('Tax Exemptions')).toBeInTheDocument();
     expect(screen.getByText('Review')).toBeInTheDocument();
   });
 
@@ -92,7 +92,7 @@ describe('Sidebar', () => {
 
   // Completed state
   it('marks previous steps as completed when on a later step', () => {
-    const { container } = renderWithRouter(<Sidebar isCollapsed={false} onToggle={mockOnToggle} />, { initialEntries: ['/custody-schedule'] });
+    const { container } = renderWithRouter(<Sidebar isCollapsed={false} onToggle={mockOnToggle} />, { initialEntries: ['/informationsharing'] });
     const completedLinks = container.querySelectorAll('.sidebar__nav-link--completed');
     expect(completedLinks.length).toBeGreaterThan(0);
   });
@@ -109,7 +109,7 @@ describe('Sidebar', () => {
   });
 
   it('shows correct step number in progress indicator', () => {
-    renderWithRouter(<Sidebar isCollapsed={false} onToggle={mockOnToggle} />, { initialEntries: ['/custody-schedule'] });
+    renderWithRouter(<Sidebar isCollapsed={false} onToggle={mockOnToggle} />, { initialEntries: ['/informationsharing'] });
     expect(screen.getByText(/step 4 of 6/i)).toBeInTheDocument();
   });
 
@@ -125,8 +125,8 @@ describe('Sidebar', () => {
     expect(screen.getByRole('link', { name: /getting started/i })).toHaveAttribute('href', '/getting-started');
     expect(screen.getByRole('link', { name: /parental rights/i })).toHaveAttribute('href', '/parental-rights');
     expect(screen.getByRole('link', { name: /parenting time & communication/i })).toHaveAttribute('href', '/parenting-time-communication');
-    expect(screen.getByRole('link', { name: /custody schedule/i })).toHaveAttribute('href', '/custody-schedule');
-    expect(screen.getByRole('link', { name: /transportation/i })).toHaveAttribute('href', '/transportation');
+    expect(screen.getByRole('link', { name: /information sharing/i })).toHaveAttribute('href', '/informationsharing');
+    expect(screen.getByRole('link', { name: /tax exemptions/i })).toHaveAttribute('href', '/tax-exemptions');
     expect(screen.getByRole('link', { name: /review/i })).toHaveAttribute('href', '/review');
   });
 
@@ -140,7 +140,6 @@ describe('Sidebar', () => {
   it('navigation items have title attribute when collapsed', () => {
     renderWithRouter(<Sidebar isCollapsed={true} onToggle={mockOnToggle} />);
     const links = screen.getAllByRole('link');
-    // First link should have title attribute for tooltip when collapsed
     expect(links[0]).toHaveAttribute('title', 'Getting Started');
   });
 });

@@ -1,32 +1,32 @@
-import { screen } from '@testing-library/react'
-import Header from '../../src/components/common/Header'
-import { renderWithRouter } from '../../src/utils/renderWithRouter'
+import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import Header from '../../../src/components/common/Header';
+
+const renderWithRouter = (ui) =>
+  render(<MemoryRouter>{ui}</MemoryRouter>);
 
 describe('Header', () => {
-
-  // Render
   it('renders without crashing', () => {
-    renderWithRouter(<Header />)
-  })
+    renderWithRouter(<Header />);
+  });
 
   it('displays the ShareCare logo', () => {
-    renderWithRouter(<Header />)
-    expect(screen.getByAltText('ShareCare')).toBeInTheDocument()
-  })
+    renderWithRouter(<Header />);
+    expect(screen.getByAltText('ShareCare')).toBeInTheDocument();
+  });
 
   it('does not show Saved indicator by default', () => {
-    renderWithRouter(<Header />)
-    expect(screen.queryByText('Saved')).not.toBeInTheDocument()
-  })
+    renderWithRouter(<Header />);
+    expect(screen.queryByText('Saved')).not.toBeInTheDocument();
+  });
 
   it('shows Saved indicator when saved is true', () => {
-    renderWithRouter(<Header saved={true} />)
-    expect(screen.getByText('Saved')).toBeInTheDocument()
-  })
+    renderWithRouter(<Header saved={true} />);
+    expect(screen.getByText('Saved')).toBeInTheDocument();
+  });
 
   it('renders without crashing when showNavigation is false', () => {
-    renderWithRouter(<Header showNavigation={false} />)
-    expect(screen.getByAltText('ShareCare')).toBeInTheDocument()
-  })
-
-})
+    renderWithRouter(<Header showNavigation={false} />);
+    expect(screen.getByAltText('ShareCare')).toBeInTheDocument();
+  });
+});
