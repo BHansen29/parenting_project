@@ -6,6 +6,7 @@ const initialState = {
   safetyConcern: '',
   caseFilingStatus: '',
   flags: {},
+  caseId: null,
   parents: {
     firstName: '',
     lastName: '',

@@ -10,6 +10,10 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID || 'mock-app-id',
 };
 
+// Debug: Log the API key to verify it's loaded (first 10 chars only for security)
+console.log('Firebase API Key loaded:', firebaseConfig.apiKey?.substring(0, 10) + '...');
+console.log('All env vars:', import.meta.env);
+
 const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);

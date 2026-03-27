@@ -58,8 +58,24 @@ export default function SignIn() {
         // Try to sync Mongo profile, but do not block sign-in if backend/database is down.
         await syncFirebaseUserProfileSafely(userCredential.user);
 
-        // Next Step
-        navigate('/dashboard');
+        // Check for pending invite
+        const pendingToken = localStorage.getItem('pendingInviteToken');
+        if (pendingToken) {
+          try {
+            const { acceptInvite } = await import('../../lib/inviteApi');
+            const result = await acceptInvite(pendingToken);
+
+            localStorage.removeItem('pendingInviteToken');
+            navigate('/getting-started', { state: { caseId: result.caseId } });
+          } catch (error) {
+            console.error('Failed to accept invite:', error);
+            localStorage.removeItem('pendingInviteToken');
+            navigate('/dashboard');
+          }
+        } else {
+          // Next Step
+          navigate('/dashboard');
+        }
       } catch (err) {
         // Show Firebase error in the form
         setErrors({ general: err.message });

@@ -4,6 +4,7 @@ import LandingPage from './pages/LandingPage';
 import Dashboard from './pages/Dashboard';
 import SignIn from './pages/auth/SignIn';
 import SignUp from './pages/auth/SignUp';
+import InviteLanding from './pages/InviteLanding';
 import GettingStarted from './pages/GettingStarted';
 import ParentalRights from './pages/ParentalRights';
 import ParentingTimeAndCommunication from './pages/ParentingTimeAndCommunication';
@@ -26,6 +27,9 @@ function App() {
 
         {/* Dashboard (no sidebar) */}
         <Route path="/dashboard" element={<Dashboard />} />
+
+        {/* Invite landing page (no sidebar) */}
+        <Route path="/invite/:token" element={<InviteLanding />} />
 
         {/* Form routes with sidebar */}
         <Route path="/getting-started" element={
