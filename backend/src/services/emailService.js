@@ -85,4 +85,50 @@ async function sendInviteEmail(toAddress) {
   };
 }
 
-module.exports = { sendInviteEmail };
+// Send invitation email with token link
+async function sendInviteEmailWithToken(toAddress, token) {
+  if (!toAddress) {
+    throw new Error('A recipient email address is required');
+  }
+  if (!token) {
+    throw new Error('An invitation token is required');
+  }
+
+  const config = getEmailConfig();
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const inviteLink = `${frontendUrl}/invite/${token}`;
+
+  const result = await getTransporter().sendMail({
+    from: config.from,
+    to: toAddress,
+    replyTo: config.replyTo,
+    subject: 'You\'re invited to collaborate on a parenting plan',
+    text: `You've been invited to collaborate on a parenting plan.\n\nClick the link below to accept the invitation:\n${inviteLink}\n\nThis invitation will expire in 7 days.`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #333;">You're Invited!</h2>
+        <p>You've been invited to collaborate on a parenting plan.</p>
+        <p style="margin: 30px 0;">
+          <a href="${inviteLink}" style="background-color: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+            Accept Invitation
+          </a>
+        </p>
+        <p style="color: #666; font-size: 14px;">
+          Or copy and paste this link into your browser:<br>
+          <a href="${inviteLink}">${inviteLink}</a>
+        </p>
+        <p style="color: #999; font-size: 12px; margin-top: 40px;">
+          This invitation will expire in 7 days.
+        </p>
+      </div>
+    `,
+  });
+
+  return {
+    accepted: result.accepted,
+    rejected: result.rejected,
+    messageId: result.messageId,
+  };
+}
+
+module.exports = { sendInviteEmail, sendInviteEmailWithToken };

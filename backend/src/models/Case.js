@@ -6,9 +6,10 @@ const caseSchema = new mongoose.Schema(
       type: String, 
       required: true 
     },
-    parent2Uid: { 
-      type: String, 
-      required: true 
+    parent2Uid: {
+      type: String,
+      required: false,
+      default: null
     },
     status: {
       type: String,
