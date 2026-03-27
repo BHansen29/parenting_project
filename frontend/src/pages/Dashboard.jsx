@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { Users, FileText, Calendar, UserPlus, Plus, Trash2, Pencil } from 'lucide-react';
 import { auth } from '../lib/firebase';
+import { sendInviteEmailRequest } from '../lib/inviteApi';
 import Header from '../components/common/Header';
 import InviteModal from '../components/common/InviteModal';
 import './Dashboard.css';
@@ -72,10 +73,21 @@ export default function Dashboard() {
     navigate('/');
   };
 
+  const handleInvite = async (email) => {
+    // For Dashboard, use the basic email invite since plans are mock data
+    await sendInviteEmailRequest(email);
+    return { status: 'sent', message: 'Invite sent successfully!' };
+  };
+
   return (
     <div className="dashboard" onClick={() => setContextMenu(null)}>
       <Header user={user} onSignOut={handleSignOut} />
-      <InviteModal isOpen={isInviteOpen} onClose={() => setIsInviteOpen(false)} />
+      {isInviteOpen && (
+        <InviteModal
+          onClose={() => setIsInviteOpen(false)}
+          onSendInvite={handleInvite}
+        />
+      )}
 
       {deleteTarget && (
         <div className="delete-modal__overlay" onClick={() => setDeleteTarget(null)}>

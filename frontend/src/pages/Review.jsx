@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { UserPlus } from 'lucide-react';
 import { useForm } from '../hooks/useForm';
 import Header from '../components/common/Header';
 import Footer from '../components/common/Footer';
@@ -51,8 +52,6 @@ export default function Review() {
 
   return (
     <div className="page-container">
-      <Header />
-
       <main className="page-content">
         <div data-slot="card">
           <div data-slot="card-header">
@@ -76,7 +75,9 @@ export default function Review() {
                 onClick={() => setShowInviteModal(true)}
                 className="footer__button footer__button--next"
                 disabled={isLoading}
+                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: 0 }}
               >
+                <UserPlus size={20} />
                 {isLoading ? 'Sending...' : 'Invite Co-parent'}
               </button>
 
@@ -96,11 +97,6 @@ export default function Review() {
           </div>
         </div>
       </main>
-
-      <Footer
-        onBack={handleBack}
-        showNext={false}
-      />
 
       {showInviteModal && (
         <InviteModal

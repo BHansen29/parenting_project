@@ -1,7 +1,7 @@
 import { auth } from './firebase';
 import { buildApiUrl } from './apiClient';
 
-const CASE_BASE_URL = buildApiUrl('/api/cases');
+const CASE_BASE_URL = buildApiUrl('/api/v1/cases');
 
 /**
  * Create a new case and get caseId
