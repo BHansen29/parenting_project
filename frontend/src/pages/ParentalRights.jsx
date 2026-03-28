@@ -13,6 +13,7 @@ export default function ParentalRights() {
 
     const navigate = useNavigate();
     const { state, dispatch } = useForm();
+    console.log('plan object:', state.plan);
     const { setOnNext, setOnBack } = useNavigation();
 
     const formData = state.parentalRights ?? { appliesToAllChildren: '', livingArrangements: '', decisionMaking: '' };
