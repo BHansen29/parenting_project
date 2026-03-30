@@ -8,7 +8,8 @@ const questionResponseSchema = new mongoose.Schema(
   },
   answer: { 
     type: mongoose.Schema.Types.Mixed, 
-    required: true },
+    required: true 
+  },
   isFlagged: {
     // future proofing for potential "flagging" a question feature to come back to later
     type: Boolean,

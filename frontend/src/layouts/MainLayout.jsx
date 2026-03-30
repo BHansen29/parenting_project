@@ -72,7 +72,7 @@ export default function Layout({ children }) {
 
   const handleNext = async () => {
     const apiURL = pageOrder[currentPageIndex] === '/getting-started' 
-      ? '/api/logic-engine/question/69c04a555c958122e4d898bd' // default starting question (probably change to const or something)
+      ? '/api/logic-engine/question/69c57450e794c12043e820fb' // default starting question (probably change to const or something)
       : '/api/logic-engine/nextQuestion/' + q.qKey + '/' + answer
     try {
       // get the next 'question' object

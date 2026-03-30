@@ -100,9 +100,22 @@ router.post('/:planId/answer', verifyToken, async (req, res) => {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
-    //Store the question into the plan
     const {qKey, answer} = req.body
-    plan.children.push({qKey, answer})
+    const index = plan.children.findIndex(userAnswer => userAnswer.qKey === qKey)
+    const oldAnswer = plan.children[index]?.answer
+    if (!oldAnswer) {
+      // case for first question answered in plan
+      plan.children.push({qKey: qKey, answer: answer})
+    } else if (oldAnswer.answer !== answer) {
+      // case for changing exsisting response
+      plan.children[index] = {qKey: qKey, answer: answer}
+      // this chops off everything after the new answer since our "path" through the decision tree may be different
+      // TODO: maybe update so that it only chops off questions if they aren't defaultNextQuestions?
+      plan.children.splice(index + 1)
+    } else {
+      // no change to question required since answer matches
+      return res.status(200).json(plan)
+    }
 
     //Save the plan and write back to DB
     await plan.save();

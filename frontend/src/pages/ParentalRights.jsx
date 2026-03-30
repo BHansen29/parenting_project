@@ -14,15 +14,17 @@ export default function ParentalRights() {
     const { state, dispatch } = useForm();
     const question = state.question
     //form data and errors for this section
+
+    // if plan doesn't match plan in the context, update context to be consistent
     if (state.parental_rights.planID !== state.plan._id) {
-        let res = state.plan.children.map((qAnswer) => {return {qKey: qAnswer.qKey, answer: qAnswer.answer}})
-        if (!res) {
-            res = []
+        let planAnswers = state.plan.children.map((qAnswer) => {return {qKey: qAnswer.qKey, answer: qAnswer.answer}})
+        if (!planAnswers) {
+            planAnswers = []
         }
         dispatch({
             type: 'UPDATE_SECTION',
             section: "parental_rights",
-            payload: {planID: state.plan._id, responses: res, errors: {}}
+            payload: {planID: state.plan._id, responses: planAnswers, errors: {}}
         });
     }
     const formData = state.parental_rights
@@ -78,13 +80,19 @@ export default function ParentalRights() {
 
     const validateForm = () => {
         const formErrors = {};
-        if (!currAnswer) {
-            formErrors.currAnswer = 'Please select an option';
+        if (!formData.appliesToAllChildren) {
+            formErrors.appliesToAllChildren = 'Please select an option';
+        }
+        if (!formData.livingArrangements) {
+            formErrors.livingArrangements = 'Please select an option';
+        }
+        if (!formData.decisionMaking) {
+            formErrors.decisionMaking = 'Please select an option';
         }
 
         dispatch({
             type: 'UPDATE_SECTION',
-            section: question.section.replaceAll("-", "_"),
+            section: 'parentalRights',
             payload: { errors: formErrors }
         });
 
