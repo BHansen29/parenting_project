@@ -1,33 +1,12 @@
 /* ─── Review page ─────────────────────────────────────────────────────────── */
 
-/* Header row: title + progress badge */
+/* Header row */
 .review__header-row {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
   flex-wrap: wrap;
-}
-
-.review__progress-badge {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  flex-shrink: 0;
-}
-
-.review__progress-count {
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: #1bb0dd;
-  line-height: 1;
-}
-
-.review__progress-label {
-  font-size: 0.72rem;
-  color: #6b7280;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 
 /* ─── Hero ─────────────────────────────────────────────────────────────────── */
@@ -68,7 +47,6 @@
 
 /* ─── Section cards ────────────────────────────────────────────────────────── */
 
-/* Spacing between the two Disclaimer banners, and between last Disclaimer and sections */
 .review__sections {
   display: flex;
   flex-direction: column;
@@ -76,7 +54,6 @@
   margin-top: 1rem;
 }
 
-/* Each section is a Card — give it a visible border so they read as distinct */
 .review__section-card {
   border: 1px solid #e5e7eb;
   border-radius: 10px;
@@ -88,18 +65,15 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
-/* CardHeader inside each section card — remove default padding, let the button fill it */
 .review__section-card-header {
   padding: 0 !important;
 }
 
-/* CardContent inside each section card */
 .review__section-card-content {
   border-top: 1px solid #e5e7eb;
   padding: 0.75rem 1rem 1rem;
 }
 
-/* Toggle button fills the card header */
 .review__section-header {
   display: flex;
   align-items: center;
@@ -147,7 +121,6 @@
   color: #9ca3af;
 }
 
-/* Edit button */
 .review__edit-btn {
   display: flex;
   align-items: center;
@@ -220,10 +193,20 @@
   margin: 0;
 }
 
+/* Page-level empty state when no plan is loaded yet */
+.review__section-empty--page {
+  text-align: center;
+  padding: 2rem 0;
+  font-size: 0.9rem;
+}
+
 /* ─── Action buttons ───────────────────────────────────────────────────────── */
 
 .review__actions {
   margin-top: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
 }
 
 .review__action-buttons {
@@ -248,7 +231,7 @@
   transition: background 0.15s, color 0.15s;
 }
 
-.review__btn-invite:hover {
+.review__btn-invite:hover:not(:disabled) {
   background: #1bb0dd;
   color: #fff;
 }
@@ -268,9 +251,27 @@
   transition: background 0.15s, color 0.15s;
 }
 
-.review__btn-download:hover {
+.review__btn-download:hover:not(:disabled) {
   background: #55c77e;
   color: #fff;
+}
+
+/* Disabled state for both buttons when planId is missing */
+.review__btn-invite:disabled,
+.review__btn-download:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Warning shown when planId is not yet available */
+.review__no-plan-warning {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  color: #b45309;
+  margin: 0;
 }
 
 /* Invite modal styles are handled by InviteModal.css */

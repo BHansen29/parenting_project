@@ -10,23 +10,62 @@ import './Review.css';
 
 
 // Section titles and routes
+// Maps backend section enum values to UI label and frontend route for editing
+// TODO: Update keys to match exact enum values - currently only have 1 created
+
 const SECTION_META = {
   getting_started: { label: 'Getting Started', route: '/getting-started' },
-  parental_rights: { label: 'Parental Rights', route: '/parental-rights' },
+  allocation_of_parental_rights_and_responsibilities: { label: 'Parental Rights', route: '/parental-rights' },
   parenting_time_communication: { label: 'Parenting Time & Communication', route: '/parenting-time-communication' },
   information_sharing: { label: 'Information Sharing', route: '/informationsharing' },
   tax_exemptions: { label: 'Tax Exemptions', route: '/tax-exemptions' },
 };
 
+// Formats an answer value for display
 function formatAnswer(answer) {
   if (!answer || answer === '') return <span className="review__empty">Not answered</span>;
   if (Array.isArray(answer)) return answer.join(', ');
   return String(answer);
 }
 
+// Groups the state.plan.children array by question section
+// Plan model representation of the array: plan.children = [{ questionID, answer, isFlagged, isDeferred }, ...]
+// Question model includes "section" and "qKey" fields
+
+// TODO: Populate questionID to look like: questionID: { _id, qKey, section, qText, ... }, answer, isFlagged }
+
+// If questionId is not populated, defualt to "unsectioned" 
+function groupResponsesBySection(children = []) {
+  const grouped = {};
+  
+  children.forEach((response) => {
+    const question = response.questionID; 
+    const isPopulated = question && typeof question === 'object'; 
+
+    //if questions has section value use it, if not become unsectioned
+    const sectionKey = isPopulated ? question.section : 'unsectioned'; 
+
+    if (!grouped[sectionKey]) {
+      grouped[sectionKey] = [];
+    }
+
+    grouped[sectionKey].push({
+      qKey: isPopulated ? question.qKey : String(question),
+      answer: response.answer, 
+      isFlagged: response.isFlagged,
+      isDeferred: response.isDeferred,
+    });
+  });
+  return grouped; 
+}
+
 
 function SectionBlock({ sectionKey, responses, onEdit, isOpen, onToggle }) {
-  const meta = SECTION_META[sectionKey] || { label: sectionKey, route: '/' };
+  // Look up display label and edit route
+  const meta = SECTION_META[sectionKey] || { 
+    label: sectionKey.replaceAll('_', ' '),
+    route: '/',
+  };
   const hasAnswers = responses && responses.length > 0;
 
   return (
@@ -36,6 +75,7 @@ function SectionBlock({ sectionKey, responses, onEdit, isOpen, onToggle }) {
       <CardHeader className="review__section-card-header">
         <button className="review__section-header" onClick={onToggle} aria-expanded={isOpen}>
           <div className="review__section-header-left">
+            {/* Green check if section has answers, grey if not */}
             <CheckCircle
               size={18}
               className={hasAnswers ? 'review__check--complete' : 'review__check--incomplete'}
@@ -43,6 +83,7 @@ function SectionBlock({ sectionKey, responses, onEdit, isOpen, onToggle }) {
             <span className="review__section-title">{meta.label}</span>
           </div>
           <div className="review__section-header-right">
+             {/* Edit button navigates back to this section's form page */}
             <button
               className="review__edit-btn"
               onClick={(e) => { e.stopPropagation(); onEdit(meta.route); }}
@@ -83,8 +124,15 @@ export default function Review() {
   const navigate = useNavigate();
   const { state } = useForm();
 
-  const sectionKeys = Object.keys(SECTION_META);
+  const planId = state.plan?._id; 
+  const groupedResponses = groupResponsesBySection(state.plan?.children ?? []);
+  const knownSectionKeys = Object.keys(SECTION_META);
+  // catches any unsectioned questions
+  const sectionKeysToDisplay = groupedResponses['unsectioned']
+    ? [...knownSectionKeys, 'unsectioned']
+    : knownSectionKeys;
 
+  //makes sections collapsible
   const [openSections, setOpenSections] = useState(() =>
     Object.fromEntries(sectionKeys.map((k) => [k, true]))
   );
@@ -97,11 +145,9 @@ export default function Review() {
   const handleEdit = (route) => navigate(route);
   const handleBack = () => navigate(-1);
 
-  const completedCount = sectionKeys.filter((k) => {
-    const sec = state[k];
-    return sec?.responses?.length > 0;
-  }).length;
-
+  const completedCount = knownSectionKeys.filter(
+    (k) => groupedResponses[k]?.length > 0
+  ).length;
   const totalCount = sectionKeys.length;
   const allComplete = completedCount === totalCount;
 
@@ -109,7 +155,6 @@ export default function Review() {
     <div className="page-container">
       <div className="page-content">
 
-        {/* ── Outer card: title + disclaimers ── */}
         <Card>
           <CardHeader>
             <div className="review__header-row">
