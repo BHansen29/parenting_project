@@ -20,7 +20,7 @@ router.post('/delete', verifyToken, async (req, res) => {
   try {
     const { userID, pID } = req.body;
     
-    const deletedItem = await Plan.findByIdAndDelete({_id: pID, userID: userID});
+    const deletedItem = await Plan.findOneAndDelete({_id: pID, userID: userID});
     if (deletedItem) {
       return res.status(200).json({ message: 'Plan deleted successfully' });
     } else {
@@ -31,16 +31,14 @@ router.post('/delete', verifyToken, async (req, res) => {
   }
 });
 
-// GET /api/plan/allAdmin -> Get all plans in system
-router.get('/allAdmin', async (req, res) => {
-  const plans = await Plan.find();
-  res.json(plans)
-});
-
-// GET /api/plan/all -> Get all plans a user currently owns
-router.get('/:uid', verifyToken, async (req, res) => {
-  const plans = await Plan.find({userID: req.params.uid});
-  res.status(200).json(plans)
+// GET /api/:uid/all -> Get all plans a user currently owns
+router.get('/:uid/all', verifyToken, async (req, res) => {
+  try {
+    const plans = await Plan.find({userID: req.params.uid});
+    res.status(200).json(plans)
+  } catch (error) {
+    res.status(400).json({error: error.message})
+  }
 });
 
 
