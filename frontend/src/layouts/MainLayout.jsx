@@ -71,6 +71,10 @@ export default function Layout({ children }) {
   };
 
   const handleNext = async () => {
+    // prevent user from clicking next if answer is not selected
+    if ((pageOrder[currentPageIndex] !== '/getting-started') && (q.options.findIndex(qAnswer => qAnswer.value === answer) < 0)) {
+      return
+    }
     const apiURL = pageOrder[currentPageIndex] === '/getting-started' 
       ? '/api/logic-engine/question/69c57450e794c12043e820fb' // default starting question (probably change to const or something)
       : '/api/logic-engine/nextQuestion/' + q.qKey + '/' + answer
