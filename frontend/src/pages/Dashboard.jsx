@@ -31,6 +31,11 @@ export default function Dashboard() {
     return () => { window.removeEventListener('click', close); window.removeEventListener('scroll', close); };
   }, []);
 
+  /*
+    This function will be ran anytime the "user" object is updated.
+    When the "user" object gets updated, make an API call to retrieve all plans owned by the user
+    and use the setPlans() method call to update the plans object so they are shown in the dashboard
+  */
   useEffect(() => {
     if (!user) return;
     user.getIdToken()
@@ -108,9 +113,7 @@ export default function Dashboard() {
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${idToken}`,
-          },
-          // this will need to be changed to something more resilient
-          body: JSON.stringify({userID: user.uid})
+          }
         })
         .then( async (response) => {
           if (!response.ok) {

@@ -7,7 +7,7 @@ const verifyToken = require('../middleware/verifyToken');
 // POST /api/plan - Start a new plan
 router.post('/', verifyToken, async (req, res) => {
   try {
-    const { userID } = req.body;
+    const userID = req.user.uid;
     const plan = await Plan.create({ userID });
     res.status(201).json(plan);
   } catch (error) {
