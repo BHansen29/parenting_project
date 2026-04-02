@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/card';
 import { useForm } from '../hooks/useForm';
 import { useSectionFlag } from '../hooks/useSectionFlag';
+import { useNavigation } from '../context/NavigationContext';
 import './Page.css';
 import SectionHeader from '../components/forms/SectionHeader';
 import RadioQuestion from '../components/forms/RadioQuestion';
@@ -13,8 +14,8 @@ import ScheduleBuilder from '../components/forms/ScheduleBuilder';
 export default function ParentingTimeAndCommunication() {
     const navigate = useNavigate();
     const { state, dispatch } = useForm();
+    const { setOnNext, setOnBack } = useNavigation();
 
-    //section flags
     const transportationAgreementFlag = useSectionFlag('transportationAgreement');
     const activitiesAndSchedulingFlag = useSectionFlag('activitiesAndScheduling');
     const parentingScheduleFlag = useSectionFlag('parentingSchedule');
@@ -30,37 +31,41 @@ export default function ParentingTimeAndCommunication() {
         communicationWithCoParentOnPhone: '',
         communicationWithCoParentOnPhoneDescription: '',
         notifyCoParentOfChildRelatedEvents: '',
+        notifyCoParentOfChildRelatedEventsDescription: '',
         errors: {}
     };
     const errors = state.timeAndCommunication?.errors ?? {};
+
+    // Separate error state for radio groups (not stored in formData.errors)
+    const [communicationError, setCommunicationError] = useState('');
+    const [notifyError, setNotifyError] = useState('');
+
+    // ── Clear all errors on mount (e.g. user navigated away and came back) ──
+    useEffect(() => {
+        dispatch({ type: 'UPDATE_SECTION', section: 'timeAndCommunication', payload: { errors: {} } });
+        setCommunicationError('');
+        setNotifyError('');
+    }, []);
 
     const [submitAttempted, setSubmitAttempted] = useState(false);
 
     useEffect(() => {
         if (submitAttempted) {
             const firstError = document.querySelector(
-                '.text-input__error-message, .date-picker__error-message'
+                '.text-input__error-message, .date-picker__error-message, .radio-group-error'
             );
-            if (firstError) {
-                firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
+            if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
             setSubmitAttempted(false);
         }
     }, [formData, submitAttempted]);
 
     const handleChange = (field) => (value) => {
-        dispatch({
-            type: 'UPDATE_SECTION',
-            section: 'timeAndCommunication',
-            payload: { [field]: value }
-        });
+        dispatch({ type: 'UPDATE_SECTION', section: 'timeAndCommunication', payload: { [field]: value } });
         if (errors[field]) {
-            dispatch({
-                type: 'UPDATE_SECTION',
-                section: 'timeAndCommunication',
-                payload: { errors: { ...errors, [field]: '' } }
-            });
+            dispatch({ type: 'UPDATE_SECTION', section: 'timeAndCommunication', payload: { errors: { ...errors, [field]: '' } } });
         }
+        if (field === 'communicationWithCoParentOnPhone') setCommunicationError('');
+        if (field === 'notifyCoParentOfChildRelatedEvents') setNotifyError('');
     };
 
     const handlePolicyChange = (field) => (value) => {
@@ -75,11 +80,7 @@ export default function ParentingTimeAndCommunication() {
                 ? 'transportationArrangementDescription'
                 : 'activityPolicyDescription';
             if (errors[descriptionField]) {
-                dispatch({
-                    type: 'UPDATE_SECTION',
-                    section: 'timeAndCommunication',
-                    payload: { errors: { ...errors, [descriptionField]: '' } }
-                });
+                dispatch({ type: 'UPDATE_SECTION', section: 'timeAndCommunication', payload: { errors: { ...errors, [descriptionField]: '' } } });
             }
         }
     };
@@ -91,41 +92,63 @@ export default function ParentingTimeAndCommunication() {
             payload: { parentingSchedule: schedule }
         });
         if (errors.parentingSchedule) {
-            dispatch({
-                type: 'UPDATE_SECTION',
-                section: 'timeAndCommunication',
-                payload: { errors: { ...errors, parentingSchedule: '' } }
-            });
+            dispatch({ type: 'UPDATE_SECTION', section: 'timeAndCommunication', payload: { errors: { ...errors, parentingSchedule: '' } } });
         }
     }, [dispatch, errors.parentingSchedule]);
 
     const validateForm = () => {
+        let isValid = true;
         const formErrors = {};
-        if (!formData.agreeToTransportationPolicy && !formData.transportationArrangementDescription.trim()) {
-            formErrors.transportationArrangementDescription = 'Please describe your transportation arrangement if you do not agree to the standard policy';
-        }
-        if (!formData.agreeToActivityPolicy && !formData.activityPolicyDescription.trim()) {
-            formErrors.activityPolicyDescription = 'Please describe your activity scheduling arrangement if you do not agree to the standard policy';
-        }
-        if (!formData.communicationWithCoParentOnPhone.trim()) {
-            formErrors.communicationWithCoParentOnPhone = 'Please describe your phone communication arrangement with your co-parent';
-        }
-        if (!formData.notifyCoParentOfChildRelatedEvents.trim()) {
-            formErrors.notifyCoParentOfChildRelatedEvents = 'Please describe how you will notify your co-parent of child-related events';
+
+        // Transportation: must agree OR provide description
+        if (!formData.agreeToTransportationPolicy && !formData.transportationArrangementDescription?.trim()) {
+            formErrors.transportationArrangementDescription = 'Please agree to the standard policy or describe your preferred arrangement';
+            isValid = false;
         }
 
-        dispatch({
-            type: 'UPDATE_SECTION',
-            section: 'timeAndCommunication',
-            payload: { errors: formErrors }
-        });
+        // Activities: must agree OR provide description
+        if (!formData.agreeToActivityPolicy && !formData.activityPolicyDescription?.trim()) {
+            formErrors.activityPolicyDescription = 'Please agree to the standard policy or describe your preferred arrangement';
+            isValid = false;
+        }
 
-        return Object.keys(formErrors).length === 0;
+        // Communication with co-parent on phone (radio required)
+        if (!formData.communicationWithCoParentOnPhone?.trim()) {
+            setCommunicationError('Please select an option to continue');
+            isValid = false;
+        } else {
+            setCommunicationError('');
+            if (
+                formData.communicationWithCoParentOnPhone === 'sometimes' &&
+                !formData.communicationWithCoParentOnPhoneDescription?.trim()
+            ) {
+                formErrors.communicationWithCoParentOnPhoneDescription = 'Please describe the circumstances';
+                isValid = false;
+            }
+        }
+
+        // Notify co-parent of child-related events (radio required)
+        if (!formData.notifyCoParentOfChildRelatedEvents?.trim()) {
+            setNotifyError('Please select an option to continue');
+            isValid = false;
+        } else {
+            setNotifyError('');
+            if (
+                formData.notifyCoParentOfChildRelatedEvents === 'sometimes' &&
+                !formData.notifyCoParentOfChildRelatedEventsDescription?.trim()
+            ) {
+                formErrors.notifyCoParentOfChildRelatedEventsDescription = 'Please describe the circumstances';
+                isValid = false;
+            }
+        }
+
+        dispatch({ type: 'UPDATE_SECTION', section: 'timeAndCommunication', payload: { errors: formErrors } });
+        return isValid;
     };
 
     const handleNext = () => {
         if (validateForm()) {
-            navigate('/custody-schedule');
+            navigate('/informationsharing');
         } else {
             setSubmitAttempted(true);
         }
@@ -135,16 +158,26 @@ export default function ParentingTimeAndCommunication() {
         navigate('/parental-rights');
     };
 
+    useEffect(() => {
+        setOnNext(handleNext);
+        setOnBack(handleBack);
+    }, [state, communicationError, notifyError]);
+
     return (
         <div className="page-container">
             <div className="page-content">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Parenting Time & Communication</CardTitle>
-                        <CardDescription>Establish how parenting time will be structured and communication will work.</CardDescription>
+                        <CardTitle>Parenting Time &amp; Communication</CardTitle>
+                        <CardDescription>
+                            Establish how parenting time will be structured and communication will work.
+                            Fields marked with <span className="required-asterisk">*</span> are required.
+                        </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <hr className="section-divider" />
+
+                        {/* ── Transportation Agreement ── */}
                         <section className="transportation-agreement-section">
                             <SectionHeader
                                 iconClassName="car-icon"
@@ -164,6 +197,7 @@ export default function ParentingTimeAndCommunication() {
                             checkboxLabel="I agree to the standard transportation policy"
                             checked={formData.agreeToTransportationPolicy}
                             onCheckboxChange={handlePolicyChange('agreeToTransportationPolicy')}
+                            requiredNote="You must either agree to the standard policy or describe your preferred arrangement"
                             textInput={{
                                 id: 'transportationArrangementDescription',
                                 label: 'Please describe your preferred transportation arrangement:',
@@ -207,9 +241,9 @@ export default function ParentingTimeAndCommunication() {
                             }}
                         />
 
-                        {/* ScheduleBuilder component -- just put here to show what having a schedule form
-                        attached could look like, we can get rid of this after discussing */}
                         <hr className="section-divider" />
+
+                        {/* ── Parenting Schedule (optional) ── */}
                         <section className="parenting-schedule-section">
                             <SectionHeader
                                 iconClassName="car-icon"
@@ -222,7 +256,7 @@ export default function ParentingTimeAndCommunication() {
                         <Card>
                             <CardHeader>
                                 <CardDescription>
-                                    Create a typical week schedule that repeats. Click on any day to set up time slots with specific time frames (e.g., "Until noon", "4:00 PM - 7:30 PM").
+                                    Create a typical week schedule that repeats. Click on any day to set up time slots with specific time frames.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
@@ -231,13 +265,15 @@ export default function ParentingTimeAndCommunication() {
                                     onChange={handleScheduleChange}
                                     parent1Label="You"
                                     parent2Label="Co-Parent"
-                                    helpText="Click on a day to add time slots. You can specify exact time frames or mark whole days. The schedule shows 4 weeks to help visualize the pattern."
+                                    helpText="Click on a day to add time slots. You can specify exact time frames or mark whole days."
                                     error={errors.parentingSchedule}
                                 />
                             </CardContent>
                         </Card>
 
                         <hr className="section-divider" />
+
+                        {/* ── Communication with Co-Parent ── */}
                         <section className="communication-section">
                             <SectionHeader
                                 iconClassName="car-icon"
@@ -252,6 +288,7 @@ export default function ParentingTimeAndCommunication() {
                             value={formData.communicationWithCoParentOnPhone}
                             onChange={handleChange('communicationWithCoParentOnPhone')}
                             flag={communicationWithCoParentOnPhoneFlag}
+                            error={communicationError}
                             options={[
                                 { value: 'yes',                  label: 'Yes' },
                                 { value: 'no',                   label: 'No' },
@@ -266,6 +303,7 @@ export default function ParentingTimeAndCommunication() {
                                 value: formData.communicationWithCoParentOnPhoneDescription,
                                 onChange: handleChange('communicationWithCoParentOnPhoneDescription'),
                                 placeholder: 'Describe when your child can talk to your co-parent on the phone',
+                                error: errors.communicationWithCoParentOnPhoneDescription,
                             }}
                         />
                         <RadioQuestion
@@ -274,6 +312,7 @@ export default function ParentingTimeAndCommunication() {
                             value={formData.notifyCoParentOfChildRelatedEvents}
                             onChange={handleChange('notifyCoParentOfChildRelatedEvents')}
                             flag={notifyCoParentOfChildRelatedEventsFlag}
+                            error={notifyError}
                             options={[
                                 { value: 'yes',                  label: 'Yes' },
                                 { value: 'no',                   label: 'No' },
@@ -288,6 +327,7 @@ export default function ParentingTimeAndCommunication() {
                                 value: formData.notifyCoParentOfChildRelatedEventsDescription,
                                 onChange: handleChange('notifyCoParentOfChildRelatedEventsDescription'),
                                 placeholder: 'Describe when you would notify your co-parent if your child gets sick or injured',
+                                error: errors.notifyCoParentOfChildRelatedEventsDescription,
                             }}
                         />
                     </CardContent>

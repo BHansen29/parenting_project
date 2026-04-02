@@ -4,6 +4,16 @@ import { vi } from 'vitest'
 import SignUp from '../../src/pages/auth/SignUp'
 import { renderWithRouter } from '../../src/utils/renderWithRouter'
 
+// Mock Firebase
+vi.mock('firebase/auth', () => ({
+  createUserWithEmailAndPassword: vi.fn(() => Promise.resolve({ user: { uid: '123' } })),
+  getAuth: vi.fn(),
+}))
+
+vi.mock('../../src/lib/firebase', () => ({
+  auth: {},
+}))
+
 // Mock useNavigate from react-router-dom
 const mockNavigate = vi.fn()
 vi.mock('react-router-dom', async () => {

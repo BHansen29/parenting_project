@@ -1,73 +1,73 @@
 import { useState, useEffect } from 'react';
 import { Info, Shield, Users, UserCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import Footer from '../components/common/Footer';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/card';
 import TextInput from '../components/forms/TextInput';
 import DatePicker from '../components/forms/DatePicker';
 import { useForm } from '../hooks/useForm';
 import { useSectionFlag } from '../hooks/useSectionFlag';
+import { useNavigation } from '../context/NavigationContext';
 import './Page.css';
 import SectionHeader from '../components/forms/SectionHeader';
 import RadioQuestion from '../components/forms/RadioQuestion';
 
-/**
- * "Getting Started" page component for the parenting plan application.
- * This page collects basic information about the parents, their safety concerns, case filing status, and their children.
- * It uses local state for managing the list of children and global context for other form data.
- * The page includes validation logic to ensure all required fields are filled out before proceeding to the next step.
- */
 export default function GettingStarted() {
   const navigate = useNavigate();
-  const { state, dispatch } = useForm();
+  const { state, dispatch } = useForm(); //state reads data, dispatch writes data
+  const { setOnNext, setOnBack } = useNavigation();
 
-  // Parents stay in global context
-  const formData = state.parents ?? { name: '', secondParentName: '', errors: {} };
+  const formData = state.parents ?? { name: '', secondParentName: '', errors: {} }; //pull data from the stored state
   const safetyConcern = state.safetyConcern ?? '';
   const caseFilingStatus = state.caseFilingStatus ?? '';
   const errors = formData.errors ?? {};
 
-  // Section-specific flag states
-  const caseFilingFlag = useSectionFlag('caseFilingStatus');
-  const childrenFlag = useSectionFlag('children'); 
+  //these errors use the local useState
+  const [safetyConcernError, setSafetyConcernError] = useState('');
+  const [caseFilingError, setCaseFilingError] = useState('');
 
-  // Children use local state
+  const caseFilingFlag = useSectionFlag('caseFilingStatus');
+  const childrenFlag = useSectionFlag('children');
+
+  //pull children from the stored state, calling setChildren will add a new child to the existing list
   const [children, setChildren] = useState(() => {
+    //if no existing children, create a blank one
     return state.children?.length > 0
       ? state.children
       : [{ id: 1, firstName: '', lastName: '', dateOfBirth: '', classification: '', errors: {} }];
   });
 
-  // Syncs children to global context whenever local state changes
+  useEffect(() => {
+    dispatch({ type: 'UPDATE_SECTION', section: 'parents', payload: { errors: {} } });
+    setSafetyConcernError('');
+    setCaseFilingError('');
+    setChildren(prev => prev.map(c => ({ ...c, errors: {} })));
+  }, []); //clears all errors as soon as the page loads
+
   useEffect(() => {
     dispatch({ type: 'UPDATE_CHILDREN', payload: children });
-  }, [children]);
+  }, [children]); //every time the children array changes. save to formCOntext
 
   const handleRadioChange = (section) => (value) => {
-    dispatch({
-      type: 'UPDATE_SECTION',
-      section: section,
-      payload: value
-    });
+    dispatch({ type: 'UPDATE_SECTION', section: section, payload: value });
+    //clear the relevant error when user makes a selection
+    if (section === 'safetyConcern') setSafetyConcernError('');
+    if (section === 'caseFilingStatus') setCaseFilingError('');
   };
 
   const handleFormChange = (section, field) => (value) => {
-    dispatch({
-      type: 'UPDATE_SECTION',
-      section: section,
-      payload: { [field]: value }
-    });
+    //updates the formContext with the new returned value
+    dispatch({ type: 'UPDATE_SECTION', section: section, payload: { [field]: value } });
     if (errors[field]) {
-      dispatch({
-        type: 'UPDATE_SECTION',
-        section: section,
-        payload: { errors: { ...errors, [field]: '' } }
-      });
+      //clear previous errors for a field since it has been changed
+      dispatch({ type: 'UPDATE_SECTION', section: section, payload: { errors: { ...errors, [field]: '' } } });
     }
   };
 
+  
   const handleChildChange = (childId, field) => (value) => {
+    //looks through previous list of children to find the current one to update
     setChildren(prev => prev.map(child =>
+      //once the child to update is found, return child with a new value and errors cleared
       child.id === childId
         ? { ...child, [field]: value, errors: { ...(child.errors ?? {}), [field]: '' } }
         : child
@@ -76,14 +76,7 @@ export default function GettingStarted() {
 
   const addChild = () => {
     const newId = Math.max(...children.map(c => c.id), 0) + 1;
-    setChildren(prev => [...prev, {
-      id: newId,
-      firstName: '',
-      lastName: '',
-      dateOfBirth: '',
-      classification: '',
-      errors: {}
-    }]);
+    setChildren(prev => [...prev, { id: newId, firstName: '', lastName: '', dateOfBirth: '', classification: '', errors: {} }]);
   };
 
   const removeChild = (childId) => {
@@ -93,64 +86,60 @@ export default function GettingStarted() {
   };
 
   const validateForm = () => {
-    const parentErrors = {};
-    if (!formData.firstName?.trim()) parentErrors.firstName = 'Parent 1 first name is required';
-    if (!formData.lastName?.trim()) parentErrors.lastName = 'Parent 1 last name is required';
-    if (!formData.secondParentFirstName?.trim()) parentErrors.secondParentFirstName = 'Parent 2 first name is required';
-    if (!formData.secondParentLastName?.trim()) parentErrors.secondParentLastName = 'Parent 2 last name is required';
+    let isValid = true;
 
-    let childrenValid = true;
+    if (!safetyConcern) {
+      setSafetyConcernError('Please select an option to continue');
+      isValid = false;
+    } else {
+      setSafetyConcernError('');
+    }
+
+    const parentErrors = {};
+    if (!formData.firstName?.trim()) { parentErrors.firstName = 'First name is required'; isValid = false; }
+    if (!formData.lastName?.trim())  { parentErrors.lastName  = 'Last name is required';  isValid = false; }
+    if (!formData.phone?.trim())     { parentErrors.phone     = 'Phone number is required'; isValid = false; }
+    if (!formData.address?.trim())   { parentErrors.address   = 'Address is required';    isValid = false; }
+
+    //if validation for any of the parenting section fails, write the  parentErrors to the FormContext
+    dispatch({ type: 'UPDATE_SECTION', section: 'parents', payload: { errors: parentErrors } });
+
+    if (!caseFilingStatus) {
+      setCaseFilingError('Please select an option to continue');
+      isValid = false;
+    } else {
+      setCaseFilingError('');
+    }
+
     const updatedChildren = children.map((child, index) => {
       const childErrors = {};
-      if (!child.firstName.trim()) {
-        childErrors.firstName = `Child ${index + 1} first name is required`;
-        childrenValid = false;
-      }
-      if (!child.lastName.trim()) {
-        childErrors.lastName = `Child ${index + 1} last name is required`;
-        childrenValid = false;
-      }
-      if (!child.dateOfBirth) {
-        childErrors.dateOfBirth = `Child ${index + 1} date of birth is required`;
-        childrenValid = false;
-      }
-      if (!child.classification) {
-        childErrors.classification = `Child ${index + 1} classification is required`;
-        childrenValid = false;
-      } 
+      if (!child.firstName.trim())  { childErrors.firstName       = `Child ${index + 1} first name is required`;    isValid = false; }
+      if (!child.lastName.trim())   { childErrors.lastName        = `Child ${index + 1} last name is required`;     isValid = false; }
+      if (!child.dateOfBirth)       { childErrors.dateOfBirth     = `Child ${index + 1} date of birth is required`; isValid = false; }
+      if (!child.classification)    { childErrors.classification  = `Child ${index + 1} classification is required`; isValid = false; }
       return { ...child, errors: childErrors };
     });
-
     setChildren(updatedChildren);
 
-    dispatch({
-      type: 'UPDATE_SECTION',
-      section: 'parents',
-      payload: { errors: parentErrors }
-    });
-
-    return Object.keys(parentErrors).length === 0 && childrenValid;
+    return isValid;
   };
 
-  // Tracks when a failed submission happens - controls when to show validation errors
+  //helps remember and update values for components: submitAttempted is the value, setSubmitAttempted is a function to chnage the value
   const [submitAttempted, setSubmitAttempted] = useState(false);
 
-  // Runs after React re-renders with new errors
   useEffect(() => {
     if (submitAttempted) {
       const firstError = document.querySelector(
-        '.text-input__error-message, .date-picker__error-message'
+        '.text-input__error-message, .date-picker__error-message, .radio-group-error, .child-classification-error'
       );
-      if (firstError) {
-        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
+      if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
       setSubmitAttempted(false);
     }
-  }, [children, submitAttempted]);
+  }, [submitAttempted]); 
 
   const handleNext = () => {
-    if (validateForm()) {
-      // Save children to global context before navigating
+    const valid = validateForm();
+    if (valid) {
       dispatch({ type: 'UPDATE_CHILDREN', payload: children });
       navigate('/parental-rights');
     } else {
@@ -160,15 +149,14 @@ export default function GettingStarted() {
 
   const handleBack = () => {
     dispatch({ type: 'UPDATE_CHILDREN', payload: children });
-    dispatch({
-      type: 'UPDATE_SECTION',
-      section: 'parents',
-      payload: { errors: {} }
-    });
-    navigate('/landing-page');
+    dispatch({ type: 'UPDATE_SECTION', section: 'parents', payload: { errors: {} } });
+    navigate('/');
   };
 
-  
+  useEffect(() => {
+    setOnNext(handleNext);
+    setOnBack(handleBack);
+  }, [state, children, safetyConcern, caseFilingStatus]);
 
   return (
     <div className="page-container">
@@ -177,11 +165,14 @@ export default function GettingStarted() {
           <CardHeader>
             <CardTitle>Getting Started</CardTitle>
             <CardDescription>
-              Let's start by gathering some basic information about your family and situation.            </CardDescription>
+              Let's start by gathering some basic information about your family and situation.
+              Fields marked with <span className="required-asterisk">*</span> are required.
+            </CardDescription>
           </CardHeader>
 
           <CardContent>
             <hr className="section-divider" />
+
             <section className="safety-privacy-section">
               <SectionHeader
                 iconClassName="shield-icon"
@@ -194,6 +185,7 @@ export default function GettingStarted() {
                 name="safetyConcern"
                 value={safetyConcern}
                 onChange={handleRadioChange('safetyConcern')}
+                error={safetyConcernError}
                 options={[
                   { value: 'yes', label: 'Yes, please keep my information private', description: 'You and your co-parent will fill out the form separately' },
                   { value: 'no',  label: 'No, I wish to collaborate with my co-parent', description: 'Your answers will be shared with your co-parent' },
@@ -213,49 +205,38 @@ export default function GettingStarted() {
                 <CardContent>
                   <div className="form-row">
                     <TextInput
-                      id="firstParentFirstName"
-                      type="text"
+                      id="firstParentFirstName" type="text"
                       value={formData.firstName ?? ''}
                       onChange={handleFormChange('parents', 'firstName')}
-                      error={submitAttempted ? errors.firstName : ''}
+                      error={errors.firstName}
                       placeholder="Enter your first name"
-                      label="First Name"
-                      autoComplete="given-name"
-                      required
+                      label="First Name" autoComplete="given-name" required
                     />
                     <TextInput
-                      id="firstParentLastName"
-                      type="text"
+                      id="firstParentLastName" type="text"
                       value={formData.lastName ?? ''}
                       onChange={handleFormChange('parents', 'lastName')}
-                      error={submitAttempted ? errors.lastName : ''}
+                      error={errors.lastName}
                       placeholder="Enter your last name"
-                      label="Last Name"
-                      autoComplete="family-name"
-                      required
+                      label="Last Name" autoComplete="family-name" required
                     />
                   </div>
                   <TextInput
-                      id="firstParentPhone"
-                      type="text"
-                      value={formData.phone ?? ''}
-                      onChange={handleFormChange('parents', 'phone')}
-                      error={submitAttempted ? errors.phone : ''}
-                      placeholder="Enter your phone number"
-                      label="Phone Number"
-                      autoComplete="tel"
-                      required
+                    id="firstParentPhone" type="text"
+                    value={formData.phone ?? ''}
+                    onChange={handleFormChange('parents', 'phone')}
+                    error={errors.phone}
+                    placeholder="Enter your phone number"
+                    label="Phone Number" autoComplete="tel" required
                   />
-                  <TextInput className="text-input-long-text"
-                      id="firstParentAddress"
-                      type="text"
-                      value={formData.address ?? ''}
-                      onChange={handleFormChange('parents', 'address')}
-                      error={submitAttempted ? errors.address : ''}
-                      placeholder="Enter your full address (this will help identify the relevant county)"
-                      label="Address"
-                      autoComplete="street-address"
-                      required
+                  <TextInput
+                    className="text-input-long-text"
+                    id="firstParentAddress" type="text"
+                    value={formData.address ?? ''}
+                    onChange={handleFormChange('parents', 'address')}
+                    error={errors.address}
+                    placeholder="Enter your full address (this will help identify the relevant county)"
+                    label="Address" autoComplete="street-address" required
                   />
                 </CardContent>
               </Card>
@@ -274,6 +255,7 @@ export default function GettingStarted() {
                 name="caseFilingStatus"
                 value={caseFilingStatus}
                 onChange={handleRadioChange('caseFilingStatus')}
+                error={caseFilingError}
                 flag={caseFilingFlag}
                 options={[
                   { value: 'yes',     label: 'Yes, it was me',         description: 'You will be identified as Parent 1/Petitioner 1/Plaintiff in the parenting plan' },
@@ -292,104 +274,107 @@ export default function GettingStarted() {
                 title="Your Children"
                 intro="Please list the children you are including in this shared parenting plan."
               />
-                {children.map((child, index) => (
-                  <Card key={child.id}>
-                    <CardHeader>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <CardTitle>{`Child ${index + 1}`}</CardTitle>
-                        {children.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => removeChild(child.id)}
-                            className="remove-child-btn"
-                            aria-label={`Remove Child ${index + 1}`}
-                          >
-                            Remove
-                          </button>
+              {children.map((child, index) => (
+                <Card key={child.id}>
+                  <CardHeader>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <CardTitle>{`Child ${index + 1}`}</CardTitle>
+                      {children.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeChild(child.id)}
+                          className="remove-child-btn"
+                          aria-label={`Remove Child ${index + 1}`}
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                  </CardHeader>
+
+                  <CardContent>
+                    <form noValidate>
+                      <div className="form-row">
+                        <TextInput
+                          id={`child-${child.id}-firstName`}
+                          label="First Name"
+                          type="text"
+                          value={child.firstName}
+                          onChange={handleChildChange(child.id, 'firstName')}
+                          required
+                          placeholder="First Name"
+                          autoComplete="given-name"
+                          error={child.errors?.firstName ?? ''}
+                        />
+                        <TextInput
+                          id={`child-${child.id}-lastName`}
+                          label="Last Name"
+                          type="text"
+                          value={child.lastName}
+                          onChange={handleChildChange(child.id, 'lastName')}
+                          required
+                          placeholder="Last Name"
+                          autoComplete="family-name"
+                          error={child.errors?.lastName ?? ''}
+                        />
+                      </div>
+
+                      <DatePicker
+                        id={`child-${child.id}-dateOfBirth`}
+                        label="Date of Birth"
+                        value={child.dateOfBirth}
+                        onChange={handleChildChange(child.id, 'dateOfBirth')}
+                        required
+                        max={new Date().toISOString().split('T')[0]}
+                        error={child.errors?.dateOfBirth ?? ''}
+                      />
+
+                      <div className="child-classification">
+                        <label className="classification-label">Child Classification</label>
+                        <div className="radio-group">
+                          <label className="radio-option">
+                            <input
+                              type="radio"
+                              name={`child-${child.id}-classification`}
+                              value="minor"
+                              checked={child.classification === 'minor'}
+                              onChange={(e) => handleChildChange(child.id, 'classification')(e.target.value)}
+                            />
+                            <span>
+                              The child is a minor and/or mentally or physically disabled
+                              incapable of supporting or maintaining themselves
+                            </span>
+                          </label>
+                          <label className="radio-option">
+                            <input
+                              type="radio"
+                              name={`child-${child.id}-classification`}
+                              value="emancipated"
+                              checked={child.classification === 'emancipated'}
+                              onChange={(e) => handleChildChange(child.id, 'classification')(e.target.value)}
+                            />
+                            <span>The child is an emancipated adult</span>
+                          </label>
+                        </div>
+                        {child.errors?.classification && (
+                          <p className="child-classification-error">
+                            {child.errors.classification}
+                          </p>
                         )}
                       </div>
-                    </CardHeader>
+                    </form>
+                  </CardContent>
+                </Card>
+              ))}
 
-                    <CardContent>
-                      <form noValidate>
-                        <div className="form-row">
-                          <TextInput
-                            id={`child-${child.id}-firstName`}
-                            label="First Name"
-                            type="text"
-                            value={child.firstName}
-                            onChange={handleChildChange(child.id, 'firstName')}
-                            required
-                            placeholder="First Name"
-                            autoComplete="given-name"
-                            error={submitAttempted ? child.errors?.firstName : ''}
-                          />
-
-                          <TextInput
-                            id={`child-${child.id}-lastName`}
-                            label="Last Name"
-                            type="text"
-                            value={child.lastName}
-                            onChange={handleChildChange(child.id, 'lastName')}
-                            required
-                            placeholder="Last Name"
-                            autoComplete="family-name"
-                            error={submitAttempted ? child.errors?.lastName : ''}
-                          />
-                        </div>
-
-                        <DatePicker
-                          id={`child-${child.id}-dateOfBirth`}
-                          label="Date of Birth"
-                          value={child.dateOfBirth}
-                          onChange={handleChildChange(child.id, 'dateOfBirth')}
-                          required
-                          max={new Date().toISOString().split('T')[0]}
-                          error={submitAttempted ? child.errors?.dateOfBirth : ''}
-                        />
-
-                        <div className="child-classification">
-                          <label className="classification-label">Child Classification</label>
-                          <div className="radio-group">
-                            <label className="radio-option">
-                              <input
-                                type="radio"
-                                name={`child-${child.id}-classification`}
-                                value="minor"
-                                checked={child.classification === 'minor'}
-                                onChange={(e) => handleChildChange(child.id, 'classification')(e.target.value)}
-                              />
-                              <span>
-                                The child is a minor and/or mentally or physically disabled
-                                incapable of supporting or maintaining themselves
-                              </span>
-                            </label>
-
-                            <label className="radio-option">
-                              <input
-                                type="radio"
-                                name={`child-${child.id}-classification`}
-                                value="emancipated"
-                                checked={child.classification === 'emancipated'}
-                                onChange={(e) => handleChildChange(child.id, 'classification')(e.target.value)}
-                              />
-                              <span>The child is an emancipated adult</span>
-                            </label>
-                          </div>
-                        </div>
-                      </form>
-                    </CardContent>
-                  </Card>
-                ))}
-
-                <button
-                  type="button"
-                  onClick={addChild}
-                  className="add-child-btn"
-                >
-                  + Add Another Child
-                </button>
-              </section>
+              <button
+                type="button"
+                onClick={addChild}
+                className="add-child-btn"
+              >
+                + Add Another Child
+              </button>
+            </section>
           </CardContent>
         </Card>
       </div>
