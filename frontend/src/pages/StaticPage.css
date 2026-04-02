@@ -1,0 +1,138 @@
+.static-page {
+  min-height: 100vh;
+  background-color: var(--color-background, #f9fafb);
+  padding: 2rem 1rem;
+}
+
+.static-page__container {
+  max-width: 760px;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 8px;
+  padding: 2.5rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.static-page__back {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-primary, #4f46e5);
+  font-size: 0.9rem;
+  padding: 0;
+  margin-bottom: 1.5rem;
+  display: inline-block;
+}
+
+.static-page__back:hover {
+  text-decoration: underline;
+  color: #312e81;
+}
+
+.static-page__title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: var(--color-text, #111827);
+}
+
+.static-page__last-updated {
+  font-size: 0.85rem;
+  color: var(--color-text-muted, #6b7280);
+  margin-bottom: 2rem;
+}
+
+.static-page__placeholder {
+  color: var(--color-text-muted, #6b7280);
+  font-style: italic;
+}
+
+.static-page__container p,
+.static-page__container li,
+.static-page__container address {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: #374151;
+}
+
+.static-page__container h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #111827;
+  margin-top: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.static-page__container ul {
+  padding-left: 1.5rem;
+  margin: 0.5rem 0 1rem;
+}
+
+.static-page__container li {
+  margin-bottom: 0.35rem;
+}
+
+.static-page__container a {
+  color: #4f46e5;
+}
+
+.static-page__container a:hover {
+  color: #312e81;
+  text-decoration: underline;
+}
+
+.static-page__container address {
+  font-style: normal;
+  margin: 0.5rem 0 1rem;
+  line-height: 1.8;
+}
+
+@media (prefers-color-scheme: dark) {
+  .static-page {
+    background-color: #111827;
+  }
+
+  .static-page__container {
+    background: #1f2937;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  }
+
+  .static-page__back {
+    color: #14abdd;
+    background: none;
+  }
+
+  .static-page__back:hover {
+    color: #ffffff;
+  }
+
+  .static-page__title {
+    color: #e5e7eb;
+  }
+
+  .static-page__last-updated {
+    color: #9ca3af;
+  }
+
+  .static-page__placeholder {
+    color: #9ca3af;
+  }
+
+  .static-page__container p,
+  .static-page__container li,
+  .static-page__container address {
+    color: #d1d5db;
+  }
+
+  .static-page__container h2 {
+    color: #e5e7eb;
+  }
+
+  .static-page__container a {
+    color: #14abdd;
+  }
+
+  .static-page__container a:hover {
+    color: #ffffff;
+  }
+}
