@@ -31,3 +31,27 @@
 .flag-button__label {
   font-size: 0.875rem;
 }
+
+@media (prefers-color-scheme: dark) {
+  .flag-button,
+  .flag-button--flagged {
+    background-color: #374151;
+    border-color: #4b5563;
+    color: #d1d5db;
+  }
+
+  .flag-button:hover {
+    background-color: #4b5563;
+  }
+
+  .flag-button--flagged:hover {
+    background-color: #ffab45b3;
+  }
+
+  .flag-button:active,
+  .flag-button--flagged {
+    background-color: #ffab45;
+    border-color: #ffb700;
+    color: #ffffff;
+  }
+}
