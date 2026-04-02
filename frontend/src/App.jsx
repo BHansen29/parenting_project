@@ -10,6 +10,9 @@ import ParentingTimeAndCommunication from './pages/ParentingTimeAndCommunication
 import CustodySchedule from './pages/CustodySchedule';
 import Transportation from './pages/Transportation';
 import Review from './pages/Review';
+import TermsOfService from './pages/TermsOfService';
+import ContactSupport from './pages/ContactSupport';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 import './App.css';
 
 // Main App component with routing
@@ -58,6 +61,11 @@ function App() {
             <Review />
           </MainLayout>
         } />
+
+        {/* Static pages */}
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/terms-of-service" element={<TermsOfService />} />
+        <Route path="/contact-support" element={<ContactSupport />} />
 
         {/* Catch all - redirect unknown routes to home */}
         <Route path="*" element={<Navigate to="/" replace />} />
