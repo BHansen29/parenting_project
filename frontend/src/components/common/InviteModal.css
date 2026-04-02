@@ -161,6 +161,7 @@
 
 .invite-modal__send-btn:disabled {
   cursor: default;
+  opacity: 0.8;
 }
 
 /* ── Divider ── */
@@ -233,6 +234,113 @@
 
 .invite-modal__privacy strong {
   color: #374151;
+}
+
+/* ── Dark Mode ── */
+@media (prefers-color-scheme: dark) {
+  .modal-backdrop {
+    background-color: rgba(0, 0, 0, 0.6);
+  }
+
+  .invite-modal {
+    background-color: #1f2937;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  }
+
+  .invite-modal__icon {
+    background-color: rgba(20, 171, 221, 0.15);
+  }
+
+  .invite-modal__title {
+    color: #e5e7eb;
+  }
+
+  .invite-modal__subtitle {
+    color: #9ca3af;
+  }
+
+  .invite-modal__close {
+    color: #9ca3af;
+  }
+
+  .invite-modal__close:hover {
+    color: #d1d5db;
+    background-color: #374151;
+  }
+
+  .invite-modal__info-box {
+    background-color: rgba(20, 171, 221, 0.1);
+  }
+
+  .invite-modal__info-box p {
+    color: #d1d5db;
+  }
+
+  .invite-modal__label {
+    color: #e5e7eb;
+  }
+
+  .invite-modal__email-input {
+    background-color: #374151;
+    border-color: #4b5563;
+    color: #d1d5db;
+  }
+
+  .invite-modal__email-input::placeholder {
+    color: #9ca3af;
+  }
+
+  .invite-modal__email-input:focus {
+    border-color: #14abdd;
+  }
+
+  .invite-modal__send-btn {
+    background-color: #14abdd;
+  }
+
+  .invite-modal__send-btn:hover:not(:disabled) {
+    background-color: #0c7a9e;
+  }
+
+  .invite-modal__send-btn--sent {
+    background-color: #10b981;
+  }
+
+  .invite-modal__divider {
+    color: #9ca3af;
+  }
+
+  .invite-modal__divider::before,
+  .invite-modal__divider::after {
+    background-color: #374151;
+  }
+
+  .invite-modal__link-display {
+    background-color: #374151;
+    border-color: #4b5563;
+    color: #9ca3af;
+  }
+
+  .invite-modal__copy-btn {
+    background-color: #374151;
+    border-color: #4b5563;
+    color: #d1d5db;
+  }
+
+  .invite-modal__copy-btn:hover {
+    background-color: #4b5563;
+    border-color: #4b5563;
+    color: #e5e7eb;
+  }
+
+  .invite-modal__privacy {
+    color: #9ca3af;
+    border-top-color: #374151;
+  }
+
+  .invite-modal__privacy strong {
+    color: #d1d5db;
+  }
 }
 
 /* ── Responsive ── */

@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Car, Info, Calendar } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Car, Info, Calendar, Check, Radio, Flag } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/card';
 import { useForm } from '../hooks/useForm';
@@ -84,7 +84,7 @@ export default function ParentingTimeAndCommunication() {
         }
     };
 
-    const handleScheduleChange = (schedule) => {
+    const handleScheduleChange = useCallback((schedule) => {
         dispatch({
             type: 'UPDATE_SECTION',
             section: 'timeAndCommunication',
@@ -97,7 +97,7 @@ export default function ParentingTimeAndCommunication() {
                 payload: { errors: { ...errors, parentingSchedule: '' } }
             });
         }
-    };
+    }, [dispatch, errors.parentingSchedule]);
 
     const validateForm = () => {
         const formErrors = {};
