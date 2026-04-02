@@ -8,6 +8,8 @@ const User = require('../models/User');
 const emailRoutes = require('./email');
 const planRoutes = require('./plan');
 const logicRoutes = require('./logic-engine');
+const caseRoutes = require('./cases');
+const invitationRoutes = require('./invitations');
 const { getFirebaseAuth } = require('../config/firebaseAdmin');
 
 const requireDatabaseConnection = (req, res, next) => {
@@ -190,5 +192,7 @@ router.get('/', (req, res) => {
 router.use('/email', emailRoutes);
 router.use('/plan', requireDatabaseConnection, planRoutes);
 router.use('/logic-engine', requireDatabaseConnection, logicRoutes);
+router.use('/v1/cases', requireDatabaseConnection, caseRoutes);
+router.use('/v1', requireDatabaseConnection, invitationRoutes);
 
 module.exports = router;
