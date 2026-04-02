@@ -23,8 +23,8 @@ services:
       - /app/backend/node_modules
     ports:
       - "3000:3000"
-    environment:
-      MONGODB_URI: mongodb://admin:password123@mongodb:27017/parenting_db?authSource=admin
+    env_file:
+      - .env
     depends_on:
       - mongodb
     restart: unless-stopped

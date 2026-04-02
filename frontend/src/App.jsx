@@ -10,6 +10,9 @@ import ParentingTimeAndCommunication from './pages/ParentingTimeAndCommunication
 import InformationSharing from './pages/InformationSharing';
 import TaxExemptions from './pages/TaxExemptions';
 import Review from './pages/Review';
+import TermsOfService from './pages/TermsOfService';
+import ContactSupport from './pages/ContactSupport';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 import { FormProvider } from './context/FormContext';
 import { NavigationProvider } from './context/NavigationContext';
 import './App.css';
@@ -61,6 +64,11 @@ function App() {
                 <Review />
               </MainLayout>
             } />
+            
+            {/* Static pages */}
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/terms-of-service" element={<TermsOfService />} />
+            <Route path="/contact-support" element={<ContactSupport />} />
 
             {/* Catch all - redirect unknown routes to home */}
             <Route path="*" element={<Navigate to="/" replace />} />
