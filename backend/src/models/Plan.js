@@ -2,14 +2,14 @@ const mongoose = require('mongoose');
 
 const questionResponseSchema = new mongoose.Schema(
 {
-  questionID: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: "Question",
+  qKey: { 
+    type: String, 
     required: true 
   },
   answer: { 
     type: mongoose.Schema.Types.Mixed, 
-    required: true },
+    required: true 
+  },
   isFlagged: {
     // future proofing for potential "flagging" a question feature to come back to later
     type: Boolean,
@@ -29,19 +29,28 @@ const planSchema = new mongoose.Schema(
   userID: { 
     type: String, 
     required: true 
-},
+  },
+  name: {
+    type: String,
+    default: 'Untitled Plan'
+  },
   status: { 
-    type: String, enum: ['in_progress', 'completed', 'ready_for_review'], 
+    type: String, enum: ['in_progress', 'completed', 'ready_for_review', 'DRAFT'], 
     default: 'in_progress' 
-},
+  },
   currentQuestion: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Question",
+    ref: "Question"
   },
   allowSharing: {
     type: Boolean,
     required: true,
     default: false
+  },
+  lastModified: {
+    type: String,
+    required: true,
+    default: new Date().toLocaleDateString('en-US')
   },
   children: [questionResponseSchema],
 })
