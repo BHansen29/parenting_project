@@ -62,7 +62,7 @@ router.get('/invitations/:token', async (req, res) => {
     const { invitation, error, status } = await findValidInvitation(req.params.token);
     if (error) return res.status(status).json({ error });
 
-    return res.json({ caseId: invitation.caseId });
+    return res.status(200).json({ caseId: invitation.caseId });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }

@@ -17,7 +17,7 @@ router.get('/:caseId/status', verifyToken, async (req, res) => {
     if (!parentingCase) return res.status(404).json({ error: 'Case not found' });
     if (!isCaseMember(parentingCase, req.user.uid)) return res.status(403).json({ error: 'Forbidden' });
 
-    res.json({ caseId: parentingCase._id, status: parentingCase.status });
+    res.status(200).json({ caseId: parentingCase._id, status: parentingCase.status });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -36,10 +36,10 @@ router.get('/:caseId/my-responses', verifyToken, async (req, res) => {
     });
 
     if (!response) {
-      return res.json({ answers: {}, isComplete: false });
+      return res.status(200).json({ answers: {}, isComplete: false });
     }
 
-    res.json(response);
+    res.status(200).json(response);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -67,7 +67,7 @@ router.put('/:caseId/my-responses', verifyToken, async (req, res) => {
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
-    res.json(updated);
+    res.status(200).json(updated);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -98,7 +98,7 @@ router.post('/:caseId/my-responses/submit', verifyToken, async (req, res) => {
       await parentingCase.save();
     }
 
-    res.json({ message: 'Responses submitted', isComplete: response.isComplete, caseStatus: parentingCase.status });
+    res.status(200).json({ message: 'Responses submitted', isComplete: response.isComplete, caseStatus: parentingCase.status });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -123,7 +123,7 @@ router.get('/:caseId/comparison', verifyToken, async (req, res) => {
 
     const diff = computeDiff(response1?.answers, response2?.answers);
 
-    res.json({ caseId: parentingCase._id, status: parentingCase.status, diff });
+    res.status(200).json({ caseId: parentingCase._id, status: parentingCase.status, diff });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
