@@ -31,26 +31,23 @@ function formatAnswer(answer) {
 // Groups the state.plan.children array by question section
 // Plan model representation of the array: plan.children = [{ questionID, answer, isFlagged, isDeferred }, ...]
 // Question model includes "section" and "qKey" fields
-
 // TODO: Populate questionID to look like: questionID: { _id, qKey, section, qText, ... }, answer, isFlagged }
-
-// If questionId is not populated, defualt to "unsectioned" 
 function groupResponsesBySection(children = []) {
   const grouped = {};
   
   children.forEach((response) => {
     const question = response.questionID; 
     const isPopulated = question && typeof question === 'object'; 
+    const sectionKey = isPopulated ? question.section : null;
 
-    //if questions has section value use it, if not become unsectioned
-    const sectionKey = isPopulated ? question.section : 'unsectioned'; 
+    if (!sectionKey) return; // skip unpopulated questions
 
     if (!grouped[sectionKey]) {
       grouped[sectionKey] = [];
     }
 
     grouped[sectionKey].push({
-      qKey: isPopulated ? question.qKey : String(question),
+      qKey: question.qKey,
       answer: response.answer, 
       isFlagged: response.isFlagged,
       isDeferred: response.isDeferred,
@@ -61,7 +58,6 @@ function groupResponsesBySection(children = []) {
 
 
 function SectionBlock({ sectionKey, responses, onEdit, isOpen, onToggle }) {
-  // Look up display label and edit route
   const meta = SECTION_META[sectionKey] || { 
     label: sectionKey.replaceAll('_', ' '),
     route: '/',
@@ -70,12 +66,9 @@ function SectionBlock({ sectionKey, responses, onEdit, isOpen, onToggle }) {
 
   return (
     <Card className="review__section-card">
-
-      {/* Card header acts as the collapsible toggle */}
       <CardHeader className="review__section-card-header">
         <button className="review__section-header" onClick={onToggle} aria-expanded={isOpen}>
           <div className="review__section-header-left">
-            {/* Green check if section has answers, grey if not */}
             <CheckCircle
               size={18}
               className={hasAnswers ? 'review__check--complete' : 'review__check--incomplete'}
@@ -83,7 +76,6 @@ function SectionBlock({ sectionKey, responses, onEdit, isOpen, onToggle }) {
             <span className="review__section-title">{meta.label}</span>
           </div>
           <div className="review__section-header-right">
-             {/* Edit button navigates back to this section's form page */}
             <button
               className="review__edit-btn"
               onClick={(e) => { e.stopPropagation(); onEdit(meta.route); }}
@@ -97,7 +89,6 @@ function SectionBlock({ sectionKey, responses, onEdit, isOpen, onToggle }) {
         </button>
       </CardHeader>
 
-      {/* Card content holds the answers */}
       {isOpen && (
         <CardContent className="review__section-card-content">
           {hasAnswers ? (
@@ -114,7 +105,6 @@ function SectionBlock({ sectionKey, responses, onEdit, isOpen, onToggle }) {
           )}
         </CardContent>
       )}
-
     </Card>
   );
 }
@@ -127,14 +117,9 @@ export default function Review() {
   const planId = state.plan?._id; 
   const groupedResponses = groupResponsesBySection(state.plan?.children ?? []);
   const knownSectionKeys = Object.keys(SECTION_META);
-  // catches any unsectioned questions
-  const sectionKeysToDisplay = groupedResponses['unsectioned']
-    ? [...knownSectionKeys, 'unsectioned']
-    : knownSectionKeys;
 
-  //makes sections collapsible
   const [openSections, setOpenSections] = useState(() =>
-    Object.fromEntries(sectionKeys.map((k) => [k, true]))
+    Object.fromEntries(knownSectionKeys.map((k) => [k, true]))
   );
 
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -148,7 +133,7 @@ export default function Review() {
   const completedCount = knownSectionKeys.filter(
     (k) => groupedResponses[k]?.length > 0
   ).length;
-  const totalCount = sectionKeys.length;
+  const totalCount = knownSectionKeys.length;
   const allComplete = completedCount === totalCount;
 
   return (
@@ -166,27 +151,22 @@ export default function Review() {
               </div>
             </div>
           </CardHeader>
-          
 
           <CardContent>
             <hr className="section-divider" />
 
-            {/* Legal disclaimer — always visible */}
             <Disclaimer variant="info">
               This tool helps you draft a parenting plan but does <strong>not</strong> constitute
               legal advice. This document is not a substitute for consultation with a licensed
               attorney. Review all answers carefully before submitting to the court.
             </Disclaimer>
 
-            
-
-            {/* ── Section cards ── */}
             <div className="review__sections">
-              {sectionKeys.map((key) => (
+              {knownSectionKeys.map((key) => (
                 <SectionBlock
                   key={key}
                   sectionKey={key}
-                  responses={state[key]?.responses ?? []}
+                  responses={groupedResponses[key] ?? []}
                   onEdit={handleEdit}
                   isOpen={openSections[key]}
                   onToggle={() => toggleSection(key)}
@@ -194,7 +174,6 @@ export default function Review() {
               ))}
             </div>
 
-            {/* Incomplete sections warning — conditional */}
             {!allComplete && (
               <Disclaimer variant="warning">
                 Some sections are incomplete. You can still download or invite your co-parent,
@@ -202,7 +181,6 @@ export default function Review() {
               </Disclaimer>
             )}
 
-            {/* ── Action buttons ── */}
             <div className="review__actions">
               <div className="review__action-buttons">
                 <button
