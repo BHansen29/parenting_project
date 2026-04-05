@@ -31,7 +31,7 @@ router.post('/delete', verifyToken, async (req, res) => {
   }
 });
 
-// GET /api/:uid/all -> Get all plans a user currently owns
+// GET /api/plan/:uid/all -> Get all plans a user currently owns
 router.get('/:uid/all', verifyToken, async (req, res) => {
   try {
     const plans = await Plan.find({userID: req.params.uid});
@@ -99,17 +99,17 @@ router.post('/:planId/answer', verifyToken, async (req, res) => {
     }
 
     const {qKey, answer} = req.body
-    const index = plan.children.findIndex(userAnswer => userAnswer.qKey === qKey)
-    const oldAnswer = plan.children[index]?.answer
+    const index = plan.answers.findIndex(userAnswer => userAnswer.qKey === qKey)
+    const oldAnswer = plan.answers[index]?.answer
     if (!oldAnswer) {
       // case for first question answered in plan
-      plan.children.push({qKey: qKey, answer: answer})
+      plan.answers.push({qKey: qKey, answer: answer})
     } else if (oldAnswer.answer !== answer) {
       // case for changing exsisting response
-      plan.children[index] = {qKey: qKey, answer: answer}
+      plan.answers[index] = {qKey: qKey, answer: answer}
       // this chops off everything after the new answer since our "path" through the decision tree may be different
       // TODO: maybe update so that it only chops off questions if they aren't defaultNextQuestions?
-      plan.children.splice(index + 1)
+      plan.answers.splice(index + 1)
     } else {
       // no change to question required since answer matches
       return res.status(200).json(plan)

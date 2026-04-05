@@ -21,8 +21,28 @@ const questionResponseSchema = new mongoose.Schema(
     required: true,
     default: false },
   timestamp: { type: Date, default: Date.now }
-}
-);
+});
+
+const childSchema = new mongoose.Schema(
+{
+  fName: { 
+    type: String, 
+    required: true 
+  },
+  lName: { 
+    type: String, 
+    required: true 
+  },
+  birthday: {
+    type: String,
+    required: true,
+  },
+  isEmancipatedAdult: {
+    type: Boolean,
+    required: true,
+  },
+  timestamp: { type: Date, default: Date.now }
+});
 
 const planSchema = new mongoose.Schema(
 {
@@ -52,7 +72,8 @@ const planSchema = new mongoose.Schema(
     required: true,
     default: new Date().toLocaleDateString('en-US')
   },
-  children: [questionResponseSchema],
+  answers: [questionResponseSchema],
+  children: [childSchema]
 })
 
 module.exports = mongoose.model('Plan', planSchema);
