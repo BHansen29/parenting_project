@@ -23,7 +23,7 @@ export default function GettingStarted() {
 
   // Parents stay in global context
   const formData = state.parents ?? { name: '', secondParentName: '', errors: {} };
-  const safetyConcern = state.safetyConcern ?? '';
+  const allowSharing = state.plan.allowSharing ? "true" : "false"
   const caseFilingStatus = state.caseFilingStatus ?? '';
   const errors = formData.errors ?? {};
 
@@ -33,14 +33,20 @@ export default function GettingStarted() {
 
   // Children use local state
   const [children, setChildren] = useState(() => {
-    return state.children?.length > 0
-      ? state.children
-      : [{ id: 1, firstName: '', lastName: '', dateOfBirth: '', classification: '', errors: {} }];
+    let startKey = 1
+    return state.plan.children?.length > 0
+      ? state.plan.children.map(child => {
+        const newKid = {...child, isEmancipatedAdult: child.isEmancipatedAdult ? "emancipated" : "minor", key: startKey}
+        startKey += 1
+        return newKid
+      })
+      : [{ key: startKey, fName: '', lName: '', birthday: '', isEmancipatedAdult: '', errors: {} }];
   });
 
   // Syncs children to global context whenever local state changes
   useEffect(() => {
-    dispatch({ type: 'UPDATE_CHILDREN', payload: children });
+    const fixedChildren = children.map(child => ({...child, isEmancipatedAdult: child.isEmancipatedAdult === "emancipated"})) 
+    dispatch({ type: 'UPDATE_SECTION', section: "plan", payload: {children: fixedChildren} });
   }, [children]);
 
   const handleRadioChange = (section) => (value) => {
@@ -66,70 +72,30 @@ export default function GettingStarted() {
     }
   };
 
-  const handleChildChange = (childId, field) => (value) => {
+  const handleChildChange = (childKey, field) => (value) => {
     setChildren(prev => prev.map(child =>
-      child.id === childId
+      child.key === childKey
         ? { ...child, [field]: value, errors: { ...(child.errors ?? {}), [field]: '' } }
         : child
     ));
   };
 
   const addChild = () => {
-    const newId = Math.max(...children.map(c => c.id), 0) + 1;
+    const newKey = Math.max(...children.map(c => c.key), 0) + 1;
     setChildren(prev => [...prev, {
-      id: newId,
-      firstName: '',
-      lastName: '',
-      dateOfBirth: '',
-      classification: '',
+      key: newKey,
+      fName: '',
+      lName: '',
+      birthday: '',
+      isEmancipatedAdult: '',
       errors: {}
     }]);
   };
 
-  const removeChild = (childId) => {
+  const removeChild = (childKey) => {
     if (children.length > 1) {
-      setChildren(prev => prev.filter(child => child.id !== childId));
+      setChildren(prev => prev.filter(child => child.key !== childKey));
     }
-  };
-
-  const validateForm = () => {
-    const parentErrors = {};
-    if (!formData.firstName?.trim()) parentErrors.firstName = 'Parent 1 first name is required';
-    if (!formData.lastName?.trim()) parentErrors.lastName = 'Parent 1 last name is required';
-    if (!formData.secondParentFirstName?.trim()) parentErrors.secondParentFirstName = 'Parent 2 first name is required';
-    if (!formData.secondParentLastName?.trim()) parentErrors.secondParentLastName = 'Parent 2 last name is required';
-
-    let childrenValid = true;
-    const updatedChildren = children.map((child, index) => {
-      const childErrors = {};
-      if (!child.firstName.trim()) {
-        childErrors.firstName = `Child ${index + 1} first name is required`;
-        childrenValid = false;
-      }
-      if (!child.lastName.trim()) {
-        childErrors.lastName = `Child ${index + 1} last name is required`;
-        childrenValid = false;
-      }
-      if (!child.dateOfBirth) {
-        childErrors.dateOfBirth = `Child ${index + 1} date of birth is required`;
-        childrenValid = false;
-      }
-      if (!child.classification) {
-        childErrors.classification = `Child ${index + 1} classification is required`;
-        childrenValid = false;
-      } 
-      return { ...child, errors: childErrors };
-    });
-
-    setChildren(updatedChildren);
-
-    dispatch({
-      type: 'UPDATE_SECTION',
-      section: 'parents',
-      payload: { errors: parentErrors }
-    });
-
-    return Object.keys(parentErrors).length === 0 && childrenValid;
   };
 
   // Tracks when a failed submission happens - controls when to show validation errors
@@ -147,28 +113,6 @@ export default function GettingStarted() {
       setSubmitAttempted(false);
     }
   }, [children, submitAttempted]);
-
-  const handleNext = () => {
-    if (validateForm()) {
-      // Save children to global context before navigating
-      dispatch({ type: 'UPDATE_CHILDREN', payload: children });
-      navigate('/parental-rights');
-    } else {
-      setSubmitAttempted(true);
-    }
-  };
-
-  const handleBack = () => {
-    dispatch({ type: 'UPDATE_CHILDREN', payload: children });
-    dispatch({
-      type: 'UPDATE_SECTION',
-      section: 'parents',
-      payload: { errors: {} }
-    });
-    navigate('/landing-page');
-  };
-
-  
 
   return (
     <div className="page-container">
@@ -191,12 +135,12 @@ export default function GettingStarted() {
               />
               <RadioQuestion
                 question="Would sharing information from this questionnaire with your co-parent make you fear for your safety in any way?"
-                name="safetyConcern"
-                value={safetyConcern}
-                onChange={handleRadioChange('safetyConcern')}
+                name="allowSharing"
+                value={allowSharing}
+                onChange={handleFormChange('plan', 'allowSharing')}
                 options={[
-                  { value: 'yes', label: 'Yes, please keep my information private', description: 'You and your co-parent will fill out the form separately' },
-                  { value: 'no',  label: 'No, I wish to collaborate with my co-parent', description: 'Your answers will be shared with your co-parent' },
+                  { value: "false", label: 'Yes, please keep my information private', description: 'You and your co-parent will fill out the form separately' },
+                  { value: "true",  label: 'No, I wish to collaborate with my co-parent', description: 'Your answers will be shared with your co-parent' },
                 ]}
               />
             </section>
@@ -293,14 +237,14 @@ export default function GettingStarted() {
                 intro="Please list the children you are including in this shared parenting plan."
               />
                 {children.map((child, index) => (
-                  <Card key={child.id}>
+                  <Card key={child.key}>
                     <CardHeader>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <CardTitle>{`Child ${index + 1}`}</CardTitle>
                         {children.length > 1 && (
                           <button
                             type="button"
-                            onClick={() => removeChild(child.id)}
+                            onClick={() => removeChild(child.key)}
                             className="remove-child-btn"
                             aria-label={`Remove Child ${index + 1}`}
                           >
@@ -314,38 +258,38 @@ export default function GettingStarted() {
                       <form noValidate>
                         <div className="form-row">
                           <TextInput
-                            id={`child-${child.id}-firstName`}
+                            id={`child-${child.key}-firstName`}
                             label="First Name"
                             type="text"
-                            value={child.firstName}
-                            onChange={handleChildChange(child.id, 'firstName')}
+                            value={child.fName}
+                            onChange={handleChildChange(child.key, 'fName')}
                             required
                             placeholder="First Name"
                             autoComplete="given-name"
-                            error={submitAttempted ? child.errors?.firstName : ''}
+                            error={submitAttempted ? child.errors?.fName : ''}
                           />
 
                           <TextInput
-                            id={`child-${child.id}-lastName`}
+                            id={`child-${child.key}-lastName`}
                             label="Last Name"
                             type="text"
-                            value={child.lastName}
-                            onChange={handleChildChange(child.id, 'lastName')}
+                            value={child.lName}
+                            onChange={handleChildChange(child.key, 'lName')}
                             required
                             placeholder="Last Name"
                             autoComplete="family-name"
-                            error={submitAttempted ? child.errors?.lastName : ''}
+                            error={submitAttempted ? child.errors?.lName : ''}
                           />
                         </div>
 
                         <DatePicker
-                          id={`child-${child.id}-dateOfBirth`}
+                          id={`child-${child.key}-dateOfBirth`}
                           label="Date of Birth"
-                          value={child.dateOfBirth}
-                          onChange={handleChildChange(child.id, 'dateOfBirth')}
+                          value={child.birthday}
+                          onChange={handleChildChange(child.key, 'birthday')}
                           required
                           max={new Date().toISOString().split('T')[0]}
-                          error={submitAttempted ? child.errors?.dateOfBirth : ''}
+                          error={submitAttempted ? child.errors?.birthday : ''}
                         />
 
                         <div className="child-classification">
@@ -354,10 +298,10 @@ export default function GettingStarted() {
                             <label className="radio-option">
                               <input
                                 type="radio"
-                                name={`child-${child.id}-classification`}
+                                name={`child-${child.key}-classification`}
                                 value="minor"
-                                checked={child.classification === 'minor'}
-                                onChange={(e) => handleChildChange(child.id, 'classification')(e.target.value)}
+                                checked={child.isEmancipatedAdult === 'minor'}
+                                onChange={(e) => handleChildChange(child.key, 'isEmancipatedAdult')(e.target.value)}
                               />
                               <span>
                                 The child is a minor and/or mentally or physically disabled
@@ -368,10 +312,10 @@ export default function GettingStarted() {
                             <label className="radio-option">
                               <input
                                 type="radio"
-                                name={`child-${child.id}-classification`}
+                                name={`child-${child.key}-classification`}
                                 value="emancipated"
-                                checked={child.classification === 'emancipated'}
-                                onChange={(e) => handleChildChange(child.id, 'classification')(e.target.value)}
+                                checked={child.isEmancipatedAdult === 'emancipated'}
+                                onChange={(e) => handleChildChange(child.key, 'isEmancipatedAdult')(e.target.value)}
                               />
                               <span>The child is an emancipated adult</span>
                             </label>

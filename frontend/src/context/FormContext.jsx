@@ -3,7 +3,6 @@ import { createContext, useReducer, useEffect } from "react";
 export const FormContext = createContext(null);
 
 const initialState = {
-  safetyConcern: '',
   caseFilingStatus: '',
   flags: {},
   parents: {
@@ -11,9 +10,10 @@ const initialState = {
     lastName: '',
     secondParentFirstName: '',
     secondParentLastName: '',
+    phone: '',
+    address: '',
     errors: {}
   },
-  children: [],
   parentingTime: { errors: {} },
   holidays: { errors: {} },
   decisionMaking: { errors: {} },
@@ -57,11 +57,6 @@ function formReducer(state, action) {
           ...state[action.section],
           ...action.payload
         }
-      };
-    case "UPDATE_CHILDREN":
-      return {
-        ...state,
-        children: action.payload
       };
     case "UPDATE_FLAG":
       return {

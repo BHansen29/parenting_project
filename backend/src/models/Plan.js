@@ -54,6 +54,14 @@ const planSchema = new mongoose.Schema(
     type: String,
     default: 'Untitled Plan'
   },
+  phoneNumber: {
+    type: String,
+    default: ''
+  },
+  address: {
+    type: String,
+    default: ''
+  },
   status: { 
     type: String, enum: ['in_progress', 'completed', 'ready_for_review', 'DRAFT'], 
     default: 'in_progress' 
