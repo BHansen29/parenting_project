@@ -161,6 +161,7 @@
 
 .invite-modal__send-btn:disabled {
   cursor: default;
+  opacity: 0.8;
 }
 
 /* ── Divider ── */
