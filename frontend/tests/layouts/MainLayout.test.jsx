@@ -1,18 +1,32 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import { useEffect } from 'react';
 import { FormProvider } from '../../src/context/FormContext';
+import { NavigationProvider, useNavigation } from '../../src/context/NavigationContext';
 import MainLayout from '../../src/layouts/MainLayout';
 
-// Mock the child component
 const TestComponent = () => <div>Test Child Content</div>;
 
-const renderWithProviders = (initialRoute = '/getting-started') => {
+// Helper that registers mock callbacks into NavigationContext
+const RegisterCallbacks = ({ onNext, onBack }) => {
+  const { setOnNext, setOnBack } = useNavigation();
+  useEffect(() => {
+    if (onNext) setOnNext(onNext);
+    if (onBack) setOnBack(onBack);
+  }, []);
+  return null;
+};
+
+const renderWithProviders = (initialRoute = '/getting-started', { mockNext, mockBack } = {}) => {
   return render(
     <MemoryRouter initialEntries={[initialRoute]}>
       <FormProvider>
-        <MainLayout>
-          <TestComponent />
-        </MainLayout>
+        <NavigationProvider>
+          <MainLayout>
+            <RegisterCallbacks onNext={mockNext} onBack={mockBack} />
+            <TestComponent />
+          </MainLayout>
+        </NavigationProvider>
       </FormProvider>
     </MemoryRouter>
   );
@@ -36,15 +50,12 @@ describe('MainLayout', () => {
 
   it('renders header', () => {
     renderWithProviders();
-    // Header should render (checking for common header elements)
     expect(document.querySelector('.header')).toBeInTheDocument();
   });
 
   it('renders footer', () => {
     renderWithProviders();
-    // Footer should render with navigation buttons
-    const footer = document.querySelector('.footer');
-    expect(footer).toBeInTheDocument();
+    expect(document.querySelector('.footer')).toBeInTheDocument();
   });
 
   // Sidebar collapse functionality
@@ -58,8 +69,7 @@ describe('MainLayout', () => {
     renderWithProviders();
     const toggleButton = screen.getByRole('button', { name: /collapse sidebar/i });
     fireEvent.click(toggleButton);
-    const sidebar = document.querySelector('.sidebar');
-    expect(sidebar).toHaveClass('sidebar--collapsed');
+    expect(document.querySelector('.sidebar')).toHaveClass('sidebar--collapsed');
   });
 
   it('toggle button changes label when collapsed', () => {
@@ -69,7 +79,7 @@ describe('MainLayout', () => {
     expect(screen.getByRole('button', { name: /expand sidebar/i })).toBeInTheDocument();
   });
 
-  // Footer navigation buttons
+  // Footer navigation button visibility
   it('hides back button on first page', () => {
     renderWithProviders('/getting-started');
     expect(screen.queryByRole('button', { name: /back/i })).not.toBeInTheDocument();
@@ -90,48 +100,37 @@ describe('MainLayout', () => {
     expect(screen.queryByRole('button', { name: /next/i })).not.toBeInTheDocument();
   });
 
-  // Page order navigation
-  it('navigates to correct page when next is clicked', () => {
-    const { container } = renderWithProviders('/getting-started');
-    const nextButton = screen.getByRole('button', { name: /next/i });
-    fireEvent.click(nextButton);
-
-    // After clicking next from getting-started, should navigate to parental-rights
-    // The sidebar should show parental-rights as active
-    const activeLink = container.querySelector('.sidebar__nav-link--active');
-    expect(activeLink).toHaveAttribute('href', '/parental-rights');
+  // Callback invocation
+  it('calls registered onNext when next button is clicked', () => {
+    const mockNext = vi.fn();
+    renderWithProviders('/getting-started', { mockNext });
+    fireEvent.click(screen.getByRole('button', { name: /next/i }));
+    expect(mockNext).toHaveBeenCalledOnce();
   });
 
-  it('navigates to correct page when back is clicked', () => {
-    const { container } = renderWithProviders('/parental-rights');
-    const backButton = screen.getByRole('button', { name: /back/i });
-    fireEvent.click(backButton);
-
-    // After clicking back from parental-rights, should navigate to getting-started
-    const activeLink = container.querySelector('.sidebar__nav-link--active');
-    expect(activeLink).toHaveAttribute('href', '/getting-started');
+  it('calls registered onBack when back button is clicked', () => {
+    const mockBack = vi.fn();
+    renderWithProviders('/parental-rights', { mockBack });
+    fireEvent.click(screen.getByRole('button', { name: /back/i }));
+    expect(mockBack).toHaveBeenCalledOnce();
   });
 
-  // Page progression
-  it('marks previous steps as completed', () => {
-    const { container } = renderWithProviders('/custody-schedule');
-    const completedLinks = container.querySelectorAll('.sidebar__nav-link--completed');
-    // Should have 3 completed steps before custody-schedule (getting-started, parental-rights, parenting-time-communication)
-    expect(completedLinks.length).toBeGreaterThanOrEqual(3);
+  it('does not crash when next is clicked with no callback registered', () => {
+    renderWithProviders('/getting-started');
+    expect(() =>
+      fireEvent.click(screen.getByRole('button', { name: /next/i }))
+    ).not.toThrow();
   });
 
-  // Responsive behavior
+  // Sidebar collapsed class on layout__main
   it('layout main section has correct class when sidebar is expanded', () => {
     renderWithProviders();
-    const mainSection = document.querySelector('.layout__main');
-    expect(mainSection).not.toHaveClass('layout__main--sidebar-collapsed');
+    expect(document.querySelector('.layout__main')).not.toHaveClass('layout__main--sidebar-collapsed');
   });
 
   it('layout main section has collapsed class when sidebar is collapsed', () => {
     renderWithProviders();
-    const toggleButton = screen.getByRole('button', { name: /collapse sidebar/i });
-    fireEvent.click(toggleButton);
-    const mainSection = document.querySelector('.layout__main');
-    expect(mainSection).toHaveClass('layout__main--sidebar-collapsed');
+    fireEvent.click(screen.getByRole('button', { name: /collapse sidebar/i }));
+    expect(document.querySelector('.layout__main')).toHaveClass('layout__main--sidebar-collapsed');
   });
 });

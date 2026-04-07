@@ -1,25 +1,20 @@
 import { useState, useEffect } from 'react';
 import { Info, Shield, Users, UserCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import Footer from '../components/common/Footer';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/card';
 import TextInput from '../components/forms/TextInput';
 import DatePicker from '../components/forms/DatePicker';
 import { useForm } from '../hooks/useForm';
 import { useSectionFlag } from '../hooks/useSectionFlag';
+import { useNavigation } from '../context/NavigationContext';
 import './Page.css';
 import SectionHeader from '../components/forms/SectionHeader';
 import RadioQuestion from '../components/forms/RadioQuestion';
 
-/**
- * "Getting Started" page component for the parenting plan application.
- * This page collects basic information about the parents, their safety concerns, case filing status, and their children.
- * It uses local state for managing the list of children and global context for other form data.
- * The page includes validation logic to ensure all required fields are filled out before proceeding to the next step.
- */
 export default function GettingStarted() {
   const navigate = useNavigate();
-  const { state, dispatch } = useForm();
+  const { state, dispatch } = useForm(); //state reads data, dispatch writes data
+  const { setOnNext, setOnBack } = useNavigation();
 
   // Parents stay in global context
   const formData = state.parents ?? { name: '', secondParentName: '', errors: {} };
@@ -27,11 +22,14 @@ export default function GettingStarted() {
   const caseFilingStatus = state.caseFilingStatus ?? '';
   const errors = formData.errors ?? {};
 
-  // Section-specific flag states
-  const caseFilingFlag = useSectionFlag('caseFilingStatus');
-  const childrenFlag = useSectionFlag('children'); 
+  //these errors use the local useState
+  const [safetyConcernError, setSafetyConcernError] = useState('');
+  const [caseFilingError, setCaseFilingError] = useState('');
 
-  // Children use local state
+  const caseFilingFlag = useSectionFlag('caseFilingStatus');
+  const childrenFlag = useSectionFlag('children');
+
+  //pull children from the stored state, calling setChildren will add a new child to the existing list
   const [children, setChildren] = useState(() => {
     let startKey = 1
     return state.plan.children?.length > 0
@@ -43,32 +41,31 @@ export default function GettingStarted() {
       : [{ key: startKey, fName: '', lName: '', birthday: '', isEmancipatedAdult: '', errors: {} }];
   });
 
-  // Syncs children to global context whenever local state changes
+  useEffect(() => {
+    dispatch({ type: 'UPDATE_SECTION', section: 'parents', payload: { errors: {} } });
+    setSafetyConcernError('');
+    setCaseFilingError('');
+    setChildren(prev => prev.map(c => ({ ...c, errors: {} })));
+  }, []); //clears all errors as soon as the page loads
+
   useEffect(() => {
     const fixedChildren = children.map(child => ({...child, isEmancipatedAdult: child.isEmancipatedAdult === "emancipated"})) 
     dispatch({ type: 'UPDATE_SECTION', section: "plan", payload: {children: fixedChildren} });
   }, [children]);
 
   const handleRadioChange = (section) => (value) => {
-    dispatch({
-      type: 'UPDATE_SECTION',
-      section: section,
-      payload: value
-    });
+    dispatch({ type: 'UPDATE_SECTION', section: section, payload: value });
+    //clear the relevant error when user makes a selection
+    if (section === 'safetyConcern') setSafetyConcernError('');
+    if (section === 'caseFilingStatus') setCaseFilingError('');
   };
 
   const handleFormChange = (section, field) => (value) => {
-    dispatch({
-      type: 'UPDATE_SECTION',
-      section: section,
-      payload: { [field]: value }
-    });
+    //updates the formContext with the new returned value
+    dispatch({ type: 'UPDATE_SECTION', section: section, payload: { [field]: value } });
     if (errors[field]) {
-      dispatch({
-        type: 'UPDATE_SECTION',
-        section: section,
-        payload: { errors: { ...errors, [field]: '' } }
-      });
+      //clear previous errors for a field since it has been changed
+      dispatch({ type: 'UPDATE_SECTION', section: section, payload: { errors: { ...errors, [field]: '' } } });
     }
   };
 
@@ -101,18 +98,15 @@ export default function GettingStarted() {
   // Tracks when a failed submission happens - controls when to show validation errors
   const [submitAttempted, setSubmitAttempted] = useState(false);
 
-  // Runs after React re-renders with new errors
   useEffect(() => {
     if (submitAttempted) {
       const firstError = document.querySelector(
-        '.text-input__error-message, .date-picker__error-message'
+        '.text-input__error-message, .date-picker__error-message, .radio-group-error, .child-classification-error'
       );
-      if (firstError) {
-        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
+      if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
       setSubmitAttempted(false);
     }
-  }, [children, submitAttempted]);
+  }, [submitAttempted]); 
 
   return (
     <div className="page-container">
@@ -121,11 +115,14 @@ export default function GettingStarted() {
           <CardHeader>
             <CardTitle>Getting Started</CardTitle>
             <CardDescription>
-              Let's start by gathering some basic information about your family and situation.            </CardDescription>
+              Let's start by gathering some basic information about your family and situation.
+              Fields marked with <span className="required-asterisk">*</span> are required.
+            </CardDescription>
           </CardHeader>
 
           <CardContent>
             <hr className="section-divider" />
+
             <section className="safety-privacy-section">
               <SectionHeader
                 iconClassName="shield-icon"
@@ -157,49 +154,38 @@ export default function GettingStarted() {
                 <CardContent>
                   <div className="form-row">
                     <TextInput
-                      id="firstParentFirstName"
-                      type="text"
+                      id="firstParentFirstName" type="text"
                       value={formData.firstName ?? ''}
                       onChange={handleFormChange('parents', 'firstName')}
-                      error={submitAttempted ? errors.firstName : ''}
+                      error={errors.firstName}
                       placeholder="Enter your first name"
-                      label="First Name"
-                      autoComplete="given-name"
-                      required
+                      label="First Name" autoComplete="given-name" required
                     />
                     <TextInput
-                      id="firstParentLastName"
-                      type="text"
+                      id="firstParentLastName" type="text"
                       value={formData.lastName ?? ''}
                       onChange={handleFormChange('parents', 'lastName')}
-                      error={submitAttempted ? errors.lastName : ''}
+                      error={errors.lastName}
                       placeholder="Enter your last name"
-                      label="Last Name"
-                      autoComplete="family-name"
-                      required
+                      label="Last Name" autoComplete="family-name" required
                     />
                   </div>
                   <TextInput
-                      id="firstParentPhone"
-                      type="text"
-                      value={formData.phone ?? ''}
-                      onChange={handleFormChange('parents', 'phone')}
-                      error={submitAttempted ? errors.phone : ''}
-                      placeholder="Enter your phone number"
-                      label="Phone Number"
-                      autoComplete="tel"
-                      required
+                    id="firstParentPhone" type="text"
+                    value={formData.phone ?? ''}
+                    onChange={handleFormChange('parents', 'phone')}
+                    error={errors.phone}
+                    placeholder="Enter your phone number"
+                    label="Phone Number" autoComplete="tel" required
                   />
-                  <TextInput className="text-input-long-text"
-                      id="firstParentAddress"
-                      type="text"
-                      value={formData.address ?? ''}
-                      onChange={handleFormChange('parents', 'address')}
-                      error={submitAttempted ? errors.address : ''}
-                      placeholder="Enter your full address (this will help identify the relevant county)"
-                      label="Address"
-                      autoComplete="street-address"
-                      required
+                  <TextInput
+                    className="text-input-long-text"
+                    id="firstParentAddress" type="text"
+                    value={formData.address ?? ''}
+                    onChange={handleFormChange('parents', 'address')}
+                    error={errors.address}
+                    placeholder="Enter your full address (this will help identify the relevant county)"
+                    label="Address" autoComplete="street-address" required
                   />
                 </CardContent>
               </Card>
@@ -218,6 +204,7 @@ export default function GettingStarted() {
                 name="caseFilingStatus"
                 value={caseFilingStatus}
                 onChange={handleRadioChange('caseFilingStatus')}
+                error={caseFilingError}
                 flag={caseFilingFlag}
                 options={[
                   { value: 'yes',     label: 'Yes, it was me',         description: 'You will be identified as Parent 1/Petitioner 1/Plaintiff in the parenting plan' },
@@ -291,6 +278,28 @@ export default function GettingStarted() {
                           max={new Date().toISOString().split('T')[0]}
                           error={submitAttempted ? child.errors?.birthday : ''}
                         />
+                        <TextInput
+                          id={`child-${child.id}-lastName`}
+                          label="Last Name"
+                          type="text"
+                          value={child.lastName}
+                          onChange={handleChildChange(child.id, 'lastName')}
+                          required
+                          placeholder="Last Name"
+                          autoComplete="family-name"
+                          error={child.errors?.lastName ?? ''}
+                        />
+                      </div>
+
+                      <DatePicker
+                        id={`child-${child.id}-dateOfBirth`}
+                        label="Date of Birth"
+                        value={child.dateOfBirth}
+                        onChange={handleChildChange(child.id, 'dateOfBirth')}
+                        required
+                        max={new Date().toISOString().split('T')[0]}
+                        error={child.errors?.dateOfBirth ?? ''}
+                      />
 
                         <div className="child-classification">
                           <label className="classification-label">Child Classification</label>
@@ -321,19 +330,25 @@ export default function GettingStarted() {
                             </label>
                           </div>
                         </div>
-                      </form>
-                    </CardContent>
-                  </Card>
-                ))}
+                        {child.errors?.classification && (
+                          <p className="child-classification-error">
+                            {child.errors.classification}
+                          </p>
+                        )}
+                      </div>
+                    </form>
+                  </CardContent>
+                </Card>
+              ))}
 
-                <button
-                  type="button"
-                  onClick={addChild}
-                  className="add-child-btn"
-                >
-                  + Add Another Child
-                </button>
-              </section>
+              <button
+                type="button"
+                onClick={addChild}
+                className="add-child-btn"
+              >
+                + Add Another Child
+              </button>
+            </section>
           </CardContent>
         </Card>
       </div>

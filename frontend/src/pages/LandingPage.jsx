@@ -7,7 +7,7 @@ export default function LandingPage() {
   const navigate = useNavigate();
 
   const handleGetStarted = () => {
-    navigate('/signin');
+    navigate('/signup');
   };
 
   const handleSignIn = () => {
@@ -159,9 +159,9 @@ export default function LandingPage() {
         <div className="landing-footer__container">
           <p className="landing-footer__copyright">&copy; 2026 Action for Children. All rights reserved.</p>
           <div className="landing-footer__links">
-            <button className="landing-footer__link">Privacy Policy</button>
-            <button className="landing-footer__link">Terms of Service</button>
-            <button className="landing-footer__link">Contact Support</button>
+            <button className="landing-footer__link" onClick={() => navigate('/privacy-policy')}>Privacy Policy</button>
+            <button className="landing-footer__link" onClick={() => navigate('/terms-of-service')}>Terms of Service</button>
+            <button className="landing-footer__link" onClick={() => navigate('/contact-support')}>Contact Support</button>
           </div>
         </div>
       </footer>

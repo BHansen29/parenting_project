@@ -61,12 +61,13 @@ export default function RadioQuestion({
               value={conditionalInput.value}
               onChange={conditionalInput.onChange}
               placeholder={conditionalInput.placeholder}
+              error={conditionalInput.error}
             />
           )}
         </div>
 
         {error && (
-          <div className="text-input__error-message" role="alert">
+          <div className="radio-group-error" role="alert">
             {error}
           </div>
         )}
