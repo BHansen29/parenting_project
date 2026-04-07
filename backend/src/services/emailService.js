@@ -108,14 +108,29 @@ async function sendInviteEmail(toEmail, inviteLink) {
       throw new Error('A recipient email address is required');
     }
 
+// Create the SMTP transporter lazily so route imports do not fail before env vars load.
+function getTransporter() {
+  if (!transporter) {
     const config = getEmailConfig();
+    const hasInviteLink = typeof inviteLink === 'string' && inviteLink.trim().length > 0;
+
     const result = await getTransporter().sendMail({
       from: config.from,
       to: toAddress,
       replyTo: config.replyTo,
-      subject: 'ShareCare email delivery check',
-      text: 'This is a test email from ShareCare using Gmail SMTP.',
-      html: '<p>This is a test email from <strong>ShareCare</strong> using Gmail SMTP.</p>',
+      subject: hasInviteLink
+        ? 'You have been invited to ShareCare'
+        : 'ShareCare email delivery check',
+      text: hasInviteLink
+        ? `You have been invited to collaborate on a ShareCare parenting plan.\n\nAccept your invitation here:\n${inviteLink}\n\nThis link expires in 7 days.`
+        : 'This is a test email from ShareCare using Gmail SMTP.',
+      html: hasInviteLink
+        ? `
+          <p>You have been invited to collaborate on a <strong>ShareCare</strong> parenting plan.</p>
+          <p><a href="${inviteLink}">Accept your invitation</a></p>
+          <p>This link expires in 7 days.</p>
+        `
+        : '<p>This is a test email from <strong>ShareCare</strong> using Gmail SMTP.</p>',
     });
 
     return {
@@ -124,5 +139,4 @@ async function sendInviteEmail(toEmail, inviteLink) {
       messageId: result.messageId,
     };
   }
-}
 module.exports = { sendInviteEmail };
