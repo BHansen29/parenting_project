@@ -278,28 +278,6 @@ export default function GettingStarted() {
                           max={new Date().toISOString().split('T')[0]}
                           error={submitAttempted ? child.errors?.birthday : ''}
                         />
-                        <TextInput
-                          id={`child-${child.id}-lastName`}
-                          label="Last Name"
-                          type="text"
-                          value={child.lastName}
-                          onChange={handleChildChange(child.id, 'lastName')}
-                          required
-                          placeholder="Last Name"
-                          autoComplete="family-name"
-                          error={child.errors?.lastName ?? ''}
-                        />
-                      </div>
-
-                      <DatePicker
-                        id={`child-${child.id}-dateOfBirth`}
-                        label="Date of Birth"
-                        value={child.dateOfBirth}
-                        onChange={handleChildChange(child.id, 'dateOfBirth')}
-                        required
-                        max={new Date().toISOString().split('T')[0]}
-                        error={child.errors?.dateOfBirth ?? ''}
-                      />
 
                         <div className="child-classification">
                           <label className="classification-label">Child Classification</label>
@@ -335,7 +313,6 @@ export default function GettingStarted() {
                             {child.errors.classification}
                           </p>
                         )}
-                      </div>
                     </form>
                   </CardContent>
                 </Card>
