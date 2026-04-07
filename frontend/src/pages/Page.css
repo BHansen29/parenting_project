@@ -552,3 +552,105 @@
     color: #93c5fd;
   }
 }
+
+.safety-privacy-question {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+ 
+.safety-privacy-question__disclaimer {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: #92400e;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin: 0;
+  line-height: 1.5;
+}
+ 
+.safety-privacy-question__disclaimer-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: #d97706;
+}
+ 
+/* Confirmation panel that appears below the third radio option */
+.safety-privacy-question__confirmation {
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: confirmation-slide-in 0.15s ease;
+}
+ 
+@keyframes confirmation-slide-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+ 
+.safety-privacy-question__confirmation-text {
+  font-size: 0.9rem;
+  color: #0c4a6e;
+  margin: 0;
+  line-height: 1.55;
+}
+ 
+.safety-privacy-question__confirmation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+ 
+/* "Yes, I'm sure" — muted/secondary style */
+.safety-privacy-question__confirm-btn {
+  padding: 8px 16px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: #374151;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+ 
+.safety-privacy-question__confirm-btn:hover {
+  background: #f1f5f9;
+}
+ 
+/* "No, I will collaborate" — primary/encouraging style */
+.safety-privacy-question__decline-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  background: #14abdd;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+ 
+.safety-privacy-question__decline-btn:hover {
+  background: #1299c5;
+}
+ 
+@media (max-width: 480px) {
+  .safety-privacy-question__confirmation-actions {
+    flex-direction: column;
+  }
+ 
+  .safety-privacy-question__confirm-btn,
+  .safety-privacy-question__decline-btn {
+    width: 100%;
+    text-align: center;
+  }
+}

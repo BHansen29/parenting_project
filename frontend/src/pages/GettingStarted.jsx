@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Info, Shield, Users, UserCheck } from 'lucide-react';
+import { Info, Shield, Users, UserCheck, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/card';
 import TextInput from '../components/forms/TextInput';
@@ -10,29 +10,155 @@ import { useNavigation } from '../context/NavigationContext';
 import './Page.css';
 import SectionHeader from '../components/forms/SectionHeader';
 import RadioQuestion from '../components/forms/RadioQuestion';
+import RadioButton from '../components/forms/RadioButton';
+
+// ─── SafetyPrivacyQuestion ────────────────────────────────────────────────────
+//
+// Handles the merged safety + collaboration question as a single self-contained unit.
+//
+// The three raw radio options map to collaborationMode values in FormContext:
+//   'yes'          → 'locked-individual'  (safety concern; no sharing at all)
+//   'collaborative'→ 'collaborative'      (happy to share)
+//   'no-private'   → 'individual'         (no safety concern but chose not to share)
+//
+// The 'no-private' option triggers an inline confirmation sub-flow before
+// committing to FormContext, encouraging the user to reconsider collaborating.
+// The raw selection is kept in local state so the confirmation panel can be shown
+// without persisting a half-decided value to FormContext.
+//
+function SafetyPrivacyQuestion({ collaborationMode, onModeChange, error }) {
+  // Derive the initial raw selection from the persisted collaborationMode so
+  // the correct radio is checked when the user navigates back to this page.
+  const rawFromMode = (mode) => {
+    if (mode === 'locked-individual') return 'yes';
+    if (mode === 'collaborative')     return 'collaborative';
+    if (mode === 'individual')        return 'no-private';
+    return '';
+  };
+
+  const [rawSelection, setRawSelection] = useState(rawFromMode(collaborationMode));
+  const [showConfirmation, setShowConfirmation] = useState(false);
+
+  const handleRawChange = (value) => {
+    setRawSelection(value);
+    setShowConfirmation(false); // always reset confirmation when selection changes
+
+    if (value === 'yes') {
+      // Safety concern — lock to individual immediately, no confirmation needed
+      onModeChange('locked-individual');
+    } else if (value === 'collaborative') {
+      onModeChange('collaborative');
+    } else if (value === 'no-private') {
+      // Don't write to FormContext yet — wait for user to confirm via sub-flow
+      onModeChange('');
+      setShowConfirmation(true);
+    }
+  };
+
+  const handleConfirmPrivate = () => {
+    // User is sure they don't want to collaborate
+    setShowConfirmation(false);
+    onModeChange('individual');
+  };
+
+  const handleDeclinePrivate = () => {
+    // User changed their mind — switch to collaborative
+    setShowConfirmation(false);
+    setRawSelection('collaborative');
+    onModeChange('collaborative');
+  };
+
+  return (
+    <div className="safety-privacy-question">
+      <p className="card-heading-question-bold">
+        Would sharing information from this questionnaire with your co-parent make you fear
+        for your safety in any way?
+      </p>
+
+      <p className="safety-privacy-question__disclaimer">
+        <AlertTriangle size={14} className="safety-privacy-question__disclaimer-icon" />
+        Your address, contact information, and childcare preferences will be shared with your
+        co-parent if you select the collaborative mode.
+      </p>
+
+      <div className="radio-group">
+        <RadioButton
+          name="safetyConcern"
+          value="yes"
+          checked={rawSelection === 'yes'}
+          onChange={() => handleRawChange('yes')}
+          label="Yes, please keep my information private"
+          description="You will fill out the form individually. Your answers will not be shared with your co-parent."
+        />
+
+        <RadioButton
+          name="safetyConcern"
+          value="collaborative"
+          checked={rawSelection === 'collaborative'}
+          onChange={() => handleRawChange('collaborative')}
+          label="No, I wish to collaborate with my co-parent"
+          description="Your answers will be shared with your co-parent to help you reach an agreement."
+        />
+
+        <RadioButton
+          name="safetyConcern"
+          value="no-private"
+          checked={rawSelection === 'no-private'}
+          onChange={() => handleRawChange('no-private')}
+          label="No, but I don't want to share my information with my co-parent for other reasons"
+          description=""
+        />
+      </div>
+
+      {/* Inline confirmation sub-flow — only visible when third option is selected */}
+      {showConfirmation && (
+        <div className="safety-privacy-question__confirmation">
+          <p className="safety-privacy-question__confirmation-text">
+            <strong>Are you sure you don't want to collaborate?</strong> Collaborating with
+            your co-parent helps you create a more complete plan to be filed with the court.
+          </p>
+          <div className="safety-privacy-question__confirmation-actions">
+            <button
+              type="button"
+              className="safety-privacy-question__confirm-btn"
+              onClick={handleConfirmPrivate}
+            >
+              Yes, I'm sure — keep my information private
+            </button>
+            <button
+              type="button"
+              className="safety-privacy-question__decline-btn"
+              onClick={handleDeclinePrivate}
+            >
+              No, I will collaborate
+            </button>
+          </div>
+        </div>
+      )}
+
+      {error && <p className="radio-group-error">{error}</p>}
+    </div>
+  );
+}
+
+// ─── GettingStarted ───────────────────────────────────────────────────────────
 
 export default function GettingStarted() {
   const navigate = useNavigate();
-  const { state, dispatch } = useForm(); //state reads data, dispatch writes data
+  const { state, dispatch } = useForm();
   const { setOnNext, setOnBack } = useNavigation();
 
-  const formData = state.parents ?? { name: '', secondParentName: '', errors: {} }; //pull data from the stored state
-  const safetyConcern = state.safetyConcern ?? '';
-  const collaborationMode = state.collaborationMode ?? ''; //added collaboration field
+  const formData = state.parents ?? { name: '', secondParentName: '', errors: {} };
+  const collaborationMode = state.collaborationMode ?? '';
   const caseFilingStatus = state.caseFilingStatus ?? '';
   const errors = formData.errors ?? {};
 
-  //these errors use the local useState
-  const [safetyConcernError, setSafetyConcernError] = useState('');
   const [collaborationModeError, setCollaborationModeError] = useState('');
   const [caseFilingError, setCaseFilingError] = useState('');
 
   const caseFilingFlag = useSectionFlag('caseFilingStatus');
-  const childrenFlag = useSectionFlag('children');
 
-  //pull children from the stored state, calling setChildren will add a new child to the existing list
   const [children, setChildren] = useState(() => {
-    //if no existing children, create a blank one
     return state.children?.length > 0
       ? state.children
       : [{ id: 1, firstName: '', lastName: '', dateOfBirth: '', classification: '', errors: {} }];
@@ -40,54 +166,37 @@ export default function GettingStarted() {
 
   useEffect(() => {
     dispatch({ type: 'UPDATE_SECTION', section: 'parents', payload: { errors: {} } });
-    setSafetyConcernError('');
     setCollaborationModeError('');
     setCaseFilingError('');
     setChildren(prev => prev.map(c => ({ ...c, errors: {} })));
-  }, []); //clears all errors as soon as the page loads
+  }, []);
 
   useEffect(() => {
     dispatch({ type: 'UPDATE_CHILDREN', payload: children });
-  }, [children]); //every time the children array changes. save to formCOntext
+  }, [children]);
+
+  // Called by SafetyPrivacyQuestion whenever a final collaboration mode is resolved.
+  // An empty string means the user is mid-flow (third option, confirmation pending)
+  // and validation will catch it if they try to proceed.
+  const handleCollaborationModeChange = (mode) => {
+    dispatch({ type: 'UPDATE_SECTION', section: 'collaborationMode', payload: mode });
+    if (mode) setCollaborationModeError('');
+  };
 
   const handleRadioChange = (section) => (value) => {
     dispatch({ type: 'UPDATE_SECTION', section: section, payload: value });
-    //clear the relevant error when user makes a selection
-
-    if (section === 'safetyConcern') {
-      setSafetyConcernError('');
-
-      //lock collaboration mode if there is a safety concern
-      //this hides the collaboration mode question entirely & disables coparent invite modal
-      if (value === 'yes') {
-        dispatch({ type: 'UPDATE_SECTION', section: 'collaborationMode', payload: 'locked-individual' });
-        setCollaborationModeError('');
-      }
-
-      //If the user switches back from 'yes' to 'no', reset collaboration mode so the follow-up question reappears and they can make a fresh choice.
-      if (value === 'no') {
-        dispatch({ type: 'UPDATE_SECTION', section: 'collaborationMode', payload: '' });
-      }
-    }
-
-    if (section === 'collaborationMode') setCollaborationModeError('');
     if (section === 'caseFilingStatus') setCaseFilingError('');
   };
 
   const handleFormChange = (section, field) => (value) => {
-    //updates the formContext with the new returned value
     dispatch({ type: 'UPDATE_SECTION', section: section, payload: { [field]: value } });
     if (errors[field]) {
-      //clear previous errors for a field since it has been changed
       dispatch({ type: 'UPDATE_SECTION', section: section, payload: { errors: { ...errors, [field]: '' } } });
     }
   };
 
-  
   const handleChildChange = (childId, field) => (value) => {
-    //looks through previous list of children to find the current one to update
     setChildren(prev => prev.map(child =>
-      //once the child to update is found, return child with a new value and errors cleared
       child.id === childId
         ? { ...child, [field]: value, errors: { ...(child.errors ?? {}), [field]: '' } }
         : child
@@ -108,18 +217,11 @@ export default function GettingStarted() {
   const validateForm = () => {
     let isValid = true;
 
-    if (!safetyConcern) {
-      setSafetyConcernError('Please select an option to continue');
-      isValid = false;
-    } else {
-      setSafetyConcernError('');
-    }
-
-    //Collaborative mode is only relevant when there is no safety concern. 
-    // If safetyConcern === 'yes' then no need to validate 
-    if (safetyConcern === 'no' && !collaborationMode) {
+    // collaborationMode must be a resolved value — '' means the user either hasn't
+    // answered or is still in the confirmation sub-flow for the third option
+    if (!collaborationMode) {
       setCollaborationModeError('Please select an option to continue');
-      isValid = false; 
+      isValid = false;
     } else {
       setCollaborationModeError('');
     }
@@ -130,7 +232,6 @@ export default function GettingStarted() {
     if (!formData.phone?.trim())     { parentErrors.phone     = 'Phone number is required'; isValid = false; }
     if (!formData.address?.trim())   { parentErrors.address   = 'Address is required';    isValid = false; }
 
-    //if validation for any of the parenting section fails, write the  parentErrors to the FormContext
     dispatch({ type: 'UPDATE_SECTION', section: 'parents', payload: { errors: parentErrors } });
 
     if (!caseFilingStatus) {
@@ -142,10 +243,10 @@ export default function GettingStarted() {
 
     const updatedChildren = children.map((child, index) => {
       const childErrors = {};
-      if (!child.firstName.trim())  { childErrors.firstName       = `Child ${index + 1} first name is required`;    isValid = false; }
-      if (!child.lastName.trim())   { childErrors.lastName        = `Child ${index + 1} last name is required`;     isValid = false; }
-      if (!child.dateOfBirth)       { childErrors.dateOfBirth     = `Child ${index + 1} date of birth is required`; isValid = false; }
-      if (!child.classification)    { childErrors.classification  = `Child ${index + 1} classification is required`; isValid = false; }
+      if (!child.firstName.trim())  { childErrors.firstName      = `Child ${index + 1} first name is required`;    isValid = false; }
+      if (!child.lastName.trim())   { childErrors.lastName       = `Child ${index + 1} last name is required`;     isValid = false; }
+      if (!child.dateOfBirth)       { childErrors.dateOfBirth    = `Child ${index + 1} date of birth is required`; isValid = false; }
+      if (!child.classification)    { childErrors.classification = `Child ${index + 1} classification is required`; isValid = false; }
       return { ...child, errors: childErrors };
     });
     setChildren(updatedChildren);
@@ -153,7 +254,6 @@ export default function GettingStarted() {
     return isValid;
   };
 
-  //helps remember and update values for components: submitAttempted is the value, setSubmitAttempted is a function to chnage the value
   const [submitAttempted, setSubmitAttempted] = useState(false);
 
   useEffect(() => {
@@ -164,7 +264,7 @@ export default function GettingStarted() {
       if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
       setSubmitAttempted(false);
     }
-  }, [submitAttempted]); 
+  }, [submitAttempted]);
 
   const handleNext = () => {
     const valid = validateForm();
@@ -185,7 +285,7 @@ export default function GettingStarted() {
   useEffect(() => {
     setOnNext(handleNext);
     setOnBack(handleBack);
-  }, [state, children, safetyConcern, collaborationMode, caseFilingStatus]);
+  }, [state, children, collaborationMode, caseFilingStatus]);
 
   return (
     <div className="page-container">
@@ -209,41 +309,15 @@ export default function GettingStarted() {
                 title="Safety & Privacy"
                 intro="Your safety is our priority."
               />
-              <RadioQuestion
-                question="Would sharing information from this questionnaire with your co-parent make you fear for your safety in any way?"
-                name="safetyConcern"
-                value={safetyConcern}
-                onChange={handleRadioChange('safetyConcern')}
-                error={safetyConcernError}
-                options={[
-                  { value: 'yes', label: 'Yes, please keep my information private', description: 'You will fill out the form individually. Your answers will not be shared with your co-parent.' },
-                  { value: 'no',  label: 'No, I do not have safety concerns'},
-                ]}
-              />
-
-              {/* Collaboration mode question — only shown when no safety concern. If safetyConcern === 'yes', this is hidden */}
-              {safetyConcern === 'no' && (
-                <RadioQuestion
-                  question="How would you like to complete this plan?"
-                  name="collaborationMode"
-                  value={collaborationMode}
-                  onChange={handleRadioChange('collaborationMode')}
-                  error={collaborationModeError}
-                  options={[
-                    {
-                      value: 'individual',
-                      label: 'Complete individually',
-                      description: 'Fill out the plan on your own.',
-                    },
-                    {
-                      value: 'collaborative',
-                      label: 'Collaborate with my co-parent',
-                      description: 'You and your co-parent will each fill out your sections separately. Your answers will be compared to help you reach an agreement.',
-                    },
-                  ]}
-                />
-              )}
-
+              <Card>
+                <CardContent>
+                  <SafetyPrivacyQuestion
+                    collaborationMode={collaborationMode}
+                    onModeChange={handleCollaborationModeChange}
+                    error={collaborationModeError}
+                  />
+                </CardContent>
+              </Card>
             </section>
             <hr className="section-divider" />
 

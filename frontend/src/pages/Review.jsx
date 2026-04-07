@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle, Download, UserPlus, Pencil, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
+import { CheckCircle, Download, UserPlus, Pencil, ChevronDown, ChevronUp } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/card';
 import Disclaimer from '../components/forms/Disclaimer';
 import InviteModal from '../components/common/InviteModal';
@@ -12,7 +12,6 @@ import './Review.css';
 // Section titles and routes
 // Maps backend section enum values to UI label and frontend route for editing
 // TODO: Update keys to match exact enum values - currently only have 1 created
-
 const SECTION_META = {
   getting_started: { label: 'Getting Started', route: '/getting-started' },
   allocation_of_parental_rights_and_responsibilities: { label: 'Parental Rights', route: '/parental-rights' },
@@ -34,13 +33,13 @@ function formatAnswer(answer) {
 // TODO: Populate questionID to look like: questionID: { _id, qKey, section, qText, ... }, answer, isFlagged }
 function groupResponsesBySection(children = []) {
   const grouped = {};
-  
+
   children.forEach((response) => {
-    const question = response.questionID; 
-    const isPopulated = question && typeof question === 'object'; 
+    const question = response.questionID;
+    const isPopulated = question && typeof question === 'object';
     const sectionKey = isPopulated ? question.section : null;
 
-    if (!sectionKey) return; // skip unpopulated questions
+    if (!sectionKey) return;
 
     if (!grouped[sectionKey]) {
       grouped[sectionKey] = [];
@@ -48,17 +47,17 @@ function groupResponsesBySection(children = []) {
 
     grouped[sectionKey].push({
       qKey: question.qKey,
-      answer: response.answer, 
+      answer: response.answer,
       isFlagged: response.isFlagged,
       isDeferred: response.isDeferred,
     });
   });
-  return grouped; 
+  return grouped;
 }
 
 
 function SectionBlock({ sectionKey, responses, onEdit, isOpen, onToggle }) {
-  const meta = SECTION_META[sectionKey] || { 
+  const meta = SECTION_META[sectionKey] || {
     label: sectionKey.replaceAll('_', ' '),
     route: '/',
   };
@@ -112,9 +111,16 @@ function SectionBlock({ sectionKey, responses, onEdit, isOpen, onToggle }) {
 
 export default function Review() {
   const navigate = useNavigate();
-  const { state } = useForm();
+  const { state, dispatch } = useForm();
 
-  const planId = state.plan?._id; 
+  // collaborationMode drives invite button behaviour — mirrors Dashboard logic:
+  //   'locked-individual' — safety concern; invite button hidden entirely
+  //   'individual'        — user chose solo; show switch prompt before opening invite
+  //   'collaborative'     — user chose collaborative; invite button opens modal directly
+  //   ''                  — not yet set; treat same as individual (no invite)
+  const collaborationMode = state.collaborationMode ?? '';
+
+  const planId = state.plan?._id;
   const groupedResponses = groupResponsesBySection(state.plan?.children ?? []);
   const knownSectionKeys = Object.keys(SECTION_META);
 
@@ -123,12 +129,12 @@ export default function Review() {
   );
 
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [showSwitchPrompt, setShowSwitchPrompt] = useState(false);
 
   const toggleSection = (key) =>
     setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
 
   const handleEdit = (route) => navigate(route);
-  const handleBack = () => navigate(-1);
 
   const completedCount = knownSectionKeys.filter(
     (k) => groupedResponses[k]?.length > 0
@@ -136,9 +142,54 @@ export default function Review() {
   const totalCount = knownSectionKeys.length;
   const allComplete = completedCount === totalCount;
 
+  // Routes invite click based on collaborationMode — same logic as Dashboard.
+  const handleInviteClick = () => {
+    if (collaborationMode === 'collaborative') {
+      setInviteOpen(true);
+    } else if (collaborationMode === 'individual' || collaborationMode === '') {
+      setShowSwitchPrompt(true);
+    }
+    // 'locked-individual' — button is not rendered, so this is unreachable
+  };
+
+  // User confirmed switch from individual to collaborative, then open invite modal.
+  // TODO: When the invite feature branch is merged, this switch will need to handle
+  // the case where the user has already made progress in individual mode. Consider
+  // whether answers need to be migrated, reset, or left as-is, and whether any
+  // previously sent invites (if any) need to be revoked or re-sent.
+  const handleConfirmSwitch = () => {
+    dispatch({ type: 'UPDATE_SECTION', section: 'collaborationMode', payload: 'collaborative' });
+    setShowSwitchPrompt(false);
+    setInviteOpen(true);
+  };
+
+  const showInviteUI = collaborationMode !== 'locked-individual';
+
   return (
     <div className="page-container">
       <div className="page-content">
+
+        {/* Switch-to-collaborative confirmation prompt */}
+        {showSwitchPrompt && (
+          <div className="delete-modal__overlay" onClick={() => setShowSwitchPrompt(false)}>
+            <div className="delete-modal" onClick={e => e.stopPropagation()}>
+              <h3 className="delete-modal__title">Switch to collaborative mode?</h3>
+              <p className="delete-modal__body">
+                You're currently completing this plan individually. Switching to collaborative
+                mode will allow your co-parent to fill out their section separately. Would you
+                like to switch?
+              </p>
+              <div className="delete-modal__actions">
+                <button className="delete-modal__cancel" onClick={() => setShowSwitchPrompt(false)}>
+                  Stay in individual mode
+                </button>
+                <button className="delete-modal__confirm" onClick={handleConfirmSwitch}>
+                  Switch &amp; invite co-parent
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <Card>
           <CardHeader>
@@ -183,13 +234,20 @@ export default function Review() {
 
             <div className="review__actions">
               <div className="review__action-buttons">
-                <button
-                  className="review__btn-invite"
-                  onClick={() => setInviteOpen(true)}
-                >
-                  <UserPlus size={16} />
-                  Invite Co-Parent
-                </button>
+
+                {/* Invite button — hidden for locked-individual (safety concern) users */}
+                {showInviteUI && (
+                  <button
+                    className="review__btn-invite"
+                    onClick={handleInviteClick}
+                  >
+                    <UserPlus size={16} />
+                    {collaborationMode === 'individual' || collaborationMode === ''
+                      ? 'Switch & Invite Co-Parent'
+                      : 'Invite Co-Parent'}
+                  </button>
+                )}
+
                 <button className="review__btn-download">
                   <Download size={16} />
                   Download PDF
