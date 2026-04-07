@@ -12,6 +12,7 @@ import logo from '../../assets/logos/ShareCare_Symmetrical Diamond Logo (1120 x 
 
 export default function SignUp() {
   const navigate = useNavigate();
+  const redirect = new URLSearchParams(window.location.search).get('redirect');
 
   const [formData, setFormData] = useState({
     email: '',
@@ -72,7 +73,7 @@ export default function SignUp() {
         await syncFirebaseUserProfileSafely(firebaseUser);
 
         // On success, send them to the first onboarding step.
-        navigate('/getting-started');
+        navigate(redirect || '/getting-started');
       } catch (err) {
         // Show Firebase error in the form
         setErrors({ general: err.message });

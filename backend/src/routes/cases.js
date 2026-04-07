@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Case = require('../models/Case');
+const Plan = require('../models/Plan');
 const QuestionnaireResponse = require('../models/QuestionnaireResponse');
 const verifyToken = require('../middleware/verifyToken');
 const { computeDiff } = require('../services/comparisonService');
@@ -122,6 +123,36 @@ router.get('/:caseId/comparison', verifyToken, async (req, res) => {
     ]);
 
     const diff = computeDiff(response1?.answers, response2?.answers);
+
+    res.status(200).json({ caseId: parentingCase._id, status: parentingCase.status, diff });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/v1/cases/:caseId/plan-comparison
+// Compares both parents' Plan.answers and returns a diff. Works even before both parents submit.
+router.get('/:caseId/plan-comparison', verifyToken, async (req, res) => {
+  try {
+    const parentingCase = await Case.findById(req.params.caseId);
+    if (!parentingCase) return res.status(404).json({ error: 'Case not found' });
+    if (!isCaseMember(parentingCase, req.user.uid)) return res.status(403).json({ error: 'Forbidden' });
+
+    if (!parentingCase.parent2Uid) {
+      return res.status(200).json({ caseId: parentingCase._id, status: 'waiting_for_coparent', diff: [] });
+    }
+
+    const [plan1, plan2] = await Promise.all([
+      Plan.findOne({ caseId: req.params.caseId, userID: parentingCase.parent1Uid }),
+      Plan.findOne({ caseId: req.params.caseId, userID: parentingCase.parent2Uid }),
+    ]);
+
+    const toAnswerMap = (plan) => {
+      if (!plan) return {};
+      return plan.answers.reduce((acc, a) => { acc[a.qKey] = a.answer; return acc; }, {});
+    };
+
+    const diff = computeDiff(toAnswerMap(plan1), toAnswerMap(plan2));
 
     res.status(200).json({ caseId: parentingCase._id, status: parentingCase.status, diff });
   } catch (error) {

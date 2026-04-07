@@ -1,0 +1,249 @@
+.comparison {
+  min-height: 100vh;
+  background: #f3f4f6;
+  padding: 0 0 48px;
+}
+
+.comparison--centered {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  text-align: center;
+  padding: 48px 24px;
+}
+
+.comparison--centered h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.comparison--centered p {
+  color: #6b7280;
+  max-width: 400px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.comparison__spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #14abdd;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.comparison__header {
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 24px 40px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.comparison__nav-back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.comparison__nav-back:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.comparison__title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 4px;
+}
+
+.comparison__subtitle {
+  color: #6b7280;
+  font-size: 14px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.comparison__tabs {
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0 40px;
+  display: flex;
+  gap: 4px;
+}
+
+.comparison__tab {
+  background: none;
+  border: none;
+  padding: 16px 20px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -1px;
+  transition: all 0.15s;
+}
+
+.comparison__tab:hover {
+  color: #111827;
+}
+
+.comparison__tab--active {
+  color: #14abdd;
+  border-bottom-color: #14abdd;
+}
+
+.comparison__content {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+
+.comparison__section-header {
+  margin-bottom: 24px;
+}
+
+.comparison__section-header h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 6px;
+}
+
+.comparison__section-header p {
+  color: #6b7280;
+  font-size: 14px;
+  margin: 0 0 16px;
+}
+
+.comparison__download-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #14abdd;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.comparison__download-btn:hover {
+  background: #0d8fb8;
+}
+
+.comparison__card {
+  background: white;
+  border-radius: 10px;
+  padding: 20px 24px;
+  margin-bottom: 12px;
+  border-left: 4px solid transparent;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.comparison__agreed {
+  border-left-color: #22c55e;
+}
+
+.comparison__disagreed {
+  border-left-color: #f97316;
+}
+
+.comparison__question {
+  font-size: 15px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 10px;
+}
+
+.comparison__answer-agreed {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #16a34a;
+  font-size: 15px;
+}
+
+.comparison__answer-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.comparison__answer-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.comparison__parent-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.comparison__answer-value {
+  font-size: 15px;
+  color: #374151;
+}
+
+.comparison__answer-divider {
+  flex-shrink: 0;
+}
+
+.comparison__empty {
+  text-align: center;
+  color: #9ca3af;
+  padding: 48px 24px;
+  font-size: 15px;
+}
+
+.comparison__back-btn {
+  background: #14abdd;
+  color: white;
+  border: none;
+  padding: 12px 28px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  margin-top: 8px;
+}
+
+.comparison__back-btn:hover {
+  background: #0d8fb8;
+}
+
+.comparison__error {
+  color: #ef4444;
+  font-size: 15px;
+}

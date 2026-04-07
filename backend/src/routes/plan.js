@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Plan = require('../models/Plan');
+const Case = require('../models/Case');
 const Question = require('../models/Question');
 const verifyToken = require('../middleware/verifyToken');
 
@@ -9,6 +10,16 @@ router.post('/', verifyToken, async (req, res) => {
   try {
     const userID = req.user.uid;
     const plan = await Plan.create({ userID });
+
+    // Auto-create a Case so the co-parenting flow can begin immediately
+    try {
+      const newCase = await Case.create({ parent1Uid: userID, parent1PlanId: plan._id });
+      plan.caseId = newCase._id;
+      await plan.save();
+    } catch (caseErr) {
+      console.error('Failed to auto-create Case for plan:', caseErr.message);
+    }
+
     res.status(201).json(plan);
   } catch (error) {
     res.status(400).json({ error: error.message });

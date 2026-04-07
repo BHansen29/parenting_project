@@ -2,6 +2,7 @@ const nodemailer = require('nodemailer');
 
 let transporter;
 
+
 // Support the current EMAIL_SMTP_* contract and older EMAIL_* names.
 function getEmailConfig() {
   const port = Number(process.env.EMAIL_SMTP_PORT || process.env.EMAIL_PORT || 465);

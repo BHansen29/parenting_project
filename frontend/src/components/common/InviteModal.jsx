@@ -1,43 +1,39 @@
 import { useState } from 'react';
 import { X, UserPlus, Mail, Copy, Check } from 'lucide-react';
-import { sendInviteEmailRequest } from '../../lib/inviteApi';
+import { sendCaseInvite, getPendingInviteLink } from '../../lib/inviteApi';
 import './InviteModal.css';
 
-// Mock collaboration link - replace with a real generated link later.
-const MOCK_COLLAB_LINK = 'https://2dc42780-c3c8-4249-89d0-1ce28f8ac2f1.sharecare.app/join';
-
-export default function InviteModal({ isOpen, onClose }) {
+export default function InviteModal({ isOpen, onClose, caseId }) {
   const [email, setEmail] = useState('');
   const [copied, setCopied] = useState(false);
   const [sent, setSent] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [inviteLink, setInviteLink] = useState(null);
 
   if (!isOpen) return null;
 
   const handleSend = async (e) => {
     e.preventDefault();
     const recipientEmail = email.trim();
-
-    if (!recipientEmail) {
-      return;
-    }
-
+    if (!recipientEmail) return;
     setIsSending(true);
-
     try {
-      await sendInviteEmailRequest(recipientEmail);
+      await sendCaseInvite(caseId, recipientEmail);
       setSent(true);
       setEmail('');
+      const link = await getPendingInviteLink(caseId);
+      if (link) setInviteLink(link);
       setTimeout(() => setSent(false), 3000);
     } catch (error) {
-      console.error('Failed to send invite email:', error);
+      console.error('Failed to send invite:', error);
     } finally {
       setIsSending(false);
     }
   };
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(MOCK_COLLAB_LINK);
+    if (!inviteLink) return;
+    navigator.clipboard.writeText(inviteLink);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -106,9 +102,9 @@ export default function InviteModal({ isOpen, onClose }) {
           <p className="invite-modal__label">Share collaboration link</p>
           <div className="invite-modal__link-row">
             <div className="invite-modal__link-display">
-              {MOCK_COLLAB_LINK}
+              {inviteLink || (caseId ? 'Send email invite to generate link' : 'Create a plan first')}
             </div>
-            <button className="invite-modal__copy-btn" onClick={handleCopy}>
+            <button className="invite-modal__copy-btn" onClick={handleCopy} disabled={!inviteLink}>
               {copied ? <Check size={16} /> : <Copy size={16} />}
               {copied ? 'Copied' : 'Copy'}
             </button>

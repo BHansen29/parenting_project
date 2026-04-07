@@ -75,10 +75,19 @@ const planSchema = new mongoose.Schema(
     required: true,
     default: false
   },
+  isShared: {
+    type: Boolean,
+    default: false
+  },
   lastModified: {
     type: String,
     required: true,
     default: new Date().toLocaleDateString('en-US')
+  },
+  caseId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Case',
+    default: null
   },
   answers: [questionResponseSchema],
   children: [childSchema]
