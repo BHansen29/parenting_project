@@ -7,6 +7,8 @@ import { useForm } from '../hooks/useForm';
 import Header from '../components/common/Header';
 import InviteModal from '../components/common/InviteModal';
 import './Dashboard.css';
+import { API_BASE_URL, buildApiUrl } from '../lib/apiClient';
+import { useForm } from '../hooks/useForm';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -23,10 +25,10 @@ export default function Dashboard() {
   //   ''                  — not yet set (user hasn't completed Getting Started)
   const collaborationMode = state.collaborationMode ?? '';
 
+  const { dispatch } = useForm();
+
   // Mock plan data — replace with real data fetching later
-  const [plans, setPlans] = useState([
-    { id: 1, name: 'Untitled Plan', status: 'DRAFT', lastModified: '3/3/2026' },
-  ]);
+  const [plans, setPlans] = useState([{ id: 1, name: 'Loading', status: 'DRAFT', lastModified: '3/3/2026'}]);
 
   const [editingId, setEditingId] = useState(null);
   const [editingName, setEditingName] = useState('');
@@ -39,6 +41,37 @@ export default function Dashboard() {
     return () => { window.removeEventListener('click', close); window.removeEventListener('scroll', close); };
   }, []);
 
+  /*
+    This function will be ran anytime the "user" object is updated.
+    When the "user" object gets updated, make an API call to retrieve all plans owned by the user
+    and use the setPlans() method call to update the plans object so they are shown in the dashboard
+  */
+  useEffect(() => {
+    if (!user) return;
+    user.getIdToken()
+      .then((idToken) => {
+        return fetch(buildApiUrl("api/plan/" + user.uid + "/all"), {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${idToken}`,
+          }
+        });
+      })
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error("Failed to retrieve plans");
+        }
+        return res.json();
+      })
+      .then((data) => {
+        setPlans(data);
+      })
+      .catch((err) => {
+        console.error(err.message);
+      });
+  }, [user]);
+
   const handleContextMenu = (e, plan) => {
     e.preventDefault();
     setContextMenu({ x: e.clientX, y: e.clientY, plan });
@@ -47,8 +80,29 @@ export default function Dashboard() {
   const [deleteTarget, setDeleteTarget] = useState(null);
 
   const handleDeletePlan = (id) => {
-    setPlans(prev => prev.filter(plan => plan.id !== id));
-    setDeleteTarget(null);
+    if (user) {
+      user.getIdToken().then((idToken) => {
+        fetch(buildApiUrl("api/plan/delete"), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({userID: user.uid, pID: id})
+        })
+        .then( async (response) => {
+          if (!response.ok) {
+            console.error("Failed to delete plan: ", response.message)
+          } else {
+            setPlans(prev => prev.filter(plan => plan._id !== id));
+            setDeleteTarget(null);
+          }
+        });
+      })
+      .catch((error) => {
+        console.error("Couldn't retrieve session token: ", error.message)
+      });
+    }
   };
 
   const startEditing = (plan) => {
@@ -61,12 +115,29 @@ export default function Dashboard() {
     setEditingId(null);
   };
 
-  const handleNewPlan = () => {
-    const today = new Date().toLocaleDateString('en-US');
-    setPlans(prev => [
-      ...prev,
-      { id: Date.now(), name: 'Untitled Plan', status: 'DRAFT', lastModified: today },
-    ]);
+  const handleNewPlan = async () => {
+    if (user) {
+      user.getIdToken().then((idToken) => {
+        fetch(buildApiUrl("api/plan/"), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${idToken}`,
+          }
+        })
+        .then( async (response) => {
+          if (!response.ok) {
+            console.error("Failed to create plan: ", response.message)
+          } else {
+            const plan = await response.json()
+            setPlans(prev => [...prev, plan]);
+          }
+        });
+      })
+      .catch((error) => {
+        console.error("Couldn't retrieve session token: ", error.message)
+      });
+    }
   };
 
   useEffect(() => {
@@ -124,7 +195,7 @@ export default function Dashboard() {
             </p>
             <div className="delete-modal__actions">
               <button className="delete-modal__cancel" onClick={() => setDeleteTarget(null)}>Cancel</button>
-              <button className="delete-modal__confirm" onClick={() => handleDeletePlan(deleteTarget.id)}>Delete</button>
+              <button className="delete-modal__confirm" onClick={() => handleDeletePlan(deleteTarget._id)}>Delete</button>
             </div>
           </div>
         </div>
@@ -221,7 +292,7 @@ export default function Dashboard() {
 
           <div className="dashboard__plans-grid">
             {plans.map((plan) => (
-              <div key={plan.id} className="plan-card" onContextMenu={e => handleContextMenu(e, plan)}>
+              <div key={plan._id} className="plan-card" onContextMenu={e => handleContextMenu(e, plan)}>
                 <div className="plan-card__top">
                   <div className="plan-card__icon">
                     <FileText size={24} color="#6b7280" />
@@ -232,13 +303,13 @@ export default function Dashboard() {
                 </div>
 
                 <div className="plan-card__name-row">
-                  {editingId === plan.id ? (
+                  {editingId === plan._id ? (
                     <input
                       className="plan-card__name-input"
                       value={editingName}
                       onChange={e => setEditingName(e.target.value)}
-                      onBlur={() => commitEdit(plan.id)}
-                      onKeyDown={e => e.key === 'Enter' && commitEdit(plan.id)}
+                      onBlur={() => commitEdit(plan._id)}
+                      onKeyDown={e => e.key === 'Enter' && commitEdit(plan._id)}
                       autoFocus
                     />
                   ) : (
@@ -255,13 +326,58 @@ export default function Dashboard() {
                   <Calendar size={14} color="#9ca3af" />
                   <span>Last modified: {plan.lastModified}</span>
                 </div>
-
-                <button
-                  className="plan-card__open-btn"
-                  onClick={() => navigate('/getting-started')}
-                >
-                  Open Plan &rarr;
-                </button>
+                {(() => {
+                    if (plan.currentQuestion) { // maybe use status field of plan for this?
+                      return (
+                        <button
+                          className="plan-card__open-btn"
+                          onClick={() => {     
+                            dispatch({
+                                type: 'UPDATE_SECTION',
+                                section: "plan",
+                                payload: plan
+                            });
+                            fetch(buildApiUrl("/api/logic-engine/question/" + plan.currentQuestion), {
+                              method: "GET",
+                              headers: {
+                                "Content-Type": "application/json",
+                              }
+                            })
+                            .then(res => {
+                              if (!res.ok) {
+                                throw new Error("Failed to retrieve question");
+                              }
+                              res.json().then(q => {
+                                dispatch({
+                                  type: 'UPDATE_SECTION',
+                                  section: "question",
+                                  payload: q
+                                });
+                                navigate('/' + q.section)})
+                            })
+                          }}
+                        >
+                          Resume Plan &rarr;
+                        </button>
+                      );
+                    } else {
+                      return (
+                        <button
+                          className="plan-card__open-btn"
+                          onClick={() => {     
+                            dispatch({
+                                type: 'UPDATE_SECTION',
+                                section: "plan",
+                                payload: plan
+                            });
+                            navigate('/getting-started')
+                          }}
+                        >
+                          Open Plan &rarr;
+                        </button>
+                      );
+                    }
+                })()}
 
                 {/* Per-card invite button — hidden for locked-individual users */}
                 {showInviteUI && (
