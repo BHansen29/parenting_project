@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/card';
 import { useForm } from '../hooks/useForm';
 import { useSectionFlag } from '../hooks/useSectionFlag';
+import { useNavigation } from '../context/NavigationContext';
 import './Page.css';
 import SectionHeader from '../components/forms/SectionHeader';
 import RadioQuestion from '../components/forms/RadioQuestion';
@@ -12,81 +13,70 @@ export default function ParentalRights() {
 
     const navigate = useNavigate();
     const { state, dispatch } = useForm();
+    console.log('plan object:', state.plan);
+    const { setOnNext, setOnBack } = useNavigation();
 
-    //form data and errors for this section
-    const formData = state.parentalRights ?? {appliesToAllChildren: '', livingArrangement: '', decisionMaking: '', errors: {} };
-    const errors = state.parentalRights?.errors ?? {};
+    const formData = state.parentalRights ?? { appliesToAllChildren: '', livingArrangements: '', decisionMaking: '' };
+    const [errors, setErrors] = useState({});
 
-    //flag states for this section
     const childrenApplicationFlag = useSectionFlag('childrenApplication');
     const livingArrangementsFlag = useSectionFlag('livingArrangements');
     const decisionMakingFlag = useSectionFlag('decisionMaking');
 
-    //scroll to first error when validation fails
     const [submitAttempted, setSubmitAttempted] = useState(false);
+
+    // FIX: removed formData from deps so this doesn't fire immediately after validation
     useEffect(() => {
         if (submitAttempted) {
-            const firstError = document.querySelector('.text-input__error-message, .date-picker__error-message');
-            if (firstError) {
-                firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
+            const firstError = document.querySelector('.radio-group-error');
+            if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
             setSubmitAttempted(false);
         }
-    }, [formData, submitAttempted]);
+    }, [submitAttempted]);
 
-    //generic change handler for form fields in this section
-    const handleFormChange = (section, field) => (value) => {
-        dispatch({
-        type: 'UPDATE_SECTION',
-        section: section,
-        payload: { [field]: value }
-        });
-        if (errors[field]) {
+    // FIX: dedicated radio handler that uses local setErrors to clear errors
+    const handleRadioChange = (field) => (value) => {
         dispatch({
             type: 'UPDATE_SECTION',
-            section: section,
-            payload: { errors: { ...errors, [field]: '' } }
+            section: 'parentalRights',
+            payload: { [field]: value }
         });
-        }
+        setErrors(prev => ({ ...prev, [field]: '' }));
     };
 
     const validateForm = () => {
         const formErrors = {};
         if (!formData.appliesToAllChildren) {
-            formErrors.appliesToAllChildren = 'Please select an option';
+            formErrors.appliesToAllChildren = 'Please select an option to continue';
         }
         if (!formData.livingArrangements) {
-            formErrors.livingArrangements = 'Please select an option';
+            formErrors.livingArrangements = 'Please select an option to continue';
         }
         if (!formData.decisionMaking) {
-            formErrors.decisionMaking = 'Please select an option';
+            formErrors.decisionMaking = 'Please select an option to continue';
         }
 
-        dispatch({
-            type: 'UPDATE_SECTION',
-            section: 'parentalRights',
-            payload: { errors: formErrors }
-        });
-
+        setErrors(formErrors);
         return Object.keys(formErrors).length === 0;
-    }
+    };
 
     const handleNext = () => {
-    if (validateForm()) {
-      navigate('/parenting-time-communication');
-    } else {
-      setSubmitAttempted(true);
-    }
-  };
+        if (validateForm()) {
+            navigate('/parenting-time-communication');
+        } else {
+            setSubmitAttempted(true);
+        }
+    };
 
-   const handleBack = () => {
-    dispatch({
-      type: 'UPDATE_SECTION',
-      section: 'parentalRights',
-      payload: { errors: {} }
-    });
-    navigate('/getting-started');
-  };
+    const handleBack = () => {
+        setErrors({});
+        navigate('/getting-started');
+    };
+
+    useEffect(() => {
+        setOnNext(handleNext);
+        setOnBack(handleBack);
+    }, [state]);
 
     return (
         <div className="page-container">
@@ -94,7 +84,8 @@ export default function ParentalRights() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Parental Rights</CardTitle>
-                        <CardDescription>Define where your children live and who will make legal decisions. </CardDescription>
+                        <CardDescription>Define where your children live and who will make legal decisions.</CardDescription>
+                        <CardDescription>Fields marked with <span className="required-asterisk">*</span> are required.</CardDescription>
                     </CardHeader>
 
                     <CardContent>
@@ -111,12 +102,12 @@ export default function ParentalRights() {
                             question="Will your answers apply to all of your children that you share with your co-parent?"
                             name="appliesToAllChildren"
                             value={formData.appliesToAllChildren}
-                            onChange={handleFormChange('parentalRights', 'appliesToAllChildren')}
+                            onChange={handleRadioChange('appliesToAllChildren')}
                             flag={childrenApplicationFlag}
                             error={errors.appliesToAllChildren}
                             options={[
-                                { value: 'yes',               label: 'Yes',                          description: 'My answers will be the same for all children' },
-                                { value: 'no',                label: 'No',                           description: 'I need to answer separately for each child' },
+                                { value: 'yes',               label: 'Yes',                             description: 'My answers will be the same for all children' },
+                                { value: 'no',                label: 'No',                              description: 'I need to answer separately for each child' },
                                 { value: 'needMoreInfo',      label: 'I need more information' },
                                 { value: 'defaultToCoParent', label: "Default to my co-parent's choice" },
                             ]}
@@ -135,15 +126,15 @@ export default function ParentalRights() {
                             question="Do you want your children to live with you?"
                             name="livingArrangements"
                             value={formData.livingArrangements}
-                            onChange={handleFormChange('parentalRights', 'livingArrangements')}
+                            onChange={handleRadioChange('livingArrangements')}
                             flag={livingArrangementsFlag}
                             error={errors.livingArrangements}
                             options={[
-                                { value: 'parent1FullTime',   label: 'Yes, all the time' },
-                                { value: 'parent1Occasional', label: 'Yes, on occasion' },
+                                { value: 'parent1FullTime',     label: 'Yes, all the time' },
+                                { value: 'parent1Occasional',   label: 'Yes, on occasion' },
                                 { value: 'parent1VisitingOnly', label: 'No, I just want visiting time' },
-                                { value: 'needMoreInfo',      label: 'I need more information' },
-                                { value: 'defaultToCoParent', label: "Default to my co-parent's choice" },
+                                { value: 'needMoreInfo',        label: 'I need more information' },
+                                { value: 'defaultToCoParent',   label: "Default to my co-parent's choice" },
                             ]}
                         />
 
@@ -160,20 +151,20 @@ export default function ParentalRights() {
                             question="Do you want to make legal decisions for your children?"
                             name="decisionMaking"
                             value={formData.decisionMaking}
-                            onChange={handleFormChange('parentalRights', 'decisionMaking')}
+                            onChange={handleRadioChange('decisionMaking')}
                             flag={decisionMakingFlag}
                             error={errors.decisionMaking}
                             options={[
-                                { value: 'parent1Sole',          label: 'Yes, by myself' },
-                                { value: 'jointWithCoParent',    label: 'Yes, with my co-parent' },
+                                { value: 'parent1Sole',           label: 'Yes, by myself' },
+                                { value: 'jointWithCoParent',     label: 'Yes, with my co-parent' },
                                 { value: 'noLegalDecisionMaking', label: 'No' },
-                                { value: 'needMoreInfo',         label: 'I need more information' },
-                                { value: 'defaultToCoParent',    label: "Default to my co-parent's choice" },
+                                { value: 'needMoreInfo',          label: 'I need more information' },
+                                { value: 'defaultToCoParent',     label: "Default to my co-parent's choice" },
                             ]}
                         />
-                    </CardContent>    
+                    </CardContent>
                 </Card>
             </div>
         </div>
-    )
+    );
 }

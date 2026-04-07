@@ -5,6 +5,7 @@ import { auth } from '../../lib/firebase';
 import { syncFirebaseUserProfileSafely } from '../../lib/authApi';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/common/card';
 import TextInput from '../../components/forms/TextInput';
+import LegalNoticeModal from '../../components/common/LegalNoticeModal';
 import '../Page.css';
 import './Auth.css';
 import logo from '../../assets/logos/ShareCare_Symmetrical Diamond Logo (1120 x 310 px).png';
@@ -19,6 +20,7 @@ export default function SignUp() {
 
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const [showLegalNotice, setShowLegalNotice] = useState(false);
 
   const handleChange = (field) => (value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -46,11 +48,18 @@ export default function SignUp() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
+  // On submit: only validate and show the modal — no Firebase call yet
+  const handleSubmit = (e) => {
     e.preventDefault();
-
     if (validateForm()) {
-      setIsLoading(true);
+      setShowLegalNotice(true);
+    }
+  };
+
+  // User accepted all terms — NOW create the Firebase account
+  const handleLegalAccept  = async (e) => {
+    setShowLegalNotice(false);
+    setIsLoading(true);
       try {
         // Create the user in Firebase Auth with email + password
         const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
@@ -67,13 +76,24 @@ export default function SignUp() {
       } catch (err) {
         // Show Firebase error in the form
         setErrors({ general: err.message });
+      } finally {
         setIsLoading(false);
       }
-    }
+  };
+
+  // User closed the modal — just hide it, no account was created
+  const handleLegalClose = () => {
+    setShowLegalNotice(false);
   };
 
   return (
     <div className="auth-page">
+      <LegalNoticeModal
+        isOpen={showLegalNotice}
+        onAccept={handleLegalAccept}
+        onClose={handleLegalClose}
+      />
+      
       <div className="auth-container">
         <div className="auth-logo">
           <img src={logo} alt="ShareCare" />

@@ -1,23 +1,23 @@
 import { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import Sidebar from '../components/common/Sidebar';
 import Header from '../components/common/Header';
 import './Layout.css';
 import Footer from '../components/common/Footer';
+import { useNavigation } from '../context/NavigationContext';
 
 export default function Layout({ children }) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const location = useLocation();
-  const navigate = useNavigate();
+  const { onNext, onBack } = useNavigation();
 
-  // Define the page navigation order
   const pageOrder = [
     '/getting-started',
     '/parental-rights',
     '/parenting-time-communication',
-    '/custody-schedule',
-    '/transportation',
-    '/review'
+    '/informationsharing',
+    '/tax-exemptions',
+    '/review',
   ];
 
   const currentPageIndex = pageOrder.indexOf(location.pathname);
@@ -31,61 +31,32 @@ export default function Layout({ children }) {
         setIsSidebarCollapsed(true);
       }
     };
-
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Determine if current page should show navigation
-  const shouldShowNavigation = ['/getting-started', '/parental-rights', '/parenting-time', '/custody-schedule', '/transportation', '/review'].includes(location.pathname);
-
-  // Determine if current page should show header (not landing page)
   const shouldShowHeader = location.pathname !== '/';
 
-  const toggleSidebar = () => {
-    setIsSidebarCollapsed(!isSidebarCollapsed);
-  };
-
-  const handleBack = () => {
-    if (currentPageIndex > 0) {
-      navigate(pageOrder[currentPageIndex - 1]);
-    }
-  };
-
-  const handleNext = () => {
-    if (currentPageIndex < pageOrder.length - 1) {
-      navigate(pageOrder[currentPageIndex + 1]);
-    }
-  };
+  const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
   return (
     <div className="layout">
-      <Sidebar
-        isCollapsed={isSidebarCollapsed}
-        onToggle={toggleSidebar}
-      />
-
+      <Sidebar isCollapsed={isSidebarCollapsed} onToggle={toggleSidebar} />
       <div className={`layout__main ${isSidebarCollapsed ? 'layout__main--sidebar-collapsed' : ''}`}>
         {shouldShowHeader && (
-          <Header
-            showNavigation={false} // Navigation is now in sidebar
-            saved={false} // You can pass saved state if needed
-          />
+          <Header showNavigation={false} saved={false} />
         )}
-
         <main className="layout__content">
           {children}
         </main>
-
         <Footer
           showBackButton={!isFirstPage}
           showNextButton={!isLastPage}
-          onBack={handleBack}
-          onNext={handleNext}
+          onBack={onBack}
+          onNext={onNext}
         />
       </div>
-
     </div>
   );
 }

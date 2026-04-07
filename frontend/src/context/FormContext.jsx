@@ -35,7 +35,9 @@ const initialState = {
     communicationWithCoParentOnPhoneDescription: '',
     notifyCoParentOfChildRelatedEvents: '',
     errors: {}
-  }
+  },
+  informationSharing: { errors: {} },
+  taxExemptions: { errors: {} }
 };
 
 function formReducer(state, action) {

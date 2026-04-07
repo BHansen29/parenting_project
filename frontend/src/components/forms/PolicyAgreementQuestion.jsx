@@ -23,7 +23,13 @@ export default function PolicyAgreementQuestion({
   checked,
   onCheckboxChange,
   textInput,
+  requiredNote,
 }) {
+  // Derive a stable DOM id for the collapsible section from the checkbox id
+  const sectionId = checkboxId === 'agreeToTransportationPolicy'
+    ? 'invisibility-target-transportation'
+    : 'invisibility-target-activity';
+    
   return (
     <Card>
       <CardHeader>
@@ -38,7 +44,6 @@ export default function PolicyAgreementQuestion({
           </div>
         </CardDescription>
       </CardHeader>
-
       <CardContent>
         <Checkbox
           id={checkboxId}
@@ -47,26 +52,31 @@ export default function PolicyAgreementQuestion({
           checked={checked}
           onChange={onCheckboxChange}
         />
-
-        {!checked && (
-          <div className="custom-description-section">
-            <div className="or-divider">OR</div>
-            <TextInput
-              className="text-input-long-text"
-              id={textInput.id}
-              label={textInput.label}
-              type="text"
-              value={textInput.value}
-              onChange={textInput.onChange}
-              placeholder={textInput.placeholder}
-            />
-            {textInput.error && (
-              <div className="text-input__error-message" role="alert">
-                {textInput.error}
-              </div>
-            )}
-          </div>
+        {requiredNote && (
+          <p className="policy-required-note">{requiredNote}</p>
         )}
+        {/* Always render the section but hide it via inline style when agreed */}
+        <div
+          id={sectionId}
+          style={{ display: checked ? 'none' : undefined }}
+          className="custom-description-section"
+        >
+          <div className="or-divider">OR</div>
+          <TextInput
+            className="text-input-long-text"
+            id={textInput.id}
+            label={textInput.label}
+            type="text"
+            value={textInput.value}
+            onChange={textInput.onChange}
+            placeholder={textInput.placeholder}
+          />
+          {textInput.error && (
+            <div className="text-input__error-message" role="alert">
+              {textInput.error}
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

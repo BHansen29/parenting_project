@@ -53,3 +53,32 @@
   border-color: #14abdd;
   background-color: rgba(20, 171, 221, 0.1);
 }
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .radio-option span {
+    color: #d1d5db;
+  }
+
+  .radio-option-text {
+    font-size: medium;
+    font-weight: bold;
+    color: #d1d5db;
+    margin: 0;
+  }
+
+  .radio-option-description {
+    font-size: small;
+    color: #9ca3af;
+    margin: 0;
+  }
+
+  .radio-option {
+    border: 1.5px solid #374151;
+    background-color: #1f2937;
+  }
+
+  .radio-option:hover {
+    background-color: rgba(20, 171, 221, 0.15);
+  }
+}
