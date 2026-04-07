@@ -18,11 +18,13 @@ export default function GettingStarted() {
 
   const formData = state.parents ?? { name: '', secondParentName: '', errors: {} }; //pull data from the stored state
   const safetyConcern = state.safetyConcern ?? '';
+  const collaborationMode = state.collaborationMode ?? ''; //added collaboration field
   const caseFilingStatus = state.caseFilingStatus ?? '';
   const errors = formData.errors ?? {};
 
   //these errors use the local useState
   const [safetyConcernError, setSafetyConcernError] = useState('');
+  const [collaborationModeError, setCollaborationModeError] = useState('');
   const [caseFilingError, setCaseFilingError] = useState('');
 
   const caseFilingFlag = useSectionFlag('caseFilingStatus');
@@ -39,6 +41,7 @@ export default function GettingStarted() {
   useEffect(() => {
     dispatch({ type: 'UPDATE_SECTION', section: 'parents', payload: { errors: {} } });
     setSafetyConcernError('');
+    setCollaborationModeError('');
     setCaseFilingError('');
     setChildren(prev => prev.map(c => ({ ...c, errors: {} })));
   }, []); //clears all errors as soon as the page loads
@@ -50,7 +53,24 @@ export default function GettingStarted() {
   const handleRadioChange = (section) => (value) => {
     dispatch({ type: 'UPDATE_SECTION', section: section, payload: value });
     //clear the relevant error when user makes a selection
-    if (section === 'safetyConcern') setSafetyConcernError('');
+
+    if (section === 'safetyConcern') {
+      setSafetyConcernError('');
+
+      //lock collaboration mode if there is a safety concern
+      //this hides the collaboration mode question entirely & disables coparent invite modal
+      if (value === 'yes') {
+        dispatch({ type: 'UPDATE_SECTION', section: 'collaborationMode', payload: 'locked-individual' });
+        setCollaborationModeError('');
+      }
+
+      //If the user switches back from 'yes' to 'no', reset collaboration mode so the follow-up question reappears and they can make a fresh choice.
+      if (value === 'no') {
+        dispatch({ type: 'UPDATE_SECTION', section: 'collaborationMode', payload: '' });
+      }
+    }
+
+    if (section === 'collaborationMode') setCollaborationModeError('');
     if (section === 'caseFilingStatus') setCaseFilingError('');
   };
 
@@ -93,6 +113,15 @@ export default function GettingStarted() {
       isValid = false;
     } else {
       setSafetyConcernError('');
+    }
+
+    //Collaborative mode is only relevant when there is no safety concern. 
+    // If safetyConcern === 'yes' then no need to validate 
+    if (safetyConcern === 'no' && !collaborationMode) {
+      setCollaborationModeError('Please select an option to continue');
+      isValid = false; 
+    } else {
+      setCollaborationModeError('');
     }
 
     const parentErrors = {};
@@ -156,7 +185,7 @@ export default function GettingStarted() {
   useEffect(() => {
     setOnNext(handleNext);
     setOnBack(handleBack);
-  }, [state, children, safetyConcern, caseFilingStatus]);
+  }, [state, children, safetyConcern, collaborationMode, caseFilingStatus]);
 
   return (
     <div className="page-container">
@@ -187,10 +216,34 @@ export default function GettingStarted() {
                 onChange={handleRadioChange('safetyConcern')}
                 error={safetyConcernError}
                 options={[
-                  { value: 'yes', label: 'Yes, please keep my information private', description: 'You and your co-parent will fill out the form separately' },
-                  { value: 'no',  label: 'No, I wish to collaborate with my co-parent', description: 'Your answers will be shared with your co-parent' },
+                  { value: 'yes', label: 'Yes, please keep my information private', description: 'You will fill out the form individually. Your answers will not be shared with your co-parent.' },
+                  { value: 'no',  label: 'No, I do not have safety concerns'},
                 ]}
               />
+
+              {/* Collaboration mode question — only shown when no safety concern. If safetyConcern === 'yes', this is hidden */}
+              {safetyConcern === 'no' && (
+                <RadioQuestion
+                  question="How would you like to complete this plan?"
+                  name="collaborationMode"
+                  value={collaborationMode}
+                  onChange={handleRadioChange('collaborationMode')}
+                  error={collaborationModeError}
+                  options={[
+                    {
+                      value: 'individual',
+                      label: 'Complete individually',
+                      description: 'Fill out the plan on your own.',
+                    },
+                    {
+                      value: 'collaborative',
+                      label: 'Collaborate with my co-parent',
+                      description: 'You and your co-parent will each fill out your sections separately. Your answers will be compared to help you reach an agreement.',
+                    },
+                  ]}
+                />
+              )}
+
             </section>
             <hr className="section-divider" />
 
