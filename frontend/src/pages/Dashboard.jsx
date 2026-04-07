@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { Users, FileText, Calendar, UserPlus, Plus, Trash2, Pencil } from 'lucide-react';
+import { Users, FileText, Calendar, UserPlus, Plus, Trash2, Pencil, Lock } from 'lucide-react';
 import { auth } from '../lib/firebase';
+import { useForm } from '../hooks/useForm';
 import Header from '../components/common/Header';
 import InviteModal from '../components/common/InviteModal';
 import './Dashboard.css';
@@ -11,6 +12,16 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const [showSwitchPrompt, setShowSwitchPrompt] = useState(false);
+
+  const { state, dispatch } = useForm();
+
+  // collaborationMode drives all invite UI:
+  //   'locked-individual' — safety concern; hide all invite surfaces entirely
+  //   'individual'        — user chose solo; show invite button with a switch prompt
+  //   'collaborative'     — user chose collaborative; invite button works normally
+  //   ''                  — not yet set (user hasn't completed Getting Started)
+  const collaborationMode = state.collaborationMode ?? '';
 
   // Mock plan data — replace with real data fetching later
   const [plans, setPlans] = useState([
@@ -19,8 +30,7 @@ export default function Dashboard() {
 
   const [editingId, setEditingId] = useState(null);
   const [editingName, setEditingName] = useState('');
-
-  const [contextMenu, setContextMenu] = useState(null); // { x, y, plan }
+  const [contextMenu, setContextMenu] = useState(null);
 
   useEffect(() => {
     const close = () => setContextMenu(null);
@@ -34,7 +44,7 @@ export default function Dashboard() {
     setContextMenu({ x: e.clientX, y: e.clientY, plan });
   };
 
-  const [deleteTarget, setDeleteTarget] = useState(null); // plan pending confirmation
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   const handleDeletePlan = (id) => {
     setPlans(prev => prev.filter(plan => plan.id !== id));
@@ -72,11 +82,39 @@ export default function Dashboard() {
     navigate('/');
   };
 
+  // Called when user clicks any invite button.
+  // Routes based on current collaborationMode.
+  const handleInviteClick = () => {
+    if (collaborationMode === 'collaborative') {
+      // Already in collaborative mode — open invite directly
+      setIsInviteOpen(true);
+    } else if (collaborationMode === 'individual') {
+      // User chose individual mode — ask if they want to switch first
+      setShowSwitchPrompt(true);
+    }
+    // 'locked-individual' — button is not rendered at all, so this is unreachable
+  };
+
+  // User confirmed they want to switch from individual to collaborative mode.
+  // TODO: When the invite feature branch is merged, this switch will need to
+  // handle the case where the user has already made progress in individual mode.
+  // Should answers be reset or left as-is? 
+  // Can previously sent invites be revoked or re-sent? 
+  const handleConfirmSwitch = () => {
+    dispatch({ type: 'UPDATE_SECTION', section: 'collaborationMode', payload: 'collaborative' });
+    setShowSwitchPrompt(false);
+    setIsInviteOpen(true);
+  };
+
+  // Whether to show any invite surface at all
+  const showInviteUI = collaborationMode !== 'locked-individual';
+
   return (
     <div className="dashboard" onClick={() => setContextMenu(null)}>
       <Header user={user} onSignOut={handleSignOut} />
       <InviteModal isOpen={isInviteOpen} onClose={() => setIsInviteOpen(false)} />
 
+      {/* Delete confirmation modal */}
       {deleteTarget && (
         <div className="delete-modal__overlay" onClick={() => setDeleteTarget(null)}>
           <div className="delete-modal" onClick={e => e.stopPropagation()}>
@@ -87,6 +125,27 @@ export default function Dashboard() {
             <div className="delete-modal__actions">
               <button className="delete-modal__cancel" onClick={() => setDeleteTarget(null)}>Cancel</button>
               <button className="delete-modal__confirm" onClick={() => handleDeletePlan(deleteTarget.id)}>Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Switch-to-collaborative confirmation prompt */}
+      {showSwitchPrompt && (
+        <div className="delete-modal__overlay" onClick={() => setShowSwitchPrompt(false)}>
+          <div className="delete-modal" onClick={e => e.stopPropagation()}>
+            <h3 className="delete-modal__title">Switch to collaborative mode?</h3>
+            <p className="delete-modal__body">
+              You're currently completing this plan individually. Switching to collaborative mode
+              will allow your co-parent to fill out their section separately. Would you like to switch?
+            </p>
+            <div className="delete-modal__actions">
+              <button className="delete-modal__cancel" onClick={() => setShowSwitchPrompt(false)}>
+                Stay in individual mode
+              </button>
+              <button className="delete-modal__confirm" onClick={handleConfirmSwitch}>
+                Switch &amp; invite co-parent
+              </button>
             </div>
           </div>
         </div>
@@ -109,28 +168,46 @@ export default function Dashboard() {
 
       <main className="dashboard__main">
 
-        {/* Invite co-parent banner */}
-        <div className="dashboard__invite-banner">
-          <div className="dashboard__invite-icon">
-            <Users size={32} color="#14abdd" />
-          </div>
+        {/* Invite co-parent banner — hidden entirely for locked-individual users */}
+        {showInviteUI && (
+          <div className="dashboard__invite-banner">
+            <div className="dashboard__invite-icon">
+              <Users size={32} color="#14abdd" />
+            </div>
 
-          <div className="dashboard__invite-text">
-            <h2 className="dashboard__invite-title">Co-parenting works better together</h2>
-            <p className="dashboard__invite-description">
-              Invite the other parent to contribute to the plan. You'll both fill out your preferences
-              independently, and we'll help you find common ground.
-            </p>
-          </div>
+            <div className="dashboard__invite-text">
+              {collaborationMode === 'individual' ? (
+                <>
+                  <h2 className="dashboard__invite-title">You're working individually</h2>
+                  <p className="dashboard__invite-description">
+                    You chose to complete this plan on your own. If you'd like your co-parent to
+                    contribute, you can switch to collaborative mode at any time.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h2 className="dashboard__invite-title">Co-parenting works better together</h2>
+                  <p className="dashboard__invite-description">
+                    Invite the other parent to contribute to the plan. You'll both fill out your
+                    preferences independently, and we'll help you find common ground.
+                  </p>
+                </>
+              )}
+            </div>
 
-          <div className="dashboard__invite-action">
-            <button className="dashboard__invite-btn" onClick={() => setIsInviteOpen(true)}>
-              <UserPlus size={18} />
-              Invite Co-parent
-            </button>
-            <span className="dashboard__invite-note">Free for both parents</span>
+            <div className="dashboard__invite-action">
+              <button className="dashboard__invite-btn" onClick={handleInviteClick}>
+                <UserPlus size={18} />
+                {collaborationMode === 'individual' ? 'Switch & Invite Co-parent' : 'Invite Co-parent'}
+              </button>
+              <span className="dashboard__invite-note">
+                {collaborationMode === 'individual'
+                  ? 'You are currently in individual mode'
+                  : 'Free for both parents'}
+              </span>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Your Plans section */}
         <section className="dashboard__plans">
@@ -186,10 +263,13 @@ export default function Dashboard() {
                   Open Plan &rarr;
                 </button>
 
-                <button className="plan-card__invite-btn" onClick={() => setIsInviteOpen(true)}>
-                  <UserPlus size={14} />
-                  Invite Parent
-                </button>
+                {/* Per-card invite button — hidden for locked-individual users */}
+                {showInviteUI && (
+                  <button className="plan-card__invite-btn" onClick={handleInviteClick}>
+                    <UserPlus size={14} />
+                    {collaborationMode === 'individual' ? 'Switch & Invite' : 'Invite Parent'}
+                  </button>
+                )}
 
               </div>
             ))}
