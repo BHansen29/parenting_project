@@ -31,7 +31,7 @@ router.post('/delete', verifyToken, async (req, res) => {
   }
 });
 
-// GET /api/:uid/all -> Get all plans a user currently owns
+// GET /api/plan/:uid/all -> Get all plans a user currently owns
 router.get('/:uid/all', verifyToken, async (req, res) => {
   try {
     const plans = await Plan.find({userID: req.params.uid});
@@ -99,22 +99,67 @@ router.post('/:planId/answer', verifyToken, async (req, res) => {
     }
 
     const {qKey, answer} = req.body
-    const index = plan.children.findIndex(userAnswer => userAnswer.qKey === qKey)
-    const oldAnswer = plan.children[index]?.answer
+    const index = plan.answers.findIndex(userAnswer => userAnswer.qKey === qKey)
+    const oldAnswer = plan.answers[index]?.answer
     if (!oldAnswer) {
       // case for first question answered in plan
-      plan.children.push({qKey: qKey, answer: answer})
+      plan.answers.push({qKey: qKey, answer: answer})
     } else if (oldAnswer.answer !== answer) {
       // case for changing exsisting response
-      plan.children[index] = {qKey: qKey, answer: answer}
+      plan.answers[index] = {qKey: qKey, answer: answer}
       // this chops off everything after the new answer since our "path" through the decision tree may be different
       // TODO: maybe update so that it only chops off questions if they aren't defaultNextQuestions?
-      plan.children.splice(index + 1)
+      plan.answers.splice(index + 1)
     } else {
       // no change to question required since answer matches
       return res.status(200).json(plan)
     }
 
+    //Save the plan and write back to DB
+    await plan.save();
+    res.status(201).json(plan);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Add children to the plan
+// POST/api/plan/:planId/children
+router.post('/:planId/children', verifyToken, async (req, res) => {
+  try {
+    const planID = req.params.planId;
+    //Retrieve plan and fetch from Mongo
+    const plan = await Plan.findById(planID);
+
+    //If the planId was not found or doesn't belong to the requesting user
+    if (!plan || plan.userID !== req.user.uid) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    const { planChildren } = req.body
+    plan.children = planChildren
+    //Save the plan and write back to DB
+    await plan.save();
+    res.status(201).json(plan);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Update phone and address to the plan
+// POST/api/plan/:planId/contact
+router.post('/:planId/contact', verifyToken, async (req, res) => {
+  try {
+    const planID = req.params.planId;
+    //Retrieve plan and fetch from Mongo
+    const plan = await Plan.findById(planID);
+
+    //If the planId was not found or doesn't belong to the requesting user
+    if (!plan || plan.userID !== req.user.uid) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    const { phone, address } = req.body
+    plan.phoneNumber = phone
+    plan.address = address
     //Save the plan and write back to DB
     await plan.save();
     res.status(201).json(plan);
@@ -144,7 +189,7 @@ router.get('/:planId', verifyToken, async (req, res) => {
 
 // Set a plan's allowShare field
 // POST/api/plan/setShareMode/:planId
-router.get('/setShareMode/:planId', verifyToken, async (req, res) => {
+router.post('/setShareMode/:planId', verifyToken, async (req, res) => {
   try {
     const planID = req.params.planId;
     //Retrieve plan and fetch from Mongo
@@ -156,7 +201,8 @@ router.get('/setShareMode/:planId', verifyToken, async (req, res) => {
     }
     const { allowShare } = req.body
     plan.allowSharing = allowShare
-    plan.save()
+    await plan.save()
+    res.status(201).json(plan)
   } catch (error) {
     res.status(400).json({ error: error.message });
   }

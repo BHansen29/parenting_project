@@ -16,8 +16,9 @@ export default function GettingStarted() {
   const { state, dispatch } = useForm(); //state reads data, dispatch writes data
   const { setOnNext, setOnBack } = useNavigation();
 
-  const formData = state.parents ?? { name: '', secondParentName: '', errors: {} }; //pull data from the stored state
-  const safetyConcern = state.safetyConcern ?? '';
+  // Parents stay in global context
+  const formData = state.parents ?? { name: '', secondParentName: '', errors: {} };
+  const allowSharing = state.plan.allowSharing ? "true" : "false"
   const caseFilingStatus = state.caseFilingStatus ?? '';
   const errors = formData.errors ?? {};
 
@@ -30,10 +31,14 @@ export default function GettingStarted() {
 
   //pull children from the stored state, calling setChildren will add a new child to the existing list
   const [children, setChildren] = useState(() => {
-    //if no existing children, create a blank one
-    return state.children?.length > 0
-      ? state.children
-      : [{ id: 1, firstName: '', lastName: '', dateOfBirth: '', classification: '', errors: {} }];
+    let startKey = 1
+    return state.plan.children?.length > 0
+      ? state.plan.children.map(child => {
+        const newKid = {...child, isEmancipatedAdult: child.isEmancipatedAdult ? "emancipated" : "minor", key: startKey}
+        startKey += 1
+        return newKid
+      })
+      : [{ key: startKey, fName: '', lName: '', birthday: '', isEmancipatedAdult: '', errors: {} }];
   });
 
   useEffect(() => {
@@ -44,8 +49,9 @@ export default function GettingStarted() {
   }, []); //clears all errors as soon as the page loads
 
   useEffect(() => {
-    dispatch({ type: 'UPDATE_CHILDREN', payload: children });
-  }, [children]); //every time the children array changes. save to formCOntext
+    const fixedChildren = children.map(child => ({...child, isEmancipatedAdult: child.isEmancipatedAdult === "emancipated"})) 
+    dispatch({ type: 'UPDATE_SECTION', section: "plan", payload: {children: fixedChildren} });
+  }, [children]);
 
   const handleRadioChange = (section) => (value) => {
     dispatch({ type: 'UPDATE_SECTION', section: section, payload: value });
@@ -63,68 +69,33 @@ export default function GettingStarted() {
     }
   };
 
-  
-  const handleChildChange = (childId, field) => (value) => {
-    //looks through previous list of children to find the current one to update
+  const handleChildChange = (childKey, field) => (value) => {
     setChildren(prev => prev.map(child =>
-      //once the child to update is found, return child with a new value and errors cleared
-      child.id === childId
+      child.key === childKey
         ? { ...child, [field]: value, errors: { ...(child.errors ?? {}), [field]: '' } }
         : child
     ));
   };
 
   const addChild = () => {
-    const newId = Math.max(...children.map(c => c.id), 0) + 1;
-    setChildren(prev => [...prev, { id: newId, firstName: '', lastName: '', dateOfBirth: '', classification: '', errors: {} }]);
+    const newKey = Math.max(...children.map(c => c.key), 0) + 1;
+    setChildren(prev => [...prev, {
+      key: newKey,
+      fName: '',
+      lName: '',
+      birthday: '',
+      isEmancipatedAdult: '',
+      errors: {}
+    }]);
   };
 
-  const removeChild = (childId) => {
+  const removeChild = (childKey) => {
     if (children.length > 1) {
-      setChildren(prev => prev.filter(child => child.id !== childId));
+      setChildren(prev => prev.filter(child => child.key !== childKey));
     }
   };
 
-  const validateForm = () => {
-    let isValid = true;
-
-    if (!safetyConcern) {
-      setSafetyConcernError('Please select an option to continue');
-      isValid = false;
-    } else {
-      setSafetyConcernError('');
-    }
-
-    const parentErrors = {};
-    if (!formData.firstName?.trim()) { parentErrors.firstName = 'First name is required'; isValid = false; }
-    if (!formData.lastName?.trim())  { parentErrors.lastName  = 'Last name is required';  isValid = false; }
-    if (!formData.phone?.trim())     { parentErrors.phone     = 'Phone number is required'; isValid = false; }
-    if (!formData.address?.trim())   { parentErrors.address   = 'Address is required';    isValid = false; }
-
-    //if validation for any of the parenting section fails, write the  parentErrors to the FormContext
-    dispatch({ type: 'UPDATE_SECTION', section: 'parents', payload: { errors: parentErrors } });
-
-    if (!caseFilingStatus) {
-      setCaseFilingError('Please select an option to continue');
-      isValid = false;
-    } else {
-      setCaseFilingError('');
-    }
-
-    const updatedChildren = children.map((child, index) => {
-      const childErrors = {};
-      if (!child.firstName.trim())  { childErrors.firstName       = `Child ${index + 1} first name is required`;    isValid = false; }
-      if (!child.lastName.trim())   { childErrors.lastName        = `Child ${index + 1} last name is required`;     isValid = false; }
-      if (!child.dateOfBirth)       { childErrors.dateOfBirth     = `Child ${index + 1} date of birth is required`; isValid = false; }
-      if (!child.classification)    { childErrors.classification  = `Child ${index + 1} classification is required`; isValid = false; }
-      return { ...child, errors: childErrors };
-    });
-    setChildren(updatedChildren);
-
-    return isValid;
-  };
-
-  //helps remember and update values for components: submitAttempted is the value, setSubmitAttempted is a function to chnage the value
+  // Tracks when a failed submission happens - controls when to show validation errors
   const [submitAttempted, setSubmitAttempted] = useState(false);
 
   useEffect(() => {
@@ -136,27 +107,6 @@ export default function GettingStarted() {
       setSubmitAttempted(false);
     }
   }, [submitAttempted]); 
-
-  const handleNext = () => {
-    const valid = validateForm();
-    if (valid) {
-      dispatch({ type: 'UPDATE_CHILDREN', payload: children });
-      navigate('/parental-rights');
-    } else {
-      setSubmitAttempted(true);
-    }
-  };
-
-  const handleBack = () => {
-    dispatch({ type: 'UPDATE_CHILDREN', payload: children });
-    dispatch({ type: 'UPDATE_SECTION', section: 'parents', payload: { errors: {} } });
-    navigate('/');
-  };
-
-  useEffect(() => {
-    setOnNext(handleNext);
-    setOnBack(handleBack);
-  }, [state, children, safetyConcern, caseFilingStatus]);
 
   return (
     <div className="page-container">
@@ -182,13 +132,12 @@ export default function GettingStarted() {
               />
               <RadioQuestion
                 question="Would sharing information from this questionnaire with your co-parent make you fear for your safety in any way?"
-                name="safetyConcern"
-                value={safetyConcern}
-                onChange={handleRadioChange('safetyConcern')}
-                error={safetyConcernError}
+                name="allowSharing"
+                value={allowSharing}
+                onChange={handleFormChange('plan', 'allowSharing')}
                 options={[
-                  { value: 'yes', label: 'Yes, please keep my information private', description: 'You and your co-parent will fill out the form separately' },
-                  { value: 'no',  label: 'No, I wish to collaborate with my co-parent', description: 'Your answers will be shared with your co-parent' },
+                  { value: "false", label: 'Yes, please keep my information private', description: 'You and your co-parent will fill out the form separately' },
+                  { value: "true",  label: 'No, I wish to collaborate with my co-parent', description: 'Your answers will be shared with your co-parent' },
                 ]}
               />
             </section>
@@ -274,94 +223,96 @@ export default function GettingStarted() {
                 title="Your Children"
                 intro="Please list the children you are including in this shared parenting plan."
               />
-              {children.map((child, index) => (
-                <Card key={child.id}>
-                  <CardHeader>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <CardTitle>{`Child ${index + 1}`}</CardTitle>
-                      {children.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeChild(child.id)}
-                          className="remove-child-btn"
-                          aria-label={`Remove Child ${index + 1}`}
-                        >
-                          Remove
-                        </button>
-                      )}
-                    </div>
-                  </CardHeader>
-
-                  <CardContent>
-                    <form noValidate>
-                      <div className="form-row">
-                        <TextInput
-                          id={`child-${child.id}-firstName`}
-                          label="First Name"
-                          type="text"
-                          value={child.firstName}
-                          onChange={handleChildChange(child.id, 'firstName')}
-                          required
-                          placeholder="First Name"
-                          autoComplete="given-name"
-                          error={child.errors?.firstName ?? ''}
-                        />
-                        <TextInput
-                          id={`child-${child.id}-lastName`}
-                          label="Last Name"
-                          type="text"
-                          value={child.lastName}
-                          onChange={handleChildChange(child.id, 'lastName')}
-                          required
-                          placeholder="Last Name"
-                          autoComplete="family-name"
-                          error={child.errors?.lastName ?? ''}
-                        />
+                {children.map((child, index) => (
+                  <Card key={child.key}>
+                    <CardHeader>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <CardTitle>{`Child ${index + 1}`}</CardTitle>
+                        {children.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeChild(child.key)}
+                            className="remove-child-btn"
+                            aria-label={`Remove Child ${index + 1}`}
+                          >
+                            Remove
+                          </button>
+                        )}
                       </div>
+                    </CardHeader>
 
-                      <DatePicker
-                        id={`child-${child.id}-dateOfBirth`}
-                        label="Date of Birth"
-                        value={child.dateOfBirth}
-                        onChange={handleChildChange(child.id, 'dateOfBirth')}
-                        required
-                        max={new Date().toISOString().split('T')[0]}
-                        error={child.errors?.dateOfBirth ?? ''}
-                      />
+                    <CardContent>
+                      <form noValidate>
+                        <div className="form-row">
+                          <TextInput
+                            id={`child-${child.key}-firstName`}
+                            label="First Name"
+                            type="text"
+                            value={child.fName}
+                            onChange={handleChildChange(child.key, 'fName')}
+                            required
+                            placeholder="First Name"
+                            autoComplete="given-name"
+                            error={submitAttempted ? child.errors?.fName : ''}
+                          />
 
-                      <div className="child-classification">
-                        <label className="classification-label">Child Classification</label>
-                        <div className="radio-group">
-                          <label className="radio-option">
-                            <input
-                              type="radio"
-                              name={`child-${child.id}-classification`}
-                              value="minor"
-                              checked={child.classification === 'minor'}
-                              onChange={(e) => handleChildChange(child.id, 'classification')(e.target.value)}
-                            />
-                            <span>
-                              The child is a minor and/or mentally or physically disabled
-                              incapable of supporting or maintaining themselves
-                            </span>
-                          </label>
-                          <label className="radio-option">
-                            <input
-                              type="radio"
-                              name={`child-${child.id}-classification`}
-                              value="emancipated"
-                              checked={child.classification === 'emancipated'}
-                              onChange={(e) => handleChildChange(child.id, 'classification')(e.target.value)}
-                            />
-                            <span>The child is an emancipated adult</span>
-                          </label>
+                          <TextInput
+                            id={`child-${child.key}-lastName`}
+                            label="Last Name"
+                            type="text"
+                            value={child.lName}
+                            onChange={handleChildChange(child.key, 'lName')}
+                            required
+                            placeholder="Last Name"
+                            autoComplete="family-name"
+                            error={submitAttempted ? child.errors?.lName : ''}
+                          />
+                        </div>
+
+                        <DatePicker
+                          id={`child-${child.key}-dateOfBirth`}
+                          label="Date of Birth"
+                          value={child.birthday}
+                          onChange={handleChildChange(child.key, 'birthday')}
+                          required
+                          max={new Date().toISOString().split('T')[0]}
+                          error={submitAttempted ? child.errors?.birthday : ''}
+                        />
+
+                        <div className="child-classification">
+                          <label className="classification-label">Child Classification</label>
+                          <div className="radio-group">
+                            <label className="radio-option">
+                              <input
+                                type="radio"
+                                name={`child-${child.key}-classification`}
+                                value="minor"
+                                checked={child.isEmancipatedAdult === 'minor'}
+                                onChange={(e) => handleChildChange(child.key, 'isEmancipatedAdult')(e.target.value)}
+                              />
+                              <span>
+                                The child is a minor and/or mentally or physically disabled
+                                incapable of supporting or maintaining themselves
+                              </span>
+                            </label>
+
+                            <label className="radio-option">
+                              <input
+                                type="radio"
+                                name={`child-${child.key}-classification`}
+                                value="emancipated"
+                                checked={child.isEmancipatedAdult === 'emancipated'}
+                                onChange={(e) => handleChildChange(child.key, 'isEmancipatedAdult')(e.target.value)}
+                              />
+                              <span>The child is an emancipated adult</span>
+                            </label>
+                          </div>
                         </div>
                         {child.errors?.classification && (
                           <p className="child-classification-error">
                             {child.errors.classification}
                           </p>
                         )}
-                      </div>
                     </form>
                   </CardContent>
                 </Card>

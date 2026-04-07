@@ -18,8 +18,8 @@ function getEmailConfig() {
     pass: process.env.EMAIL_SMTP_PASS || process.env.EMAIL_PASS,
     from: process.env.EMAIL_FROM_ADDRESS
       || (process.env.EMAIL_SMTP_USER || process.env.EMAIL_USER
-        ? `"ShareCare" <${process.env.EMAIL_SMTP_USER || process.env.EMAIL_USER}>`
-        : null),
+      ? `"ShareCare" <${process.env.EMAIL_SMTP_USER || process.env.EMAIL_USER}>`
+      : null),
     replyTo: process.env.EMAIL_REPLY_TO || undefined,
   };
 
@@ -29,8 +29,8 @@ function getEmailConfig() {
     EMAIL_PASS: config.pass,
     EMAIL_FROM_ADDRESS: config.from,
   })
-    .filter(([, value]) => !value)
-    .map(([key]) => key);
+  .filter(([, value]) => !value)
+  .map(([key]) => key);
 
   if (missing.length > 0) {
     throw new Error(`Email service is not configured. Missing: ${missing.join(', ')}`);
@@ -86,7 +86,7 @@ async function sendInviteEmail(toAddress, inviteLink) {
         <p>This link expires in 7 days.</p>
       `
       : '<p>This is a test email from <strong>ShareCare</strong> using Gmail SMTP.</p>',
-  });
+    });
 
   return {
     accepted: result.accepted,
