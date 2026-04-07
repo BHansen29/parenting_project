@@ -8,26 +8,39 @@ const verifyToken = require('../middleware/verifyToken');
 router.post('/', verifyToken, async (req, res) => {
   try {
     const userID = req.user.uid;
-    const { startQuestionId } = req.body;
-
-    // startQuestionId is required to know where to begin
-    if (!startQuestionId) {
-      return res.status(400).json({ error: 'startQuestionId is required' });
-    }
-
-    // Make sure that question actually exists
-    const startQuestion = await Question.findById(startQuestionId);
-    if (!startQuestion) {
-      const errorMessage = { error: 'Starting question not found' };
-      return res.status(400).json(errorMessage);
-    }
-
-    const plan = await Plan.create({ userID, currentQuestion: startQuestionId });
+    const plan = await Plan.create({ userID });
     res.status(201).json(plan);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
 });
+
+// POST /api/plan/delete - Delete a plan with the pid specified in request body
+router.post('/delete', verifyToken, async (req, res) => {
+  try {
+    const { userID, pID } = req.body;
+    
+    const deletedItem = await Plan.findOneAndDelete({_id: pID, userID: userID});
+    if (deletedItem) {
+      return res.status(200).json({ message: 'Plan deleted successfully' });
+    } else {
+      return res.status(401).json({ message: 'Unauthorized to delete this plan or plan not found' });
+    }
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// GET /api/:uid/all -> Get all plans a user currently owns
+router.get('/:uid/all', verifyToken, async (req, res) => {
+  try {
+    const plans = await Plan.find({userID: req.params.uid});
+    res.status(200).json(plans)
+  } catch (error) {
+    res.status(400).json({error: error.message})
+  }
+});
+
 
 // GET /api/plan/:planId/current -> Get the current question for a plan
 router.get('/:planId/current', verifyToken, async (req, res) => {
@@ -52,6 +65,26 @@ router.get('/:planId/current', verifyToken, async (req, res) => {
   }
 });
 
+// POST /api/plan/updateCurrent/:planId/:currQId - Update a plan's currentQuestion field to be currQId
+router.post('/updateCurrent/:planId/:currQId', verifyToken, async (req, res) => {
+  try {
+    const { planId, currQId } = req.params;
+    const plan = await Plan.findById(planId);
+    if (!plan) {
+      return res.status(404).json({ message: 'Plan not found'})
+    }
+    if (plan.userID !== req.user.uid) {
+      return res.status(401).json({ message: 'Unauthorized to update this plan' }); 
+    }
+    plan.currentQuestion = currQId;
+    await plan.save()
+    return res.status(200).json({ message: 'Plan updated successfully' });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+
 // Add an answer to the plan
 // POST/api/plan/:planId/answer
 router.post('/:planId/answer', verifyToken, async (req, res) => {
@@ -65,9 +98,22 @@ router.post('/:planId/answer', verifyToken, async (req, res) => {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
-    //Store the question into the plan
-    const {questionID, answer} = req.body
-    plan.children.push({questionID, answer})
+    const {qKey, answer} = req.body
+    const index = plan.children.findIndex(userAnswer => userAnswer.qKey === qKey)
+    const oldAnswer = plan.children[index]?.answer
+    if (!oldAnswer) {
+      // case for first question answered in plan
+      plan.children.push({qKey: qKey, answer: answer})
+    } else if (oldAnswer.answer !== answer) {
+      // case for changing exsisting response
+      plan.children[index] = {qKey: qKey, answer: answer}
+      // this chops off everything after the new answer since our "path" through the decision tree may be different
+      // TODO: maybe update so that it only chops off questions if they aren't defaultNextQuestions?
+      plan.children.splice(index + 1)
+    } else {
+      // no change to question required since answer matches
+      return res.status(200).json(plan)
+    }
 
     //Save the plan and write back to DB
     await plan.save();

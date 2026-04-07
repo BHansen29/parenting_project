@@ -34,6 +34,9 @@ services:
       context: .
       dockerfile: frontend/Dockerfile
     container_name: parenting-frontend
+    command: >
+      sh -c "echo 'Frontend available at http://127.0.0.1:5173/' &&
+      npm run dev -- --host 0.0.0.0"
     volumes:
       - .:/app
       - /app/frontend/node_modules

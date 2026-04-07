@@ -2,31 +2,31 @@ const nodemailer = require('nodemailer');
 
 let transporter;
 
-// Gmail SMTP env values arrive as strings, so normalize the secure flag once.
-function parseSecureFlag(value) {
-  if (typeof value !== 'string') {
-    return true;
-  }
-
-  return value.toLowerCase() !== 'false';
-}
-
-// Read and validate the SMTP configuration used by Nodemailer.
+// Support the current EMAIL_SMTP_* contract and older EMAIL_* names.
 function getEmailConfig() {
+  const port = Number(process.env.EMAIL_SMTP_PORT || process.env.EMAIL_PORT || 465);
+  const secureFlag = process.env.EMAIL_SMTP_SECURE;
+  const secure = typeof secureFlag === 'string'
+    ? secureFlag.toLowerCase() !== 'false'
+    : port === 465;
+
   const config = {
-    host: process.env.EMAIL_SMTP_HOST,
-    port: Number(process.env.EMAIL_SMTP_PORT || 465),
-    secure: parseSecureFlag(process.env.EMAIL_SMTP_SECURE),
-    user: process.env.EMAIL_SMTP_USER,
-    pass: process.env.EMAIL_SMTP_PASS,
-    from: process.env.EMAIL_FROM_ADDRESS,
+    host: process.env.EMAIL_SMTP_HOST || process.env.EMAIL_HOST,
+    port,
+    secure,
+    user: process.env.EMAIL_SMTP_USER || process.env.EMAIL_USER,
+    pass: process.env.EMAIL_SMTP_PASS || process.env.EMAIL_PASS,
+    from: process.env.EMAIL_FROM_ADDRESS
+      || (process.env.EMAIL_SMTP_USER || process.env.EMAIL_USER
+        ? `"ShareCare" <${process.env.EMAIL_SMTP_USER || process.env.EMAIL_USER}>`
+        : null),
     replyTo: process.env.EMAIL_REPLY_TO || undefined,
   };
 
   const missing = Object.entries({
-    EMAIL_SMTP_HOST: config.host,
-    EMAIL_SMTP_USER: config.user,
-    EMAIL_SMTP_PASS: config.pass,
+    EMAIL_HOST: config.host,
+    EMAIL_USER: config.user,
+    EMAIL_PASS: config.pass,
     EMAIL_FROM_ADDRESS: config.from,
   })
     .filter(([, value]) => !value)
@@ -37,14 +37,13 @@ function getEmailConfig() {
   }
 
   if (Number.isNaN(config.port)) {
-    throw new Error('EMAIL_SMTP_PORT must be a valid number');
+    throw new Error('Email port must be a valid number');
   }
 
   return config;
 }
 
-// Lazily create the transporter so routes can import this service without
-// immediately failing before env vars are loaded.
+// Create the SMTP transporter lazily so route imports do not fail before env vars load.
 function getTransporter() {
   if (!transporter) {
     const config = getEmailConfig();
@@ -62,20 +61,31 @@ function getTransporter() {
   return transporter;
 }
 
-// Send a simple invite-style email. The body is still placeholder content for now.
-async function sendInviteEmail(toAddress) {
+async function sendInviteEmail(toAddress, inviteLink) {
   if (!toAddress) {
     throw new Error('A recipient email address is required');
   }
 
   const config = getEmailConfig();
+  const hasInviteLink = typeof inviteLink === 'string' && inviteLink.trim().length > 0;
+
   const result = await getTransporter().sendMail({
     from: config.from,
     to: toAddress,
     replyTo: config.replyTo,
-    subject: 'ShareCare email delivery check',
-    text: 'This is a test email from ShareCare using Gmail SMTP.',
-    html: '<p>This is a test email from <strong>ShareCare</strong> using Gmail SMTP.</p>',
+    subject: hasInviteLink
+      ? 'You have been invited to ShareCare'
+      : 'ShareCare email delivery check',
+    text: hasInviteLink
+      ? `You have been invited to collaborate on a ShareCare parenting plan.\n\nAccept your invitation here:\n${inviteLink}\n\nThis link expires in 7 days.`
+      : 'This is a test email from ShareCare using Gmail SMTP.',
+    html: hasInviteLink
+      ? `
+        <p>You have been invited to collaborate on a <strong>ShareCare</strong> parenting plan.</p>
+        <p><a href="${inviteLink}">Accept your invitation</a></p>
+        <p>This link expires in 7 days.</p>
+      `
+      : '<p>This is a test email from <strong>ShareCare</strong> using Gmail SMTP.</p>',
   });
 
   return {
