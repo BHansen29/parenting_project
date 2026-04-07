@@ -4,6 +4,14 @@ export const FormContext = createContext(null);
 
 const initialState = {
   safetyConcern: '',
+  /* 
+    Added Collaborative Mode values 
+    '' -> not yet set (user hasn't reached the question)
+    'locked-individual' — safety concern flagged; collaboration permanently disabled for this session
+    'individual'        — no safety concern; user chose to work alone
+    'collaborative'     — no safety concern; user chose to invite co-parent
+  */
+  collaborationMode: '',
   caseFilingStatus: '',
   flags: {},
   parents: {
