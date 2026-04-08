@@ -8,7 +8,6 @@ import Header from '../components/common/Header';
 import InviteModal from '../components/common/InviteModal';
 import './Dashboard.css';
 import { API_BASE_URL, buildApiUrl } from '../lib/apiClient';
-import { useForm } from '../hooks/useForm';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -24,8 +23,6 @@ export default function Dashboard() {
   //   'collaborative'     — user chose collaborative; invite button works normally
   //   ''                  — not yet set (user hasn't completed Getting Started)
   const collaborationMode = state.collaborationMode ?? '';
-
-  const { dispatch } = useForm();
 
   // Mock plan data — replace with real data fetching later
   const [plans, setPlans] = useState([{ id: 1, name: 'Loading', status: 'DRAFT', lastModified: '3/3/2026'}]);
