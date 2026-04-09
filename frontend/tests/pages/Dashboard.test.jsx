@@ -8,8 +8,12 @@ import { renderWithRouter } from '../../src/utils/renderWithRouter'
 
 vi.mock('firebase/auth', () => ({
   onAuthStateChanged: vi.fn((auth, callback) => {
-    callback({ uid: '123', email: 'test@example.com' })
-    return vi.fn() // unsubscribe
+    callback({ 
+      uid: '123', 
+      email: 'test@example.com',
+      getIdToken: vi.fn().mockResolvedValue('fake-token'),  // add this
+    })
+    return vi.fn()
   }),
   signOut: vi.fn(() => Promise.resolve()),
   getAuth: vi.fn(),

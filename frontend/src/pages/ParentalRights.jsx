@@ -92,7 +92,7 @@ export default function ParentalRights() {
 
         dispatch({
             type: 'UPDATE_SECTION',
-            section: 'parentalRights',
+            section: 'parental_rights',
             payload: { errors: formErrors }
         });
 
@@ -110,7 +110,7 @@ export default function ParentalRights() {
    const handleBack = () => {
     dispatch({
       type: 'UPDATE_SECTION',
-      section: 'parentalRights',
+      section: 'parental_rights',
       payload: { errors: {} }
     });
     navigate('/getting-started');
