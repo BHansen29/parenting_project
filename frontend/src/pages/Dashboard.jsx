@@ -386,7 +386,6 @@ export default function Dashboard() {
                 {showInviteUI && (
                   <button className="plan-card__invite-btn" onClick={() => { setActiveCaseId(plan.caseId || null); setIsInviteOpen(true); }}>
                   <UserPlus size={14} />
-                    <UserPlus size={14} />
                     {collaborationMode === 'individual' ? 'Switch & Invite' : 'Invite Parent'}
                   </button>
                 )}

@@ -15,32 +15,21 @@ import SafetyPrivacyQuestion from '../components/forms/SafetyPrivacyQuestion';
 
 export default function GettingStarted() {
   const navigate = useNavigate();
-  const { state, dispatch } = useForm(); //state reads data, dispatch writes data
+  const { state, dispatch } = useForm();
   const { setOnNext, setOnBack } = useNavigation();
 
-  // Parents stay in global context
   const formData = state.parents ?? { name: '', secondParentName: '', errors: {} };
-  const collaborationMode = state.collaborationMode ?? ''; //allowSharing changed to collabMode to allow for more values (individual, collaborative, locked-individual)
+  const collaborationMode = state.collaborationMode ?? '';
   const caseFilingStatus = state.caseFilingStatus ?? '';
   const errors = formData.errors ?? {};
 
-  //these errors use the local useState
-  const [collaborationModeError, setCollaborationModeError] = useState(''); //changed to collab mode error
+  const [collaborationModeError, setCollaborationModeError] = useState('');
   const [caseFilingError, setCaseFilingError] = useState('');
 
   const caseFilingFlag = useSectionFlag('caseFilingStatus');
   const childrenFlag = useSectionFlag('children');
 
-  //pull children from the stored state, calling setChildren will add a new child to the existing list
   const [children, setChildren] = useState(() => {
-    let startKey = 1
-    return state.plan.children?.length > 0
-      ? state.plan.children.map(child => {
-        const newKid = {...child, isEmancipatedAdult: child.isEmancipatedAdult ? "emancipated" : "minor", key: startKey}
-        startKey += 1
-        return newKid
-      })
-      : [{ key: startKey, fName: '', lName: '', birthday: '', isEmancipatedAdult: '', errors: {} }];
     let startKey = 1
     return state.plan.children?.length > 0
       ? state.plan.children.map(child => {
@@ -53,48 +42,39 @@ export default function GettingStarted() {
 
   useEffect(() => {
     dispatch({ type: 'UPDATE_SECTION', section: 'parents', payload: { errors: {} } });
-    setCollaborationModeError(''); //changed to collab mode error
+    setCollaborationModeError('');
     setCaseFilingError('');
     setChildren(prev => prev.map(c => ({ ...c, errors: {} })));
-  }, []); //clears all errors as soon as the page loads
+  }, []);
 
   useEffect(() => {
     const fixedChildren = children.map(child => ({...child, isEmancipatedAdult: child.isEmancipatedAdult === "emancipated"})) 
     dispatch({ type: 'UPDATE_SECTION', section: "plan", payload: {children: fixedChildren} });
   }, [children]);
-    const fixedChildren = children.map(child => ({...child, isEmancipatedAdult: child.isEmancipatedAdult === "emancipated"})) 
-    dispatch({ type: 'UPDATE_SECTION', section: "plan", payload: {children: fixedChildren} });
-  }, [children]);
+
+  const handleCollaborationModeChange = (mode) => {
+    dispatch({ type: 'UPDATE_SECTION', section: 'collaborationMode', payload: mode });
+    if (mode) setCollaborationModeError('');
+  };
 
   const handleRadioChange = (section) => (value) => {
     dispatch({ type: 'UPDATE_SECTION', section: section, payload: value });
-    //clear the relevant error when user makes a selection
-    //removed safety concern error - moved collab mode error to a new function 
     if (section === 'caseFilingStatus') setCaseFilingError('');
   };
 
   const handleFormChange = (section, field) => (value) => {
-    //updates the formContext with the new returned value
     dispatch({ type: 'UPDATE_SECTION', section: section, payload: { [field]: value } });
     if (errors[field]) {
-      //clear previous errors for a field since it has been changed
       dispatch({ type: 'UPDATE_SECTION', section: section, payload: { errors: { ...errors, [field]: '' } } });
     }
   };
 
-  const handleChildChange = (childKey, field) => (value) => {
   const handleChildChange = (childKey, field) => (value) => {
     setChildren(prev => prev.map(child =>
       child.key === childKey
         ? { ...child, [field]: value, errors: { ...(child.errors ?? {}), [field]: '' } }
         : child
     ));
-  };
-
-  //added this - will create an error if the user does not confirm their choice to not collaborate
-  const handleCollaborationModeChange = (value) => {
-    dispatch({ type: 'UPDATE_SECTION', section: 'collaborationMode', payload: value });
-    setCollaborationModeError('');
   };
 
   const addChild = () => {
@@ -107,30 +87,14 @@ export default function GettingStarted() {
       isEmancipatedAdult: '',
       errors: {}
     }]);
-    const newKey = Math.max(...children.map(c => c.key), 0) + 1;
-    setChildren(prev => [...prev, {
-      key: newKey,
-      fName: '',
-      lName: '',
-      birthday: '',
-      isEmancipatedAdult: '',
-      errors: {}
-    }]);
   };
 
-  const removeChild = (childKey) => {
   const removeChild = (childKey) => {
     if (children.length > 1) {
       setChildren(prev => prev.filter(child => child.key !== childKey));
     }
   };
 
-  // Tracks when a failed submission happens - controls when to show validation errors
-      setChildren(prev => prev.filter(child => child.key !== childKey));
-    }
-  };
-
-  // Tracks when a failed submission happens - controls when to show validation errors
   const [submitAttempted, setSubmitAttempted] = useState(false);
 
   useEffect(() => {
@@ -165,7 +129,7 @@ export default function GettingStarted() {
                 title="Safety & Privacy"
                 intro="Your safety is our priority."
               />
-              <SafetyPrivacyQuestion //changed from radio question to the new safety privacy question component
+              <SafetyPrivacyQuestion
                 collaborationMode={collaborationMode}
                 onModeChange={handleCollaborationModeChange} 
                 error={collaborationModeError} 
@@ -272,51 +236,7 @@ export default function GettingStarted() {
                         )}
                       </div>
                     </CardHeader>
-                {children.map((child, index) => (
-                  <Card key={child.key}>
-                    <CardHeader>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <CardTitle>{`Child ${index + 1}`}</CardTitle>
-                        {children.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => removeChild(child.key)}
-                            className="remove-child-btn"
-                            aria-label={`Remove Child ${index + 1}`}
-                          >
-                            Remove
-                          </button>
-                        )}
-                      </div>
-                    </CardHeader>
 
-                    <CardContent>
-                      <form noValidate>
-                        <div className="form-row">
-                          <TextInput
-                            id={`child-${child.key}-firstName`}
-                            label="First Name"
-                            type="text"
-                            value={child.fName}
-                            onChange={handleChildChange(child.key, 'fName')}
-                            required
-                            placeholder="First Name"
-                            autoComplete="given-name"
-                            error={submitAttempted ? child.errors?.fName : ''}
-                          />
-
-                          <TextInput
-                            id={`child-${child.key}-lastName`}
-                            label="Last Name"
-                            type="text"
-                            value={child.lName}
-                            onChange={handleChildChange(child.key, 'lName')}
-                            required
-                            placeholder="Last Name"
-                            autoComplete="family-name"
-                            error={submitAttempted ? child.errors?.lName : ''}
-                          />
-                        </div>
                     <CardContent>
                       <form noValidate>
                         <div className="form-row">
@@ -354,44 +274,7 @@ export default function GettingStarted() {
                           max={new Date().toISOString().split('T')[0]}
                           error={submitAttempted ? child.errors?.birthday : ''}
                         />
-                        <DatePicker
-                          id={`child-${child.key}-dateOfBirth`}
-                          label="Date of Birth"
-                          value={child.birthday}
-                          onChange={handleChildChange(child.key, 'birthday')}
-                          required
-                          max={new Date().toISOString().split('T')[0]}
-                          error={submitAttempted ? child.errors?.birthday : ''}
-                        />
 
-                        <div className="child-classification">
-                          <label className="classification-label">Child Classification</label>
-                          <div className="radio-group">
-                            <label className="radio-option">
-                              <input
-                                type="radio"
-                                name={`child-${child.key}-classification`}
-                                value="minor"
-                                checked={child.isEmancipatedAdult === 'minor'}
-                                onChange={(e) => handleChildChange(child.key, 'isEmancipatedAdult')(e.target.value)}
-                              />
-                              <span>
-                                The child is a minor and/or mentally or physically disabled
-                                incapable of supporting or maintaining themselves
-                              </span>
-                            </label>
-
-                            <label className="radio-option">
-                              <input
-                                type="radio"
-                                name={`child-${child.key}-classification`}
-                                value="emancipated"
-                                checked={child.isEmancipatedAdult === 'emancipated'}
-                                onChange={(e) => handleChildChange(child.key, 'isEmancipatedAdult')(e.target.value)}
-                              />
-                              <span>The child is an emancipated adult</span>
-                            </label>
-                          </div>
                         <div className="child-classification">
                           <label className="classification-label">Child Classification</label>
                           <div className="radio-group">
@@ -426,10 +309,10 @@ export default function GettingStarted() {
                             {child.errors.classification}
                           </p>
                         )}
-                    </form>
-                  </CardContent>
-                </Card>
-              ))}
+                      </form>
+                    </CardContent>
+                  </Card>
+                ))}
 
               <button
                 type="button"
