@@ -2,6 +2,7 @@ import { Card, CardHeader, CardDescription, CardContent } from '../common/card';
 import RadioButton from './RadioButton';
 import FlagButton from './FlagButton';
 import TextInput from './TextInput';
+import Disclaimer from './Disclaimer';
 
 /**
  * A complete radio-button question card with optional flag, validation error,
@@ -14,8 +15,9 @@ import TextInput from './TextInput';
  * @param {Array}    options           - [{ value, label, description? }]
  * @param {object}   flag              - Optional flag hook result: { isFlagged, toggleFlag }
  * @param {string}   error             - Optional validation error message
- * @param {object}   conditionalInput  - Optional text input shown when a specific option is chosen:
- *                                       { triggerValue, id, label, value, onChange, placeholder }
+ * @param {object}   conditionalInput  - Optional text input shown when a specific option is chosen:{ triggerValue, id, label, value, onChange, placeholder }
+ * @param {string}   disclaimer        - Optional disclaimer text shown below the options
+ * @param {string}   disclaimerVariant - Optional variant for the disclaimer ('info' | 'warning'). 
  */
 export default function RadioQuestion({
   question,
@@ -26,6 +28,8 @@ export default function RadioQuestion({
   flag,
   error,
   conditionalInput,
+  disclaimer,
+  disclaimerVariant,
 }) {
   return (
     <Card>
@@ -65,7 +69,11 @@ export default function RadioQuestion({
             />
           )}
         </div>
-
+        {disclaimer && (
+          <Disclaimer variant={disclaimerVariant}>
+            {disclaimer}
+          </Disclaimer>
+        )}
         {error && (
           <div className="radio-group-error" role="alert">
             {error}

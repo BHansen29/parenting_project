@@ -25,7 +25,7 @@ const InfoIcon = () => (
         <div className="tax-disclaimer__icon">
           {variant === 'warning' ? <WarningIcon /> : <InfoIcon />}
         </div>
-        <p className="tax-disclaimer__text">{children}</p>
+        <div className="tax-disclaimer__text">{children}</div>
       </div>
     );
   }

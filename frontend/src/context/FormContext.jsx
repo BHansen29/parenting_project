@@ -3,15 +3,7 @@ import { createContext, useReducer, useEffect } from "react";
 export const FormContext = createContext(null);
 
 const initialState = {
-  safetyConcern: '',
-  /* 
-    Added Collaborative Mode values 
-    '' -> not yet set (user hasn't reached the question)
-    'locked-individual' — safety concern flagged; collaboration permanently disabled for this session
-    'individual'        — no safety concern; user chose to work alone
-    'collaborative'     — no safety concern; user chose to invite co-parent
-  */
-  collaborationMode: '',
+  collaborationMode: '', //added this
   caseFilingStatus: '',
   flags: {},
   parents: {
@@ -19,9 +11,10 @@ const initialState = {
     lastName: '',
     secondParentFirstName: '',
     secondParentLastName: '',
+    phone: '',
+    address: '',
     errors: {}
   },
-  children: [],
   parentingTime: { errors: {} },
   holidays: { errors: {} },
   decisionMaking: { errors: {} },
@@ -65,11 +58,6 @@ function formReducer(state, action) {
           ...state[action.section],
           ...action.payload
         }
-      };
-    case "UPDATE_CHILDREN":
-      return {
-        ...state,
-        children: action.payload
       };
     case "UPDATE_FLAG":
       return {

@@ -164,10 +164,6 @@ export default function Dashboard() {
   };
 
   // User confirmed they want to switch from individual to collaborative mode.
-  // TODO: When the invite feature branch is merged, this switch will need to
-  // handle the case where the user has already made progress in individual mode.
-  // Should answers be reset or left as-is? 
-  // Can previously sent invites be revoked or re-sent? 
   const handleConfirmSwitch = () => {
     dispatch({ type: 'UPDATE_SECTION', section: 'collaborationMode', payload: 'collaborative' });
     setShowSwitchPrompt(false);

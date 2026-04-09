@@ -4,26 +4,15 @@ import Disclaimer from './Disclaimer';
 
 // ─── SafetyPrivacyQuestion ────────────────────────────────────────────────────
 //
-// Handles the merged safety + collaboration question as a single self-contained unit.
+// There are three options for the collaborativeMode values: 
+//   'locked-individual'  (safety concern; no sharing at all)
+//   'collaborative'      (will allow sharing) 
+//   'individual'         (no safety concern but chose not to share)
 //
-// The three raw radio options map to collaborationMode values in FormContext:
-//   'yes'          → 'locked-individual'  (safety concern; no sharing at all)
-//   'collaborative'→ 'collaborative'      (happy to share)
-//   'no-private'   → 'individual'         (no safety concern but chose not to share)
-//
-// The 'no-private' option triggers an inline confirmation sub-flow before
-// committing to FormContext, encouraging the user to reconsider collaborating.
-// The raw selection is kept in local state so the confirmation panel can be shown
-// without persisting a half-decided value to FormContext.
-//
-// Props:
-//   collaborationMode — current value from FormContext (used to restore selection on back-nav)
-//   onModeChange      — callback to write the resolved collaborationMode to FormContext
-//   error             — validation error string shown below the radio group
+// If a user selects to work individually without a safety concern, confirm this choice by asking them to reconsider
 
 export default function SafetyPrivacyQuestion({ collaborationMode, onModeChange, error }) {
-  // Derive the initial raw selection from the persisted collaborationMode so
-  // the correct radio is checked when the user navigates back to this page.
+  // maps selected radio options to collab mode state
   const rawFromMode = (mode) => {
     if (mode === 'locked-individual') return 'yes';
     if (mode === 'collaborative')     return 'collaborative';
@@ -31,31 +20,36 @@ export default function SafetyPrivacyQuestion({ collaborationMode, onModeChange,
     return '';
   };
 
-  const [rawSelection, setRawSelection] = useState(rawFromMode(collaborationMode));
-  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [rawSelection, setRawSelection] = useState(rawFromMode(collaborationMode)); // saves selection locally at first to allow confirmation  before writing to global state
+  const [showConfirmation, setShowConfirmation] = useState(false); //tracks when confirmation is shown 
+  const [showWarning, setShowWarning] = useState(false); //tracks when warning is shown for safety concern option
 
+  //called whenever answer selection changes
   const handleRawChange = (value) => {
     setRawSelection(value);
     setShowConfirmation(false); // always reset confirmation when selection changes
 
     if (value === 'yes') {
       // Safety concern — lock to individual immediately, no confirmation needed
-      onModeChange('locked-individual');
+      onModeChange('locked-individual'); //updates global state
+      setShowWarning(true); //show the safety warning 
     } else if (value === 'collaborative') {
       onModeChange('collaborative');
     } else if (value === 'no-private') {
-      // Don't write to FormContext yet — wait for user to confirm via sub-flow
+      // wait for confirmation before updating global state
       onModeChange('');
-      setShowConfirmation(true);
+      setShowConfirmation(true); //show the confirmation now
     }
   };
 
+  //called if user confirms they want to keep information private (after selecting 'no-private' option)
   const handleConfirmPrivate = () => {
     // User is sure they don't want to collaborate
-    setShowConfirmation(false);
-    onModeChange('individual');
+    setShowConfirmation(false); //dismiss confirmation
+    onModeChange('individual'); //updates global state
   };
 
+  //called if user declines the confirmation and decides to collaborate instead
   const handleDeclinePrivate = () => {
     // User changed their mind — switch to collaborative
     setShowConfirmation(false);
@@ -104,7 +98,15 @@ export default function SafetyPrivacyQuestion({ collaborationMode, onModeChange,
         />
       </div>
 
-      {/* Inline confirmation sub-flow — only visible when third option is selected */}
+      {/* Show safety warning if user selects the safety concern option */}
+      {rawSelection === 'yes' && (
+        <Disclaimer variant="warning">
+          If you are in an unsafe relationship with your child's shared parent, this type of agreed plan may not be the best option. Please seek legal help or contact a local nonprofit for safety planning. For more information, please visit the <a href="https://www.supremecourt.ohio.gov" target="_blank" rel="noopener noreferrer">Supreme Court of Ohio website</a> or the <a href="https://www.supremecourt.ohio.gov/docs/JCS/domesticViolence/publications/DVAllocationParentalRights.pdf" target="_blank" rel="noopener noreferrer">Supreme Court of Ohio's Guide on Domestic Violence & Allocation of Parental Rights and Responsibilities</a>.
+        </Disclaimer>
+      )}
+
+
+      {/* Confirmation sub-flow — only visible when third option is selected */}
       {showConfirmation && (
         <div className="safety-privacy-question__confirmation">
           <p className="safety-privacy-question__confirmation-text">

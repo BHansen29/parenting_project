@@ -13,119 +13,97 @@ import RadioQuestion from '../components/forms/RadioQuestion';
 import Disclaimer from '../components/forms/Disclaimer';
 import SafetyPrivacyQuestion from '../components/forms/SafetyPrivacyQuestion';
 
-// ─── GettingStarted ───────────────────────────────────────────────────────────
-
 export default function GettingStarted() {
   const navigate = useNavigate();
-  const { state, dispatch } = useForm();
+  const { state, dispatch } = useForm(); //state reads data, dispatch writes data
   const { setOnNext, setOnBack } = useNavigation();
 
+  // Parents stay in global context
   const formData = state.parents ?? { name: '', secondParentName: '', errors: {} };
-  const collaborationMode = state.collaborationMode ?? '';
+  const collaborationMode = state.collaborationMode ?? ''; //allowSharing changed to collabMode to allow for more values (individual, collaborative, locked-individual)
   const caseFilingStatus = state.caseFilingStatus ?? '';
   const errors = formData.errors ?? {};
 
-  const [collaborationModeError, setCollaborationModeError] = useState('');
+  //these errors use the local useState
+  const [collaborationModeError, setCollaborationModeError] = useState(''); //changed to collab mode error
   const [caseFilingError, setCaseFilingError] = useState('');
 
   const caseFilingFlag = useSectionFlag('caseFilingStatus');
+  const childrenFlag = useSectionFlag('children');
 
+  //pull children from the stored state, calling setChildren will add a new child to the existing list
   const [children, setChildren] = useState(() => {
-    return state.children?.length > 0
-      ? state.children
-      : [{ id: 1, firstName: '', lastName: '', dateOfBirth: '', classification: '', errors: {} }];
+    let startKey = 1
+    return state.plan.children?.length > 0
+      ? state.plan.children.map(child => {
+        const newKid = {...child, isEmancipatedAdult: child.isEmancipatedAdult ? "emancipated" : "minor", key: startKey}
+        startKey += 1
+        return newKid
+      })
+      : [{ key: startKey, fName: '', lName: '', birthday: '', isEmancipatedAdult: '', errors: {} }];
   });
 
   useEffect(() => {
     dispatch({ type: 'UPDATE_SECTION', section: 'parents', payload: { errors: {} } });
-    setCollaborationModeError('');
+    setCollaborationModeError(''); //changed to collab mode error
     setCaseFilingError('');
     setChildren(prev => prev.map(c => ({ ...c, errors: {} })));
-  }, []);
+  }, []); //clears all errors as soon as the page loads
 
   useEffect(() => {
-    dispatch({ type: 'UPDATE_CHILDREN', payload: children });
+    const fixedChildren = children.map(child => ({...child, isEmancipatedAdult: child.isEmancipatedAdult === "emancipated"})) 
+    dispatch({ type: 'UPDATE_SECTION', section: "plan", payload: {children: fixedChildren} });
   }, [children]);
-
-  // Called by SafetyPrivacyQuestion whenever a final collaboration mode is resolved.
-  // An empty string means the user is mid-flow (third option, confirmation pending)
-  // and validation will catch it if they try to proceed.
-  const handleCollaborationModeChange = (mode) => {
-    dispatch({ type: 'UPDATE_SECTION', section: 'collaborationMode', payload: mode });
-    if (mode) setCollaborationModeError('');
-  };
 
   const handleRadioChange = (section) => (value) => {
     dispatch({ type: 'UPDATE_SECTION', section: section, payload: value });
+    //clear the relevant error when user makes a selection
+    //removed safety concern error - moved collab mode error to a new function 
     if (section === 'caseFilingStatus') setCaseFilingError('');
   };
 
   const handleFormChange = (section, field) => (value) => {
+    //updates the formContext with the new returned value
     dispatch({ type: 'UPDATE_SECTION', section: section, payload: { [field]: value } });
     if (errors[field]) {
+      //clear previous errors for a field since it has been changed
       dispatch({ type: 'UPDATE_SECTION', section: section, payload: { errors: { ...errors, [field]: '' } } });
     }
   };
 
-  const handleChildChange = (childId, field) => (value) => {
+  const handleChildChange = (childKey, field) => (value) => {
     setChildren(prev => prev.map(child =>
-      child.id === childId
+      child.key === childKey
         ? { ...child, [field]: value, errors: { ...(child.errors ?? {}), [field]: '' } }
         : child
     ));
   };
 
+  //added this - will create an error if the user does not confirm their choice to not collaborate
+  const handleCollaborationModeChange = (value) => {
+    dispatch({ type: 'UPDATE_SECTION', section: 'collaborationMode', payload: value });
+    setCollaborationModeError('');
+  };
+
   const addChild = () => {
-    const newId = Math.max(...children.map(c => c.id), 0) + 1;
-    setChildren(prev => [...prev, { id: newId, firstName: '', lastName: '', dateOfBirth: '', classification: '', errors: {} }]);
+    const newKey = Math.max(...children.map(c => c.key), 0) + 1;
+    setChildren(prev => [...prev, {
+      key: newKey,
+      fName: '',
+      lName: '',
+      birthday: '',
+      isEmancipatedAdult: '',
+      errors: {}
+    }]);
   };
 
-  const removeChild = (childId) => {
+  const removeChild = (childKey) => {
     if (children.length > 1) {
-      setChildren(prev => prev.filter(child => child.id !== childId));
+      setChildren(prev => prev.filter(child => child.key !== childKey));
     }
   };
 
-  const validateForm = () => {
-    let isValid = true;
-
-    // collaborationMode must be a resolved value — '' means the user either hasn't
-    // answered or is still in the confirmation sub-flow for the third option
-    if (!collaborationMode) {
-      setCollaborationModeError('Please select an option to continue');
-      isValid = false;
-    } else {
-      setCollaborationModeError('');
-    }
-
-    const parentErrors = {};
-    if (!formData.firstName?.trim()) { parentErrors.firstName = 'First name is required'; isValid = false; }
-    if (!formData.lastName?.trim())  { parentErrors.lastName  = 'Last name is required';  isValid = false; }
-    if (!formData.phone?.trim())     { parentErrors.phone     = 'Phone number is required'; isValid = false; }
-    if (!formData.address?.trim())   { parentErrors.address   = 'Address is required';    isValid = false; }
-
-    dispatch({ type: 'UPDATE_SECTION', section: 'parents', payload: { errors: parentErrors } });
-
-    if (!caseFilingStatus) {
-      setCaseFilingError('Please select an option to continue');
-      isValid = false;
-    } else {
-      setCaseFilingError('');
-    }
-
-    const updatedChildren = children.map((child, index) => {
-      const childErrors = {};
-      if (!child.firstName.trim())  { childErrors.firstName      = `Child ${index + 1} first name is required`;    isValid = false; }
-      if (!child.lastName.trim())   { childErrors.lastName       = `Child ${index + 1} last name is required`;     isValid = false; }
-      if (!child.dateOfBirth)       { childErrors.dateOfBirth    = `Child ${index + 1} date of birth is required`; isValid = false; }
-      if (!child.classification)    { childErrors.classification = `Child ${index + 1} classification is required`; isValid = false; }
-      return { ...child, errors: childErrors };
-    });
-    setChildren(updatedChildren);
-
-    return isValid;
-  };
-
+  // Tracks when a failed submission happens - controls when to show validation errors
   const [submitAttempted, setSubmitAttempted] = useState(false);
 
   useEffect(() => {
@@ -136,28 +114,7 @@ export default function GettingStarted() {
       if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
       setSubmitAttempted(false);
     }
-  }, [submitAttempted]);
-
-  const handleNext = () => {
-    const valid = validateForm();
-    if (valid) {
-      dispatch({ type: 'UPDATE_CHILDREN', payload: children });
-      navigate('/parental-rights');
-    } else {
-      setSubmitAttempted(true);
-    }
-  };
-
-  const handleBack = () => {
-    dispatch({ type: 'UPDATE_CHILDREN', payload: children });
-    dispatch({ type: 'UPDATE_SECTION', section: 'parents', payload: { errors: {} } });
-    navigate('/');
-  };
-
-  useEffect(() => {
-    setOnNext(handleNext);
-    setOnBack(handleBack);
-  }, [state, children, collaborationMode, caseFilingStatus]);
+  }, [submitAttempted]); 
 
   return (
     <div className="page-container">
@@ -181,15 +138,11 @@ export default function GettingStarted() {
                 title="Safety & Privacy"
                 intro="Your safety is our priority."
               />
-              <Card>
-                <CardContent>
-                  <SafetyPrivacyQuestion
-                    collaborationMode={collaborationMode}
-                    onModeChange={handleCollaborationModeChange}
-                    error={collaborationModeError}
-                  />
-                </CardContent>
-              </Card>
+              <SafetyPrivacyQuestion //changed from radio question to the new safety privacy question component
+                collaborationMode={collaborationMode}
+                onModeChange={handleCollaborationModeChange} 
+                error={collaborationModeError} 
+              />
             </section>
             <hr className="section-divider" />
 
@@ -249,27 +202,22 @@ export default function GettingStarted() {
                 title="Case Filing Status"
                 intro="Help us understand your legal situation."
               />
-              <Card>
-                <CardContent>
-                  <RadioQuestion
-                    question="Did you file the divorce, separation, or child custody case that led to this parenting plan?"
-                    name="caseFilingStatus"
-                    value={caseFilingStatus}
-                    onChange={handleRadioChange('caseFilingStatus')}
-                    error={caseFilingError}
-                    flag={caseFilingFlag}
-                    options={[
-                      { value: 'yes',     label: 'Yes, it was me',         description: 'You will be identified as Parent 1/Petitioner 1/Plaintiff in the parenting plan' },
-                      { value: 'no',      label: 'No, my co-parent filed', description: 'You will be identified as Parent 2/Petitioner 2/Defendant in the parenting plan' },
-                      { value: 'flagged', label: 'I need more information' },
-                      { value: 'defer',   label: 'Defer to co-parent' },
-                    ]}
-                  />
-                  <Disclaimer variant="info">
-                    Please note: ShareCare cannot confirm if your answer is correct or if there is an active divorce, separation, or child support case.
-                  </Disclaimer>
-                </CardContent>
-              </Card>
+              <RadioQuestion
+                question="Did you file the divorce, separation, or child custody case that led to this parenting plan?"
+                name="caseFilingStatus"
+                value={caseFilingStatus}
+                onChange={handleRadioChange('caseFilingStatus')}
+                error={caseFilingError}
+                flag={caseFilingFlag}
+                disclaimer="Please note: ShareCare cannot confirm if your answer is correct or if there is an active divorce, separation, or child support case."
+                disclaimerVariant="info"
+                options={[
+                  { value: 'yes',     label: 'Yes, it was me',         description: 'You will be identified as Parent 1/Petitioner 1/Plaintiff in the parenting plan' },
+                  { value: 'no',      label: 'No, my co-parent filed', description: 'You will be identified as Parent 2/Petitioner 2/Defendant in the parenting plan' },
+                  { value: 'flagged', label: 'I need more information' },
+                  { value: 'defer',   label: 'Defer to co-parent' },
+                ]}
+              />
             </section>
             <hr className="section-divider" />
 
@@ -280,94 +228,96 @@ export default function GettingStarted() {
                 title="Your Children"
                 intro="Please list the children you are including in this shared parenting plan."
               />
-              {children.map((child, index) => (
-                <Card key={child.id}>
-                  <CardHeader>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <CardTitle>{`Child ${index + 1}`}</CardTitle>
-                      {children.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeChild(child.id)}
-                          className="remove-child-btn"
-                          aria-label={`Remove Child ${index + 1}`}
-                        >
-                          Remove
-                        </button>
-                      )}
-                    </div>
-                  </CardHeader>
-
-                  <CardContent>
-                    <form noValidate>
-                      <div className="form-row">
-                        <TextInput
-                          id={`child-${child.id}-firstName`}
-                          label="First Name"
-                          type="text"
-                          value={child.firstName}
-                          onChange={handleChildChange(child.id, 'firstName')}
-                          required
-                          placeholder="First Name"
-                          autoComplete="given-name"
-                          error={child.errors?.firstName ?? ''}
-                        />
-                        <TextInput
-                          id={`child-${child.id}-lastName`}
-                          label="Last Name"
-                          type="text"
-                          value={child.lastName}
-                          onChange={handleChildChange(child.id, 'lastName')}
-                          required
-                          placeholder="Last Name"
-                          autoComplete="family-name"
-                          error={child.errors?.lastName ?? ''}
-                        />
+                {children.map((child, index) => (
+                  <Card key={child.key}>
+                    <CardHeader>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <CardTitle>{`Child ${index + 1}`}</CardTitle>
+                        {children.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeChild(child.key)}
+                            className="remove-child-btn"
+                            aria-label={`Remove Child ${index + 1}`}
+                          >
+                            Remove
+                          </button>
+                        )}
                       </div>
+                    </CardHeader>
 
-                      <DatePicker
-                        id={`child-${child.id}-dateOfBirth`}
-                        label="Date of Birth"
-                        value={child.dateOfBirth}
-                        onChange={handleChildChange(child.id, 'dateOfBirth')}
-                        required
-                        max={new Date().toISOString().split('T')[0]}
-                        error={child.errors?.dateOfBirth ?? ''}
-                      />
+                    <CardContent>
+                      <form noValidate>
+                        <div className="form-row">
+                          <TextInput
+                            id={`child-${child.key}-firstName`}
+                            label="First Name"
+                            type="text"
+                            value={child.fName}
+                            onChange={handleChildChange(child.key, 'fName')}
+                            required
+                            placeholder="First Name"
+                            autoComplete="given-name"
+                            error={submitAttempted ? child.errors?.fName : ''}
+                          />
 
-                      <div className="child-classification">
-                        <label className="classification-label">Child Classification</label>
-                        <div className="radio-group">
-                          <label className="radio-option">
-                            <input
-                              type="radio"
-                              name={`child-${child.id}-classification`}
-                              value="minor"
-                              checked={child.classification === 'minor'}
-                              onChange={(e) => handleChildChange(child.id, 'classification')(e.target.value)}
-                            />
-                            <span>
-                              The child is a minor and/or mentally or physically disabled
-                              incapable of supporting or maintaining themselves
-                            </span>
-                          </label>
-                          <label className="radio-option">
-                            <input
-                              type="radio"
-                              name={`child-${child.id}-classification`}
-                              value="emancipated"
-                              checked={child.classification === 'emancipated'}
-                              onChange={(e) => handleChildChange(child.id, 'classification')(e.target.value)}
-                            />
-                            <span>The child is an emancipated adult</span>
-                          </label>
+                          <TextInput
+                            id={`child-${child.key}-lastName`}
+                            label="Last Name"
+                            type="text"
+                            value={child.lName}
+                            onChange={handleChildChange(child.key, 'lName')}
+                            required
+                            placeholder="Last Name"
+                            autoComplete="family-name"
+                            error={submitAttempted ? child.errors?.lName : ''}
+                          />
+                        </div>
+
+                        <DatePicker
+                          id={`child-${child.key}-dateOfBirth`}
+                          label="Date of Birth"
+                          value={child.birthday}
+                          onChange={handleChildChange(child.key, 'birthday')}
+                          required
+                          max={new Date().toISOString().split('T')[0]}
+                          error={submitAttempted ? child.errors?.birthday : ''}
+                        />
+
+                        <div className="child-classification">
+                          <label className="classification-label">Child Classification</label>
+                          <div className="radio-group">
+                            <label className="radio-option">
+                              <input
+                                type="radio"
+                                name={`child-${child.key}-classification`}
+                                value="minor"
+                                checked={child.isEmancipatedAdult === 'minor'}
+                                onChange={(e) => handleChildChange(child.key, 'isEmancipatedAdult')(e.target.value)}
+                              />
+                              <span>
+                                The child is a minor and/or mentally or physically disabled
+                                incapable of supporting or maintaining themselves
+                              </span>
+                            </label>
+
+                            <label className="radio-option">
+                              <input
+                                type="radio"
+                                name={`child-${child.key}-classification`}
+                                value="emancipated"
+                                checked={child.isEmancipatedAdult === 'emancipated'}
+                                onChange={(e) => handleChildChange(child.key, 'isEmancipatedAdult')(e.target.value)}
+                              />
+                              <span>The child is an emancipated adult</span>
+                            </label>
+                          </div>
                         </div>
                         {child.errors?.classification && (
                           <p className="child-classification-error">
                             {child.errors.classification}
                           </p>
                         )}
-                      </div>
                     </form>
                   </CardContent>
                 </Card>
