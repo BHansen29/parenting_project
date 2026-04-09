@@ -1,0 +1,95 @@
+.invite-accept {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3f4f6;
+  padding: 24px;
+}
+
+.invite-accept__card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  padding: 48px 40px;
+  max-width: 480px;
+  width: 100%;
+  text-align: center;
+}
+
+.invite-accept__logo {
+  font-size: 24px;
+  font-weight: 700;
+  color: #14abdd;
+  margin-bottom: 32px;
+  letter-spacing: -0.5px;
+}
+
+.invite-accept__state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.invite-accept__state h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.invite-accept__state p {
+  color: #6b7280;
+  font-size: 15px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.invite-accept__spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.invite-accept__btn {
+  display: inline-block;
+  background: #14abdd;
+  color: white;
+  padding: 12px 28px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 15px;
+  margin-top: 8px;
+  transition: background 0.15s;
+}
+
+.invite-accept__btn:hover {
+  background: #0d8fb8;
+}
+
+.invite-accept__btn--secondary {
+  background: white;
+  color: #14abdd;
+  border: 2px solid #14abdd;
+}
+
+.invite-accept__btn--secondary:hover {
+  background: #f0f9ff;
+}
+
+.invite-accept__auth-btns {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.invite-accept__note {
+  font-size: 13px;
+  color: #9ca3af;
+}

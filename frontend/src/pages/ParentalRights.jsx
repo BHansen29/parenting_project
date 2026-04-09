@@ -17,7 +17,7 @@ export default function ParentalRights() {
 
     // if plan doesn't match plan in the context, update context to be consistent
     if (state.parental_rights.planID !== state.plan._id) {
-        let planAnswers = state.plan.children.map((qAnswer) => {return {qKey: qAnswer.qKey, answer: qAnswer.answer}})
+        let planAnswers = state.plan.answers.map((qAnswer) => {return {qKey: qAnswer.qKey, answer: qAnswer.answer}})
         if (!planAnswers) {
             planAnswers = []
         }

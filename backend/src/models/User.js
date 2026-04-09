@@ -9,6 +9,10 @@ const userSchema = new mongoose.Schema({
       return this.authProvider !== 'firebase';
     }   // User must have a name for local auth
   },
+  lname: {
+    type: String,
+    default: ""
+  },
   email: {
     type: String,
     required: true,

@@ -21,6 +21,8 @@ const caseSchema = new mongoose.Schema(
       type: String,
       default: null
     },
+    parent1PlanId: { type: mongoose.Schema.Types.ObjectId, ref: 'Plan', default: null },
+    parent2PlanId: { type: mongoose.Schema.Types.ObjectId, ref: 'Plan', default: null },
     status: {
       type: String,
       enum: ['pending_invite', 'both_complete', 'comparison_ready', 'resolved'],

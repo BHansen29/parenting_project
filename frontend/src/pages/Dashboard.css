@@ -573,3 +573,21 @@
     grid-template-columns: 1fr;
   }
 }
+
+.plan-card--shared {
+  border: 1.5px solid #14abdd;
+}
+
+.plan-card__shared-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #e0f5fc;
+  color: #14abdd;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 20px;
+  margin-left: auto;
+  margin-right: 8px;
+}

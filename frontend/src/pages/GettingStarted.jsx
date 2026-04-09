@@ -41,6 +41,14 @@ export default function GettingStarted() {
         return newKid
       })
       : [{ key: startKey, fName: '', lName: '', birthday: '', isEmancipatedAdult: '', errors: {} }];
+    let startKey = 1
+    return state.plan.children?.length > 0
+      ? state.plan.children.map(child => {
+        const newKid = {...child, isEmancipatedAdult: child.isEmancipatedAdult ? "emancipated" : "minor", key: startKey}
+        startKey += 1
+        return newKid
+      })
+      : [{ key: startKey, fName: '', lName: '', birthday: '', isEmancipatedAdult: '', errors: {} }];
   });
 
   useEffect(() => {
@@ -51,6 +59,9 @@ export default function GettingStarted() {
   }, []); //clears all errors as soon as the page loads
 
   useEffect(() => {
+    const fixedChildren = children.map(child => ({...child, isEmancipatedAdult: child.isEmancipatedAdult === "emancipated"})) 
+    dispatch({ type: 'UPDATE_SECTION', section: "plan", payload: {children: fixedChildren} });
+  }, [children]);
     const fixedChildren = children.map(child => ({...child, isEmancipatedAdult: child.isEmancipatedAdult === "emancipated"})) 
     dispatch({ type: 'UPDATE_SECTION', section: "plan", payload: {children: fixedChildren} });
   }, [children]);
@@ -71,6 +82,7 @@ export default function GettingStarted() {
     }
   };
 
+  const handleChildChange = (childKey, field) => (value) => {
   const handleChildChange = (childKey, field) => (value) => {
     setChildren(prev => prev.map(child =>
       child.key === childKey
@@ -95,10 +107,25 @@ export default function GettingStarted() {
       isEmancipatedAdult: '',
       errors: {}
     }]);
+    const newKey = Math.max(...children.map(c => c.key), 0) + 1;
+    setChildren(prev => [...prev, {
+      key: newKey,
+      fName: '',
+      lName: '',
+      birthday: '',
+      isEmancipatedAdult: '',
+      errors: {}
+    }]);
   };
 
   const removeChild = (childKey) => {
+  const removeChild = (childKey) => {
     if (children.length > 1) {
+      setChildren(prev => prev.filter(child => child.key !== childKey));
+    }
+  };
+
+  // Tracks when a failed submission happens - controls when to show validation errors
       setChildren(prev => prev.filter(child => child.key !== childKey));
     }
   };
@@ -245,7 +272,51 @@ export default function GettingStarted() {
                         )}
                       </div>
                     </CardHeader>
+                {children.map((child, index) => (
+                  <Card key={child.key}>
+                    <CardHeader>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <CardTitle>{`Child ${index + 1}`}</CardTitle>
+                        {children.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeChild(child.key)}
+                            className="remove-child-btn"
+                            aria-label={`Remove Child ${index + 1}`}
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                    </CardHeader>
 
+                    <CardContent>
+                      <form noValidate>
+                        <div className="form-row">
+                          <TextInput
+                            id={`child-${child.key}-firstName`}
+                            label="First Name"
+                            type="text"
+                            value={child.fName}
+                            onChange={handleChildChange(child.key, 'fName')}
+                            required
+                            placeholder="First Name"
+                            autoComplete="given-name"
+                            error={submitAttempted ? child.errors?.fName : ''}
+                          />
+
+                          <TextInput
+                            id={`child-${child.key}-lastName`}
+                            label="Last Name"
+                            type="text"
+                            value={child.lName}
+                            onChange={handleChildChange(child.key, 'lName')}
+                            required
+                            placeholder="Last Name"
+                            autoComplete="family-name"
+                            error={submitAttempted ? child.errors?.lName : ''}
+                          />
+                        </div>
                     <CardContent>
                       <form noValidate>
                         <div className="form-row">
@@ -283,7 +354,44 @@ export default function GettingStarted() {
                           max={new Date().toISOString().split('T')[0]}
                           error={submitAttempted ? child.errors?.birthday : ''}
                         />
+                        <DatePicker
+                          id={`child-${child.key}-dateOfBirth`}
+                          label="Date of Birth"
+                          value={child.birthday}
+                          onChange={handleChildChange(child.key, 'birthday')}
+                          required
+                          max={new Date().toISOString().split('T')[0]}
+                          error={submitAttempted ? child.errors?.birthday : ''}
+                        />
 
+                        <div className="child-classification">
+                          <label className="classification-label">Child Classification</label>
+                          <div className="radio-group">
+                            <label className="radio-option">
+                              <input
+                                type="radio"
+                                name={`child-${child.key}-classification`}
+                                value="minor"
+                                checked={child.isEmancipatedAdult === 'minor'}
+                                onChange={(e) => handleChildChange(child.key, 'isEmancipatedAdult')(e.target.value)}
+                              />
+                              <span>
+                                The child is a minor and/or mentally or physically disabled
+                                incapable of supporting or maintaining themselves
+                              </span>
+                            </label>
+
+                            <label className="radio-option">
+                              <input
+                                type="radio"
+                                name={`child-${child.key}-classification`}
+                                value="emancipated"
+                                checked={child.isEmancipatedAdult === 'emancipated'}
+                                onChange={(e) => handleChildChange(child.key, 'isEmancipatedAdult')(e.target.value)}
+                              />
+                              <span>The child is an emancipated adult</span>
+                            </label>
+                          </div>
                         <div className="child-classification">
                           <label className="classification-label">Child Classification</label>
                           <div className="radio-group">

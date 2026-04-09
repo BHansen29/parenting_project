@@ -253,13 +253,25 @@ export default function Review() {
                   Download PDF
                 </button>
               </div>
+
+              {/* Show comparison button whenever this plan has a caseId.
+                  The comparison page handles the "co-parent not joined yet" state itself. */}
+              {state.plan?.caseId && (
+                <button
+                  className="review__btn-invite"
+                  onClick={() => navigate(`/comparison/${state.plan.caseId}`)}
+                >
+                  View Comparison →
+                </button>
+              )}
             </div>
 
           </CardContent>
         </Card>
       </div>
 
-      <InviteModal isOpen={inviteOpen} onClose={() => setInviteOpen(false)} />
+      {/* caseId lets the modal send a real invite linked to this shared case */}
+      <InviteModal isOpen={inviteOpen} onClose={() => setInviteOpen(false)} caseId={state.plan?.caseId} />
     </div>
   );
 }

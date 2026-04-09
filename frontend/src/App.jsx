@@ -13,6 +13,8 @@ import Review from './pages/Review';
 import TermsOfService from './pages/TermsOfService';
 import ContactSupport from './pages/ContactSupport';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import InviteAccept from './pages/InviteAccept';
+import Comparison from './pages/Comparison';
 import { FormProvider } from './context/FormContext';
 import { NavigationProvider } from './context/NavigationContext';
 import './App.css';
@@ -69,6 +71,9 @@ function App() {
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms-of-service" element={<TermsOfService />} />
             <Route path="/contact-support" element={<ContactSupport />} />
+
+            <Route path="/invite/:token" element={<InviteAccept />} />
+            <Route path="/comparison/:caseId" element={<Comparison />} />
 
             {/* Catch all - redirect unknown routes to home */}
             <Route path="*" element={<Navigate to="/" replace />} />
