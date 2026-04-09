@@ -86,12 +86,14 @@ export default function Comparison() {
     );
   }
 
-  if (caseStatus === 'waiting_for_coparent' || diff.length === 0) {
+  // Only block if the co-parent hasn't joined yet — an empty diff just means
+  // neither parent has answered questions yet, which is still a valid comparison.
+  if (caseStatus === 'waiting_for_coparent') {
     return (
       <div className="comparison comparison--centered">
         <Users size={48} color="#14abdd" />
         <h2>Waiting for Co-parent</h2>
-        <p>Your co-parent hasn't joined yet. Once they accept the invite and complete their responses, you'll see the comparison here.</p>
+        <p>Your co-parent hasn't joined yet. Once they accept the invite, you'll see the comparison here.</p>
         <button className="comparison__back-btn" onClick={() => navigate('/dashboard')}>Back to Dashboard</button>
       </div>
     );

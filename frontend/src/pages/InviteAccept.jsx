@@ -62,6 +62,9 @@ export default function InviteAccept() {
           const planRes = await fetch(buildApiUrl('/api/plan/'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+            // Pass the shared caseId so this plan links to the existing Case
+            // (not a new one), enabling the comparison page to find both parents' answers.
+            body: JSON.stringify({ caseId: acceptData.caseId }),
           });
           if (planRes.ok) {
             const plan = await planRes.json();

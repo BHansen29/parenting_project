@@ -189,7 +189,14 @@ export default function Layout({ children }) {
         })
       }
       response.json().then( data => {
-        // update question in context
+        // If the logic engine returns nothing, the questionnaire is complete.
+        // Small delay so the answer save (questionnaireNext) has time to finish
+        // before we navigate away — both are fire-and-forget parallel chains.
+        if (!data || !data.section) {
+          setTimeout(() => navigate('/review'), 600);
+          return;
+        }
+        // Otherwise advance to the next question's section route.
         dispatch({
           type: 'UPDATE_SECTION',
           section: "question",

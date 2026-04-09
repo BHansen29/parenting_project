@@ -6,18 +6,42 @@ const Question = require('../models/Question');
 const verifyToken = require('../middleware/verifyToken');
 
 // POST /api/plan - Start a new plan
+// Optional body: { caseId } — when provided (co-parent accept flow), the new plan
+// is linked to the existing Case rather than creating a fresh one.
 router.post('/', verifyToken, async (req, res) => {
   try {
     const userID = req.user.uid;
+    const { caseId } = req.body || {};
+
     const plan = await Plan.create({ userID });
 
-    // Auto-create a Case so the co-parenting flow can begin immediately
-    try {
-      const newCase = await Case.create({ parent1Uid: userID, parent1PlanId: plan._id });
-      plan.caseId = newCase._id;
-      await plan.save();
-    } catch (caseErr) {
-      console.error('Failed to auto-create Case for plan:', caseErr.message);
+    if (caseId) {
+      // Co-parent joining an existing case: attach this plan as parent2's plan.
+      try {
+        const existingCase = await Case.findById(caseId);
+        if (existingCase) {
+          // Guard: prevent a third party from overwriting an already-joined co-parent.
+          if (existingCase.parent2Uid) {
+            return res.status(409).json({ error: 'A co-parent has already joined this case' });
+          }
+          existingCase.parent2Uid = userID;
+          existingCase.parent2PlanId = plan._id;
+          await existingCase.save();
+          plan.caseId = existingCase._id;
+          await plan.save();
+        }
+      } catch (caseErr) {
+        console.error('Failed to link plan to existing Case:', caseErr.message);
+      }
+    } else {
+      // Primary parent starting a new plan: auto-create a fresh Case.
+      try {
+        const newCase = await Case.create({ parent1Uid: userID, parent1PlanId: plan._id });
+        plan.caseId = newCase._id;
+        await plan.save();
+      } catch (caseErr) {
+        console.error('Failed to auto-create Case for plan:', caseErr.message);
+      }
     }
 
     res.status(201).json(plan);
