@@ -158,6 +158,33 @@ router.post('/:planId/answer', verifyToken, async (req, res) => {
   }
 });
 
+// GET /api/plan/prevQuestion/:qkey - get prev question answered before current question
+// returns "none" if there is no previous question
+router.get('/prevQuestion/:qkey/:planId', verifyToken, async (req, res) => {
+  const qKey = req.params.qkey
+  const planId = req.params.planId
+
+  try {
+    //Retrieve plan and fetch from Mongo
+    const plan = await Plan.findById(planId);
+
+    //If the planId was not found or doesn't belong to the requesting user
+    if (!plan || plan.userID !== req.user.uid) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    let index = plan.answers.findIndex(userAnswer => userAnswer.qKey === qKey)
+    if (index < 0) {
+      // if index < 0, that means we are on a question we haven't answered yet, thus prev question will be most recent one answered
+      index = plan.answers.length
+    }
+    const prevQKey = (index - 1) >= 0 ? plan.answers[index].qKey : "none"
+    const prevQuestion = await Question.findOne({qKey: prevQKey})
+    return res.status(200).json(prevQuestion)
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 // Add children to the plan
 // POST/api/plan/:planId/children
 router.post('/:planId/children', verifyToken, async (req, res) => {
