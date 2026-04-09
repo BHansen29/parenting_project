@@ -220,12 +220,12 @@ describe('SignUp', () => {
     resolveFirebase({ user: { uid: '123' } })
   })
 
-  it('navigates to /getting-started after accepting terms', async () => {
+  it('navigates to /dashboard after accepting terms', async () => {
     renderWithRouter(<SignUp />)
     await openModal()
     fireEvent.click(screen.getByRole('button', { name: /i agree/i }))
     await vi.waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/getting-started')
+      expect(mockNavigate).toHaveBeenCalledWith('/dashboard')
     }, { timeout: 2000 })
   })
 
