@@ -65,9 +65,39 @@ export default function Layout({ children }) {
     setIsSidebarCollapsed(!isSidebarCollapsed);
   };
 
-  const handleBack = () => {
-    if (currentPageIndex > 0) {
-      navigate(pageOrder[currentPageIndex - 1]);
+  const handleBack = async () => {
+    try {
+      if (user) {
+        user.getIdToken().then((idToken) => { 
+          const apiURL = '/api/plan/prevQuestion/' + q.qKey + '/' + plan._id
+          // get the previous 'question' object
+          fetch(buildApiUrl(apiURL), {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${idToken}`,
+            }
+          }).then( async (response) => {
+            if (!response.ok) {
+                throw new Error(`Response status: ${response.status}`);
+            }
+            response.json().then( data => {
+              if (data === "none") {
+                navigate("/getting-started")
+                return
+              }
+              dispatch({
+                type: 'UPDATE_SECTION',
+                section: "question",
+                payload: data
+              });
+              navigate("/" + data.section);
+            })
+          })
+        })
+      }
+    } catch (e) {
+        console.error(e.message)
     }
   };
 
@@ -101,7 +131,7 @@ export default function Layout({ children }) {
       if (!response.ok) {
         console.error("Failed to update plan children: ", response.message)
       }
-      // api call to update user's answer to current question in plan
+      // api call to update plan with user's phone and address
       fetch(buildApiUrl('api/plan/' + plan._id + '/contact'), {
         method: "POST",
         headers: {

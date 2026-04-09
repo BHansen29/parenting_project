@@ -35,6 +35,14 @@ export default function ParentalRights() {
     }
     const currAnswer = curr.answer
 
+    if (state.currAnswer !== currAnswer) {
+        dispatch({
+            type: 'UPDATE_SECTION',
+            section: "currAnswer",
+            payload: currAnswer
+        });
+    }
+
     const errors = state.parental_rights?.errors ?? {};
 
     //flag states for this section
@@ -77,44 +85,6 @@ export default function ParentalRights() {
             payload: value
         });
     };
-
-    const validateForm = () => {
-        const formErrors = {};
-        if (!formData.appliesToAllChildren) {
-            formErrors.appliesToAllChildren = 'Please select an option';
-        }
-        if (!formData.livingArrangements) {
-            formErrors.livingArrangements = 'Please select an option';
-        }
-        if (!formData.decisionMaking) {
-            formErrors.decisionMaking = 'Please select an option';
-        }
-
-        dispatch({
-            type: 'UPDATE_SECTION',
-            section: 'parentalRights',
-            payload: { errors: formErrors }
-        });
-
-        return Object.keys(formErrors).length === 0;
-    }
-
-    const handleNext = () => {
-    if (validateForm()) {
-      navigate('/parenting-time-communication');
-    } else {
-      setSubmitAttempted(true);
-    }
-  };
-
-   const handleBack = () => {
-    dispatch({
-      type: 'UPDATE_SECTION',
-      section: 'parentalRights',
-      payload: { errors: {} }
-    });
-    navigate('/getting-started');
-  };
 
     return (
         <div className="page-container">
