@@ -223,6 +223,8 @@ export default function InformationSharing() {
                   flag={flagMap[key]}
                   error={errors[key]}
                   options={RADIO_OPTIONS}
+                  disclaimer="Legal Disclaimer: This tool does not give instructions or legal advice about your rights or choices. If you have questions, please consult with a lawyer."
+                  disclaimerVariant="info"
                 />
               </div>
             ))}
