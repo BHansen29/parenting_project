@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const router = express.Router();
 const Case = require('../models/Case');
 const Invitation = require('../models/Invitation');
+const Plan = require('../models/Plan');
 const verifyToken = require('../middleware/verifyToken');
 const { sendInviteEmail } = require('../services/emailService');
 
@@ -92,12 +93,36 @@ router.post('/invitations/:token/accept', verifyToken, async (req, res) => {
     }
 
     parentingCase.parent2Uid = req.user.uid;
+    // Link parent2's plan and mark parent1's plan as shared
+    try {
+      const parent2Plan = await Plan.findOne({ caseId: invitation.caseId, userID: req.user.uid });
+      if (parent2Plan) parentingCase.parent2PlanId = parent2Plan._id;
+      await Plan.updateOne({ caseId: invitation.caseId, userID: parentingCase.parent1Uid }, { isShared: true });
+    } catch (e) { /* non-fatal */ }
     invitation.status = 'accepted';
 
     // Save both at the same time to avoid one succeeding and the other failing
     await Promise.all([parentingCase.save(), invitation.save()]);
 
     return res.status(200).json({ message: 'Invitation accepted', caseId: parentingCase._id });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/v1/cases/:caseId/pending-invite
+// Returns the invite link for the most recent pending invitation on this case.
+router.get('/cases/:caseId/pending-invite', verifyToken, async (req, res) => {
+  try {
+    const parentingCase = await Case.findById(req.params.caseId);
+    if (!parentingCase) return res.status(404).json({ error: 'Case not found' });
+    if (parentingCase.parent1Uid !== req.user.uid) return res.status(403).json({ error: 'Forbidden' });
+
+    const invitation = await Invitation.findOne({ caseId: req.params.caseId, status: 'pending' }).sort({ createdAt: -1 });
+    if (!invitation) return res.status(404).json({ error: 'No pending invitation found' });
+
+    const inviteLink = `${process.env.APP_BASE_URL}/invite/${invitation.token}`;
+    return res.status(200).json({ inviteLink });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }

@@ -13,6 +13,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const [activeCaseId, setActiveCaseId] = useState(null);
 
   const { dispatch } = useForm();
 
@@ -121,6 +122,8 @@ export default function Dashboard() {
           } else {
             const plan = await response.json()
             setPlans(prev => [...prev, plan]);
+            dispatch({ type: 'UPDATE_SECTION', section: 'plan', payload: plan });
+            if (plan.caseId) setActiveCaseId(plan.caseId);
           }
         });
       })
@@ -146,7 +149,7 @@ export default function Dashboard() {
   return (
     <div className="dashboard" onClick={() => setContextMenu(null)}>
       <Header user={user} onSignOut={handleSignOut} />
-      <InviteModal isOpen={isInviteOpen} onClose={() => setIsInviteOpen(false)} />
+      <InviteModal isOpen={isInviteOpen} onClose={() => setIsInviteOpen(false)} caseId={activeCaseId} />
 
       {deleteTarget && (
         <div className="delete-modal__overlay" onClick={() => setDeleteTarget(null)}>
@@ -195,7 +198,7 @@ export default function Dashboard() {
           </div>
 
           <div className="dashboard__invite-action">
-            <button className="dashboard__invite-btn" onClick={() => setIsInviteOpen(true)}>
+            <button className="dashboard__invite-btn" onClick={() => { setActiveCaseId(plans[0]?.caseId || null); setIsInviteOpen(true); }}>
               <UserPlus size={18} />
               Invite Co-parent
             </button>
@@ -215,11 +218,16 @@ export default function Dashboard() {
 
           <div className="dashboard__plans-grid">
             {plans.map((plan) => (
-              <div key={plan._id} className="plan-card" onContextMenu={e => handleContextMenu(e, plan)}>
+              <div key={plan._id} className={`plan-card${plan.isShared ? ' plan-card--shared' : ''}`} onContextMenu={e => handleContextMenu(e, plan)}>
                 <div className="plan-card__top">
                   <div className="plan-card__icon">
                     <FileText size={24} color="#6b7280" />
                   </div>
+                  {plan.isShared && (
+                    <span className="plan-card__shared-badge">
+                      <Users size={12} /> Shared
+                    </span>
+                  )}
                   <button className="plan-card__delete-btn" onClick={() => setDeleteTarget(plan)}>
                     <Trash2 size={16} />
                   </button>
@@ -254,12 +262,13 @@ export default function Dashboard() {
                       return (
                         <button
                           className="plan-card__open-btn"
-                          onClick={() => {     
+                          onClick={() => {
                             dispatch({
                                 type: 'UPDATE_SECTION',
                                 section: "plan",
                                 payload: plan
                             });
+                            if (plan.caseId) setActiveCaseId(plan.caseId);
                             fetch(buildApiUrl("/api/logic-engine/question/" + plan.currentQuestion), {
                               method: "GET",
                               headers: {
@@ -287,12 +296,13 @@ export default function Dashboard() {
                       return (
                         <button
                           className="plan-card__open-btn"
-                          onClick={() => {     
+                          onClick={() => {
                             dispatch({
                                 type: 'UPDATE_SECTION',
                                 section: "plan",
                                 payload: plan
                             });
+                            if (plan.caseId) setActiveCaseId(plan.caseId);
                             navigate('/getting-started')
                           }}
                         >
@@ -302,7 +312,7 @@ export default function Dashboard() {
                     }
                 })()}
 
-                <button className="plan-card__invite-btn" onClick={() => setIsInviteOpen(true)}>
+                <button className="plan-card__invite-btn" onClick={() => { setActiveCaseId(plan.caseId || null); setIsInviteOpen(true); }}>
                   <UserPlus size={14} />
                   Invite Parent
                 </button>
