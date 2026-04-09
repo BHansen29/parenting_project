@@ -170,7 +170,7 @@ export default function Dashboard() {
   const handleConfirmSwitch = () => {
     dispatch({ type: 'UPDATE_SECTION', section: 'collaborationMode', payload: 'collaborative' });
     setShowSwitchPrompt(false);
-    setIsInviteOpen(true);
+    setIsInviteOpen(true); //open after confirming switch
   };
 
   // Whether to show any invite surface at all
@@ -263,7 +263,7 @@ export default function Dashboard() {
             </div>
 
             <div className="dashboard__invite-action">
-              <button className="dashboard__invite-btn" onClick={() => { setActiveCaseId(plans[0]?.caseId || null); setIsInviteOpen(true); }}>
+              <button className="dashboard__invite-btn" onClick={() => { setActiveCaseId(plans[0]?.caseId || null); handleInviteClick(); }}>
                 <UserPlus size={18} />
                 {collaborationMode === 'individual' ? 'Switch & Invite Co-parent' : 'Invite Co-parent'}
               </button>
@@ -384,7 +384,7 @@ export default function Dashboard() {
 
                 {/* Per-card invite button — hidden for locked-individual users */}
                 {showInviteUI && (
-                  <button className="plan-card__invite-btn" onClick={() => { setActiveCaseId(plan.caseId || null); setIsInviteOpen(true); }}>
+                  <button className="plan-card__invite-btn" onClick={() => { setActiveCaseId(plan.caseId || null); handleInviteClick(); }}>
                   <UserPlus size={14} />
                     {collaborationMode === 'individual' ? 'Switch & Invite' : 'Invite Parent'}
                   </button>
