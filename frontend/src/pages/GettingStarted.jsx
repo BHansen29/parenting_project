@@ -200,8 +200,9 @@ export default function GettingStarted() {
                 onChange={handleRadioChange('caseFilingStatus')}
                 error={caseFilingError}
                 flag={caseFilingFlag}
-                disclaimer="Please note: ShareCare cannot confirm if your answer is correct or if there is an active divorce, separation, or child support case."
-                disclaimerVariant="info"
+                disclaimers={[
+                    { disclaimer: "Please note: ShareCare cannot confirm if your answer is correct or if there is an active divorce, separation, or child support case.", disclaimerVariant: "info" }
+                ]}
                 options={[
                   { value: 'yes',     label: 'Yes, it was me',         description: 'You will be identified as Parent 1/Petitioner 1/Plaintiff in the parenting plan' },
                   { value: 'no',      label: 'No, my co-parent filed', description: 'You will be identified as Parent 2/Petitioner 2/Defendant in the parenting plan' },

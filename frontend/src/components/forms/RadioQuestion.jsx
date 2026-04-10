@@ -15,9 +15,8 @@ import Disclaimer from './Disclaimer';
  * @param {Array}    options           - [{ value, label, description? }]
  * @param {object}   flag              - Optional flag hook result: { isFlagged, toggleFlag }
  * @param {string}   error             - Optional validation error message
- * @param {object}   conditionalInput  - Optional text input shown when a specific option is chosen:{ triggerValue, id, label, value, onChange, placeholder }
- * @param {string}   disclaimer        - Optional disclaimer text shown below the options
- * @param {string}   disclaimerVariant - Optional variant for the disclaimer ('info' | 'warning'). 
+ * @param {object}   conditionalInput  - Optional text input shown when a specific option is chosen:{ triggerValue, id, label, value, onChange, placeholder } 
+ * @param {Array}    disclaimers       - Optional array of disclaimers, each with { disclaimer, disclaimerVariant } default variant is 'info'
  */
 export default function RadioQuestion({
   question,
@@ -28,8 +27,7 @@ export default function RadioQuestion({
   flag,
   error,
   conditionalInput,
-  disclaimer,
-  disclaimerVariant,
+  disclaimers,
 }) {
   return (
     <Card>
@@ -69,11 +67,11 @@ export default function RadioQuestion({
             />
           )}
         </div>
-        {disclaimer && (
-          <Disclaimer variant={disclaimerVariant}>
-            {disclaimer}
+        {disclaimers?.map((item, index) => (
+          <Disclaimer key={index} variant={item.disclaimerVariant ?? 'info'}>
+            {item.disclaimer}
           </Disclaimer>
-        )}
+        ))}
         {error && (
           <div className="radio-group-error" role="alert">
             {error}

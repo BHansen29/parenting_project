@@ -14,8 +14,7 @@ import Disclaimer from './Disclaimer';
  * @param {boolean}  checked           - Whether the user has agreed to the standard policy
  * @param {function} onCheckboxChange  - Called with boolean when checkbox changes
  * @param {object}   textInput         - Config for the custom-description input:{ id, label, value, onChange, placeholder, error? }
- * @param {string}   disclaimer        - Optional disclaimer text shown below the options
- * @param {string}   disclaimerVariant - Optional variant for the disclaimer ('info' | 'warning'). 
+ * @param {Array}    disclaimers       - Optional array of disclaimers, each with { disclaimer, disclaimerVariant } default variant is 'info'
  */
 export default function PolicyAgreementQuestion({
   policyTitle,
@@ -26,8 +25,7 @@ export default function PolicyAgreementQuestion({
   onCheckboxChange,
   textInput,
   requiredNote,
-  disclaimer,
-  disclaimerVariant,
+  disclaimers,
 }) {
   // Derive a stable DOM id for the collapsible section from the checkbox id
   const sectionId = checkboxId === 'agreeToTransportationPolicy'
@@ -75,11 +73,11 @@ export default function PolicyAgreementQuestion({
             onChange={textInput.onChange}
             placeholder={textInput.placeholder}
           />
-          {disclaimer && (
-            <Disclaimer variant={disclaimerVariant}>
-            {disclaimer}
+          {disclaimers?.map((item, index) => (
+            <Disclaimer key={index} variant={item.disclaimerVariant ?? 'info'}>
+            {item.disclaimer}
             </Disclaimer>
-          )}
+          ))}
           {textInput.error && (
             <div className="text-input__error-message" role="alert">
               {textInput.error}
