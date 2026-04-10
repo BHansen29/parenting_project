@@ -16,6 +16,10 @@ export default function Comparison() {
   const [caseStatus, setCaseStatus] = useState('');
   const [questionMap, setQuestionMap] = useState({}); // qKey → qText
   const [activeTab, setActiveTab] = useState('merged');
+  // tracks which parent's answer was selected for each disagreed question
+  const [selections, setSelections] = useState({});
+  // tracks the save state of the merge action
+  const [mergeStatus, setMergeStatus] = useState('idle'); // 'idle' | 'saving' | 'saved' | 'error'
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
@@ -65,6 +69,36 @@ export default function Comparison() {
     if (val === null || val === undefined) return 'Not answered';
     if (Array.isArray(val)) return val.join(', ');
     return String(val);
+  };
+
+  const handleMerge = async () => {
+    setMergeStatus('saving');
+    // Guard against auth session expiring between page load and clicking save
+    if (!auth.currentUser) { setMergeStatus('error'); return; }
+    try {
+      const idToken = await auth.currentUser.getIdToken();
+
+      // Build the full merged answer map:
+      // - Agreed items: both parents gave the same answer, use parent1's
+      // - Disagreed items: use whichever parent the user selected
+      const mergedAnswers = {};
+      agreed.forEach(item => { mergedAnswers[item.questionKey] = item.parent1Answer; });
+      disagreed.forEach(item => {
+        const pick = selections[item.questionKey];
+        mergedAnswers[item.questionKey] = pick === 'parent1' ? item.parent1Answer : item.parent2Answer;
+      });
+
+      const res = await fetch(buildApiUrl(`/api/v1/cases/${caseId}/merge`), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+        body: JSON.stringify({ mergedAnswers }),
+      });
+      if (!res.ok) throw new Error('Save failed');
+      setMergeStatus('saved');
+    } catch (err) {
+      console.error('Merge failed:', err);
+      setMergeStatus('error');
+    }
   };
 
   if (loading) {
@@ -164,24 +198,49 @@ export default function Comparison() {
             {disagreed.length === 0 ? (
               <div className="comparison__empty">No differences — you agree on everything!</div>
             ) : (
-              disagreed.map((item) => (
-                <div key={item.questionKey} className="comparison__card comparison__disagreed">
-                  <div className="comparison__question">{questionMap[item.questionKey] || item.questionKey}</div>
-                  <div className="comparison__answer-row">
-                    <div className="comparison__answer-col">
-                      <span className="comparison__parent-label">Parent 1</span>
-                      <span className="comparison__answer-value">{formatAnswer(item.parent1Answer)}</span>
-                    </div>
-                    <div className="comparison__answer-divider">
-                      <AlertTriangle size={16} color="#f97316" />
-                    </div>
-                    <div className="comparison__answer-col">
-                      <span className="comparison__parent-label">Parent 2</span>
-                      <span className="comparison__answer-value">{formatAnswer(item.parent2Answer)}</span>
+              disagreed.map((item) => {
+                const selected = selections[item.questionKey];
+                return (
+                  <div key={item.questionKey} className="comparison__card comparison__disagreed">
+                    <div className="comparison__question">{questionMap[item.questionKey] || item.questionKey}</div>
+                    {/* Clicking a column selects that parent's answer for this question */}
+                    <div className="comparison__answer-row">
+                      <div
+                        className="comparison__answer-col"
+                        onClick={() => setSelections(prev => ({ ...prev, [item.questionKey]: 'parent1' }))}
+                        style={{ cursor: 'pointer', borderRadius: 6, padding: 8, background: selected === 'parent1' ? '#dcfce7' : 'transparent', border: selected === 'parent1' ? '2px solid #22c55e' : '2px solid transparent' }}
+                      >
+                        <span className="comparison__parent-label">Parent 1</span>
+                        <span className="comparison__answer-value">{formatAnswer(item.parent1Answer)}</span>
+                      </div>
+                      <div className="comparison__answer-divider">
+                        <AlertTriangle size={16} color="#f97316" />
+                      </div>
+                      <div
+                        className="comparison__answer-col"
+                        onClick={() => setSelections(prev => ({ ...prev, [item.questionKey]: 'parent2' }))}
+                        style={{ cursor: 'pointer', borderRadius: 6, padding: 8, background: selected === 'parent2' ? '#dcfce7' : 'transparent', border: selected === 'parent2' ? '2px solid #22c55e' : '2px solid transparent' }}
+                      >
+                        <span className="comparison__parent-label">Parent 2</span>
+                        <span className="comparison__answer-value">{formatAnswer(item.parent2Answer)}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
+            )}
+            {/* Save button — disabled until every disagreed item has a selection */}
+            {disagreed.length > 0 && (
+              <div style={{ marginTop: 16, textAlign: 'right' }}>
+                <button
+                  className="comparison__download-btn"
+                  onClick={handleMerge}
+                  disabled={disagreed.some(item => !selections[item.questionKey]) || mergeStatus === 'saving'}
+                >
+                  {mergeStatus === 'saving' ? 'Saving...' : mergeStatus === 'saved' ? 'Saved!' : 'Save Merged Plan'}
+                </button>
+                {mergeStatus === 'error' && <p style={{ color: '#ef4444', marginTop: 8 }}>Failed to save. Try again.</p>}
+              </div>
             )}
           </div>
         )}

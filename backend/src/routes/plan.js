@@ -3,7 +3,9 @@ const router = express.Router();
 const Plan = require('../models/Plan');
 const Case = require('../models/Case');
 const Question = require('../models/Question');
+const User = require('../models/User');
 const verifyToken = require('../middleware/verifyToken');
+const { getFirstName } = require('../utils/nameUtils');
 
 // POST /api/plan - Start a new plan
 // Optional body: { caseId } — when provided (co-parent accept flow), the new plan
@@ -20,14 +22,23 @@ router.post('/', verifyToken, async (req, res) => {
       try {
         const existingCase = await Case.findById(caseId);
         if (existingCase) {
-          // Guard: prevent a third party from overwriting an already-joined co-parent.
-          if (existingCase.parent2Uid) {
+          // Guard: only block if a DIFFERENT user is trying to join.
+          // Parent 2 may call this right after accepting the invite, at which point
+          // parent2Uid is already set to their own UID — that's valid and should be allowed.
+          if (existingCase.parent2Uid && existingCase.parent2Uid !== userID) {
             return res.status(409).json({ error: 'A co-parent has already joined this case' });
           }
           existingCase.parent2Uid = userID;
           existingCase.parent2PlanId = plan._id;
           await existingCase.save();
+          const [p1User, p1Plan] = await Promise.all([
+            User.findOne({ firebaseUid: existingCase.parent1Uid }, 'name email'),
+            Plan.findById(existingCase.parent1PlanId),
+          ]);
+          plan.name = `Shared Plan with ${getFirstName(p1User)}`;
           plan.caseId = existingCase._id;
+          plan.isShared = true;
+          plan.children = p1Plan?.children ?? [];
           await plan.save();
         }
       } catch (caseErr) {
@@ -46,33 +57,36 @@ router.post('/', verifyToken, async (req, res) => {
 
     res.status(201).json(plan);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
 // POST /api/plan/delete - Delete a plan with the pid specified in request body
 router.post('/delete', verifyToken, async (req, res) => {
   try {
-    const { userID, pID } = req.body;
-    
-    const deletedItem = await Plan.findOneAndDelete({_id: pID, userID: userID});
+    const { pID } = req.body;
+    const deletedItem = await Plan.findOneAndDelete({ _id: pID, userID: req.user.uid });
     if (deletedItem) {
       return res.status(200).json({ message: 'Plan deleted successfully' });
     } else {
-      return res.status(401).json({ message: 'Unauthorized to delete this plan or plan not found' });
+      return res.status(403).json({ error: 'Forbidden' });
     }
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
 // GET /api/plan/:uid/all -> Get all plans a user currently owns
 router.get('/:uid/all', verifyToken, async (req, res) => {
+  if (req.params.uid !== req.user.uid) return res.status(403).json({ error: 'Forbidden' });
   try {
-    const plans = await Plan.find({userID: req.params.uid});
-    res.status(200).json(plans)
+    const plans = await Plan.find({ userID: req.user.uid });
+    res.status(200).json(plans);
   } catch (error) {
-    res.status(400).json({error: error.message})
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -96,7 +110,8 @@ router.get('/:planId/current', verifyToken, async (req, res) => {
     // Return the full question data for the frontend to render
     res.json({ question: plan.currentQuestion });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -115,7 +130,8 @@ router.post('/updateCurrent/:planId/:currQId', verifyToken, async (req, res) => 
     await plan.save()
     return res.status(200).json({ message: 'Plan updated successfully' });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -139,7 +155,7 @@ router.post('/:planId/answer', verifyToken, async (req, res) => {
     if (!oldAnswer) {
       // case for first question answered in plan
       plan.answers.push({qKey: qKey, answer: answer})
-    } else if (oldAnswer.answer !== answer) {
+    } else if (oldAnswer !== answer) {
       // case for changing exsisting response
       plan.answers[index] = {qKey: qKey, answer: answer}
       // this chops off everything after the new answer since our "path" through the decision tree may be different
@@ -154,7 +170,8 @@ router.post('/:planId/answer', verifyToken, async (req, res) => {
     await plan.save();
     res.status(201).json(plan);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -177,11 +194,12 @@ router.get('/prevQuestion/:qkey/:planId', verifyToken, async (req, res) => {
       // if index < 0, that means we are on a question we haven't answered yet, thus prev question will be most recent one answered
       index = plan.answers.length
     }
-    const prevQKey = (index - 1) >= 0 ? plan.answers[index].qKey : "none"
+    const prevQKey = (index - 1) >= 0 ? plan.answers[index - 1].qKey : 'none'
     const prevQuestion = await Question.findOne({qKey: prevQKey})
     return res.status(200).json(prevQuestion)
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -203,7 +221,8 @@ router.post('/:planId/children', verifyToken, async (req, res) => {
     await plan.save();
     res.status(201).json(plan);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -226,7 +245,8 @@ router.post('/:planId/contact', verifyToken, async (req, res) => {
     await plan.save();
     res.status(201).json(plan);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -245,7 +265,8 @@ router.get('/:planId', verifyToken, async (req, res) => {
     //Send plan back
     res.json(plan);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -266,7 +287,24 @@ router.post('/setShareMode/:planId', verifyToken, async (req, res) => {
     await plan.save()
     res.status(201).json(plan)
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// PATCH /api/plan/:planId/name — rename a plan
+router.patch('/:planId/name', verifyToken, async (req, res) => {
+  try {
+    const plan = await Plan.findById(req.params.planId);
+    if (!plan || plan.userID !== req.user.uid) return res.status(403).json({ error: 'Forbidden' });
+    const { name } = req.body;
+    if (!name?.trim()) return res.status(400).json({ error: 'Name is required' });
+    plan.name = name.trim();
+    await plan.save();
+    res.json({ name: plan.name });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 

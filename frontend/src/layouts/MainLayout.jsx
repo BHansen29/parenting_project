@@ -56,7 +56,7 @@ export default function Layout({ children }) {
   }, [navigate]);
 
   // Determine if current page should show navigation
-  const shouldShowNavigation = ['/getting-started', '/parental-rights', '/parenting-time', '/custody-schedule', '/transportation', '/review'].includes(location.pathname);
+  const shouldShowNavigation = pageOrder.includes(location.pathname);
 
   // Determine if current page should show header (not landing page)
   const shouldShowHeader = location.pathname !== '/';
@@ -197,7 +197,7 @@ export default function Layout({ children }) {
 
   const handleNext = async () => {
     // prevent user from clicking next if answer is not selected
-    if ((pageOrder[currentPageIndex] !== '/getting-started') && (q.options.findIndex(qAnswer => qAnswer.value === answer) < 0)) {
+    if ((pageOrder[currentPageIndex] !== '/getting-started') && (!q?.options || q.options.findIndex(qAnswer => qAnswer.value === answer) < 0)) {
       return
     }
     const apiURL = pageOrder[currentPageIndex] === '/getting-started' 

@@ -4,8 +4,10 @@ const router = express.Router();
 const Case = require('../models/Case');
 const Invitation = require('../models/Invitation');
 const Plan = require('../models/Plan');
+const User = require('../models/User');
 const verifyToken = require('../middleware/verifyToken');
 const { sendInviteEmail } = require('../services/emailService');
+const { getFirstName } = require('../utils/nameUtils');
 
 // How long an invite link stays valid before it expires
 const INVITE_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -93,11 +95,24 @@ router.post('/invitations/:token/accept', verifyToken, async (req, res) => {
     }
 
     parentingCase.parent2Uid = req.user.uid;
-    // Link parent2's plan and mark parent1's plan as shared
+    // Link parent2's plan and mark parent1's plan as shared with a friendly name
     try {
-      const parent2Plan = await Plan.findOne({ caseId: invitation.caseId, userID: req.user.uid });
+      const [p1User, p2User, parent2Plan] = await Promise.all([
+        User.findOne({ firebaseUid: parentingCase.parent1Uid }, 'name email'),
+        User.findOne({ firebaseUid: req.user.uid }, 'name email'),
+        Plan.findOne({ caseId: invitation.caseId, userID: req.user.uid }),
+      ]);
+      const p1Name = getFirstName(p1User);
+      const p2Name = getFirstName(p2User);
       if (parent2Plan) parentingCase.parent2PlanId = parent2Plan._id;
-      await Plan.updateOne({ caseId: invitation.caseId, userID: parentingCase.parent1Uid }, { isShared: true });
+      await Plan.updateOne(
+        { caseId: invitation.caseId, userID: parentingCase.parent1Uid },
+        { isShared: true, name: `Shared Plan with ${p2Name}` }
+      );
+      // Also name parent 2's plan if it already exists
+      if (parent2Plan) {
+        await Plan.updateOne({ _id: parent2Plan._id }, { name: `Shared Plan with ${p1Name}` });
+      }
     } catch (e) { /* non-fatal */ }
     invitation.status = 'accepted';
 

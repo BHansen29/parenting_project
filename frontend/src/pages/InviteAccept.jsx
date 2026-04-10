@@ -73,13 +73,15 @@ export default function InviteAccept() {
         } catch (e) { /* non-fatal */ }
 
         setPageState('success');
-        setTimeout(() => navigate('/getting-started'), 1500);
+        // Redirect to Dashboard so Parent 2 sees their new shared plan card.
+        // Opening the plan from Dashboard properly loads it into context before the questionnaire starts.
+        setTimeout(() => navigate('/dashboard'), 1500);
       } catch {
         setErrorMsg('Something went wrong. Please try again.');
         setPageState('error');
       }
     });
-  }, [caseId, user]);
+  }, [caseId, user, token]);
 
   return (
     <div className="invite-accept">
