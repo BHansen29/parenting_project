@@ -53,7 +53,8 @@ router.post('/cases/:caseId/invite', verifyToken, async (req, res) => {
 
     return res.status(201).json({ message: 'Invitation sent', invitedEmail });
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    console.error(error);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -67,7 +68,8 @@ router.get('/invitations/:token', async (req, res) => {
 
     return res.status(200).json({ caseId: invitation.caseId });
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    console.error(error);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -104,16 +106,17 @@ router.post('/invitations/:token/accept', verifyToken, async (req, res) => {
       ]);
       const p1Name = getFirstName(p1User);
       const p2Name = getFirstName(p2User);
+      const p1Plan = await Plan.findById(parentingCase.parent1PlanId);
+      const sharedChildren = p1Plan?.children ?? [];
       if (parent2Plan) parentingCase.parent2PlanId = parent2Plan._id;
       await Plan.updateOne(
         { caseId: invitation.caseId, userID: parentingCase.parent1Uid },
         { isShared: true, name: `Shared Plan with ${p2Name}` }
       );
-      // Also name parent 2's plan if it already exists
       if (parent2Plan) {
-        await Plan.updateOne({ _id: parent2Plan._id }, { name: `Shared Plan with ${p1Name}` });
+        await Plan.updateOne({ _id: parent2Plan._id }, { name: `Shared Plan with ${p1Name}`, children: sharedChildren });
       }
-    } catch (e) { /* non-fatal */ }
+    } catch (e) { console.error('Failed to link parent2 plan on invite accept:', e.message); }
     invitation.status = 'accepted';
 
     // Save both at the same time to avoid one succeeding and the other failing
@@ -121,7 +124,8 @@ router.post('/invitations/:token/accept', verifyToken, async (req, res) => {
 
     return res.status(200).json({ message: 'Invitation accepted', caseId: parentingCase._id });
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    console.error(error);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -139,7 +143,8 @@ router.get('/cases/:caseId/pending-invite', verifyToken, async (req, res) => {
     const inviteLink = `${process.env.APP_BASE_URL}/invite/${invitation.token}`;
     return res.status(200).json({ inviteLink });
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    console.error(error);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 });
 

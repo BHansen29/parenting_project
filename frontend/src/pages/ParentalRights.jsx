@@ -13,8 +13,6 @@ export default function ParentalRights() {
     const navigate = useNavigate();
     const { state, dispatch } = useForm();
     const question = state.question
-    // If the question hasn't been loaded into context yet, show nothing rather than crash
-    if (!question?.qKey) return null;
 
     useEffect(() => {
         if (state.parental_rights.planID !== state.plan?._id) {
@@ -27,6 +25,18 @@ export default function ParentalRights() {
         }
     }, [state.plan?._id]);
 
+    useEffect(() => {
+        if (!question?.qKey) return;
+        const curr = state.parental_rights.responses.find(r => r.qKey === question.qKey);
+        const currAnswer = curr?.answer ?? '';
+        if (state.currAnswer !== currAnswer) {
+            dispatch({ type: 'UPDATE_SECTION', section: 'currAnswer', payload: currAnswer });
+        }
+    }, [question?.qKey, state.parental_rights.responses, state.currAnswer, dispatch]);
+
+    // If the question hasn't been loaded into context yet, show nothing rather than crash
+    if (!question?.qKey) return null;
+
     const formData = state.parental_rights
     let curr = formData.responses.find((response) => {return response.qKey === question.qKey})
     if (!curr) {
@@ -34,12 +44,6 @@ export default function ParentalRights() {
         formData.responses.push(curr)
     }
     const currAnswer = curr.answer
-
-    useEffect(() => {
-        if (state.currAnswer !== currAnswer) {
-            dispatch({ type: 'UPDATE_SECTION', section: 'currAnswer', payload: currAnswer });
-        }
-    }, [currAnswer]);
 
     const errors = state.parental_rights?.errors ?? {};
 
