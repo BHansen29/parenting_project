@@ -5,7 +5,6 @@ import { auth } from '../lib/firebase';
 import { buildApiUrl } from '../lib/apiClient';
 import { useForm } from '../hooks/useForm';
 import { CheckCircle, AlertCircle, Loader } from 'lucide-react';
-import { hydratePlanIntoForm } from '../lib/planState';
 import './InviteAccept.css';
 
 export default function InviteAccept() {
@@ -70,7 +69,7 @@ export default function InviteAccept() {
           });
           if (planRes.ok) {
             const plan = await planRes.json();
-            hydratePlanIntoForm(dispatch, plan);
+            dispatch({ type: 'UPDATE_SECTION', section: 'plan', payload: plan });
           }
         } catch { /* non-fatal */ }
 

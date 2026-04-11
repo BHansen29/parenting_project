@@ -66,36 +66,12 @@ router.post('/', verifyToken, async (req, res) => {
 router.post('/delete', verifyToken, async (req, res) => {
   try {
     const { pID } = req.body;
-    const plan = await Plan.findOne({ _id: pID, userID: req.user.uid });
-
-    if (!plan) {
-      return res.status(401).json({ message: 'Unauthorized to delete this plan or plan not found' });
+    const deletedItem = await Plan.findOneAndDelete({ _id: pID, userID: req.user.uid });
+    if (deletedItem) {
+      return res.status(200).json({ message: 'Plan deleted successfully' });
+    } else {
+      return res.status(403).json({ error: 'Forbidden' });
     }
-
-    const planId = plan._id;
-    const caseId = plan.caseId;
-
-    await plan.deleteOne();
-
-    if (caseId) {
-      const linkedCase = await Case.findById(caseId);
-      if (linkedCase) {
-        if (linkedCase.parent1PlanId?.equals(planId)) {
-          linkedCase.parent1PlanId = null;
-        }
-        if (linkedCase.parent2PlanId?.equals(planId)) {
-          linkedCase.parent2PlanId = null;
-        }
-
-        if (!linkedCase.parent1PlanId && !linkedCase.parent2PlanId) {
-          await linkedCase.deleteOne();
-        } else {
-          await linkedCase.save();
-        }
-      }
-    }
-
-    return res.status(200).json({ message: 'Plan deleted successfully' });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal server error' });
@@ -271,51 +247,6 @@ router.post('/:planId/contact', verifyToken, async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// Update Parenting Time & Communication data on the plan
-// POST /api/plan/:planId/time-and-communication
-router.post('/:planId/time-and-communication', verifyToken, async (req, res) => {
-  try {
-    const planID = req.params.planId;
-    const plan = await Plan.findById(planID);
-
-    if (!plan || plan.userID !== req.user.uid) {
-      return res.status(403).json({ error: 'Forbidden' });
-    }
-
-    const sectionData = {
-      agreeToTransportationPolicy: Boolean(req.body?.agreeToTransportationPolicy),
-      transportationArrangementDescription: typeof req.body?.transportationArrangementDescription === 'string'
-        ? req.body.transportationArrangementDescription
-        : '',
-      agreeToActivityPolicy: Boolean(req.body?.agreeToActivityPolicy),
-      activityPolicyDescription: typeof req.body?.activityPolicyDescription === 'string'
-        ? req.body.activityPolicyDescription
-        : '',
-      parentingSchedule: req.body?.parentingSchedule && typeof req.body.parentingSchedule === 'object'
-        ? req.body.parentingSchedule
-        : {},
-      communicationWithCoParentOnPhone: typeof req.body?.communicationWithCoParentOnPhone === 'string'
-        ? req.body.communicationWithCoParentOnPhone
-        : '',
-      communicationWithCoParentOnPhoneDescription: typeof req.body?.communicationWithCoParentOnPhoneDescription === 'string'
-        ? req.body.communicationWithCoParentOnPhoneDescription
-        : '',
-      notifyCoParentOfChildRelatedEvents: typeof req.body?.notifyCoParentOfChildRelatedEvents === 'string'
-        ? req.body.notifyCoParentOfChildRelatedEvents
-        : '',
-      notifyCoParentOfChildRelatedEventsDescription: typeof req.body?.notifyCoParentOfChildRelatedEventsDescription === 'string'
-        ? req.body.notifyCoParentOfChildRelatedEventsDescription
-        : '',
-    };
-
-    plan.timeAndCommunication = sectionData;
-    await plan.save();
-    res.status(201).json(plan);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
   }
 });
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from '../components/common/Sidebar';
 import Header from '../components/common/Header';
@@ -7,8 +7,7 @@ import Footer from '../components/common/Footer';
 import { buildApiUrl } from '../lib/apiClient';
 import { useForm } from '../hooks/useForm';
 import { auth } from '../lib/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
-import { useNavigation } from '../context/NavigationContext';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 
 export default function Layout({ children }) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -17,7 +16,6 @@ export default function Layout({ children }) {
 
   const [user, setUser] = useState(null);
   const { state, dispatch } = useForm();
-  const { onNext: pageOnNext, onBack: pageOnBack, onLeave: pageOnLeave } = useNavigation();
   const plan = state.plan
   const q = state.question
   const parents = state.parents
@@ -56,10 +54,6 @@ export default function Layout({ children }) {
     });
     return unsubscribe;
   }, [navigate]);
-
-  useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-  }, [location.pathname]);
 
   // Determine if current page should show navigation
   const shouldShowNavigation = pageOrder.includes(location.pathname);
@@ -106,73 +100,6 @@ export default function Layout({ children }) {
         console.error(e.message)
     }
   };
-
-  const saveGettingStartedDraft = useCallback(async () => {
-    const currentUser = auth.currentUser;
-    if (!currentUser || !plan?._id) {
-      return;
-    }
-
-    const idToken = await currentUser.getIdToken();
-    const isSharing = plan.allowSharing === 'true';
-
-    const shareResponse = await fetch(buildApiUrl(`api/plan/setShareMode/${plan._id}`), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${idToken}`,
-      },
-      body: JSON.stringify({ allowShare: isSharing }),
-    });
-
-    if (!shareResponse.ok) {
-      throw new Error(`Failed to update plan share mode: ${shareResponse.status}`);
-    }
-
-    const childrenResponse = await fetch(buildApiUrl(`api/plan/${plan._id}/children`), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${idToken}`,
-      },
-      body: JSON.stringify({ planChildren: plan.children }),
-    });
-
-    if (!childrenResponse.ok) {
-      throw new Error(`Failed to update plan children: ${childrenResponse.status}`);
-    }
-
-    const contactResponse = await fetch(buildApiUrl(`api/plan/${plan._id}/contact`), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${idToken}`,
-      },
-      body: JSON.stringify({ phone: parents.phone, address: parents.address }),
-    });
-
-    if (!contactResponse.ok) {
-      throw new Error(`Failed to update plan contact: ${contactResponse.status}`);
-    }
-
-    const updatedPlan = await contactResponse.json();
-    dispatch({
-      type: 'UPDATE_SECTION',
-      section: 'plan',
-      payload: updatedPlan,
-    });
-  }, [dispatch, parents.address, parents.phone, plan?._id, plan.allowSharing, plan.children]);
-
-  const handleLeaveCurrentSection = useCallback(async () => {
-    if (pageOnLeave) {
-      await pageOnLeave();
-      return;
-    }
-
-    if (location.pathname === '/getting-started') {
-      await saveGettingStartedDraft();
-    }
-  }, [location.pathname, pageOnLeave, saveGettingStartedDraft]);
 
   function gettingStartedNext(idToken) {
     // API call to update sharing status if neccessary
@@ -317,7 +244,6 @@ export default function Layout({ children }) {
       <Sidebar
         isCollapsed={isSidebarCollapsed}
         onToggle={toggleSidebar}
-        onBeforeNavigate={handleLeaveCurrentSection}
       />
 
       <div className={`layout__main ${isSidebarCollapsed ? 'layout__main--sidebar-collapsed' : ''}`}>
@@ -335,8 +261,8 @@ export default function Layout({ children }) {
         <Footer
           showBackButton={!isFirstPage}
           showNextButton={!isLastPage}
-          onBack={pageOnBack ?? handleBack}
-          onNext={pageOnNext ?? handleNext}
+          onBack={handleBack}
+          onNext={handleNext}
         />
       </div>
 

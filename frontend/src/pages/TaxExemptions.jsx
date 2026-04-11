@@ -325,11 +325,7 @@ export default function TaxExemptions() {
   useEffect(() => {
     setOnNext(handleNext);
     setOnBack(handleBack);
-    return () => {
-      setOnNext(null);
-      setOnBack(null);
-    };
-  }, [handleNext, handleBack, setOnNext, setOnBack]);
+  }, [handleNext, handleBack]);
 
   useEffect(() => {
     if (submitAttempted) {

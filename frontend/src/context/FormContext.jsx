@@ -31,48 +31,15 @@ const initialState = {
     transportationArrangementDescription: '',
     agreeToActivityPolicy: false,
     activityPolicyDescription: '',
-    parentingSchedule: {},
     communicationWithCoParentOnPhone: '',
     communicationWithCoParentOnPhoneDescription: '',
     notifyCoParentOfChildRelatedEvents: '',
-    notifyCoParentOfChildRelatedEventsDescription: '',
     errors: {}
   },
   plan: {},
   question: {},
   currAnswer: ''
 };
-
-function mergeSavedState(savedState = {}) {
-  return {
-    ...initialState,
-    ...savedState,
-    flags: {
-      ...initialState.flags,
-      ...(savedState.flags ?? {})
-    },
-    parents: {
-      ...initialState.parents,
-      ...(savedState.parents ?? {})
-    },
-    parental_rights: {
-      ...initialState.parental_rights,
-      ...(savedState.parental_rights ?? {})
-    },
-    timeAndCommunication: {
-      ...initialState.timeAndCommunication,
-      ...(savedState.timeAndCommunication ?? {})
-    },
-    plan: {
-      ...initialState.plan,
-      ...(savedState.plan ?? {})
-    },
-    question: {
-      ...initialState.question,
-      ...(savedState.question ?? {})
-    }
-  };
-}
 
 function formReducer(state, action) {
   switch (action.type) {
@@ -101,31 +68,18 @@ function formReducer(state, action) {
         }
       };
     case "LOAD_SAVED":
-      return mergeSavedState(action.payload);
+      return action.payload;
     case "RESET":
-      return mergeSavedState();
+      return initialState;
     default:
       return state;
   }
 }
 
-export function FormProvider({ children, initialState: seededState }) {
+export function FormProvider({ children }) {
   const [state, dispatch] = useReducer(formReducer, initialState, () => {
-    if (seededState) {
-      return mergeSavedState(seededState);
-    }
-
     const saved = localStorage.getItem("sharedCareForm");
-    if (!saved) {
-      return mergeSavedState();
-    }
-
-    try {
-      return mergeSavedState(JSON.parse(saved));
-    } catch (error) {
-      console.error('Failed to parse saved form state:', error);
-      return mergeSavedState();
-    }
+    return saved ? JSON.parse(saved) : initialState;
   });
 
   useEffect(() => {
