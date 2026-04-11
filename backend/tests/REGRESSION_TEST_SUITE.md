@@ -145,7 +145,7 @@ How it is run:
 - or run with `npm run test:api`
 
 What success looks like:
-- response status is `401`
+- response status is `403`
 - no delete occurs
 
 Why it is important:
@@ -187,12 +187,12 @@ What success looks like:
 Why it is important:
 - resume behavior depends on this field
 
-### 8. `POST /api/plan/:planId/time-and-communication` saves the full section payload
+### 8. `POST /api/plan/:planId/contact` saves contact information
 File:
 - `backend/tests/plan-routes.test.js`
 
 What it tests:
-- the time-and-communication section payload is normalized and saved onto the plan
+- phone number and address are written onto the plan
 
 How it is run:
 - included in `npm test`
@@ -200,10 +200,10 @@ How it is run:
 
 What success looks like:
 - response status is `201`
-- all section fields are written into `plan.timeAndCommunication`
+- `phoneNumber` and `address` are saved on the returned plan
 
 Why it is important:
-- this section stores multiple UI fields at once and is more fragile than a single-answer route
+- contact information is core plan metadata used across the questionnaire flow
 
 ## Manual Frontend Tests
 

@@ -184,23 +184,15 @@ test('GET /api/plan/:uid/all rejects a mismatched user id', async (t) => {
 
 // Delete owned plan
 test('POST /api/plan/delete deletes an owned plan', async (t) => {
-  let deleted = false;
+  let deleteFilter = null;
 
   const server = await createTestServer({
     Plan: {
-      async findOne(filter) {
-        assert.deepEqual(filter, { _id: 'plan-1', userID: 'user-1' });
-        return {
-          _id: 'plan-1',
-          userID: 'user-1',
-          caseId: null,
-          async deleteOne() {
-            deleted = true;
-          },
-        };
+      async findOneAndDelete(filter) {
+        deleteFilter = filter;
+        return { _id: 'plan-1', userID: 'user-1' };
       },
     },
-    Case: {},
   });
 
   t.after(() => server.close());
@@ -211,7 +203,7 @@ test('POST /api/plan/delete deletes an owned plan', async (t) => {
   });
 
   assert.equal(response.status, 200);
-  assert.equal(deleted, true);
+  assert.deepEqual(deleteFilter, { _id: 'plan-1', userID: 'user-1' });
   assert.deepEqual(json, { message: 'Plan deleted successfully' });
 });
 
@@ -219,7 +211,7 @@ test('POST /api/plan/delete deletes an owned plan', async (t) => {
 test('POST /api/plan/delete rejects deleting another user plan', async (t) => {
   const server = await createTestServer({
     Plan: {
-      async findOne() {
+      async findOneAndDelete() {
         return null;
       },
     },
@@ -232,8 +224,8 @@ test('POST /api/plan/delete rejects deleting another user plan', async (t) => {
     body: { pID: 'plan-2' },
   });
 
-  assert.equal(response.status, 401);
-  assert.deepEqual(json, { message: 'Unauthorized to delete this plan or plan not found' });
+  assert.equal(response.status, 403);
+  assert.deepEqual(json, { error: 'Forbidden' });
 });
 
 // Test 6: Save a new answer
@@ -306,14 +298,15 @@ test('POST /api/plan/updateCurrent/:planId/:currQId updates the current question
   assert.deepEqual(json, { message: 'Plan updated successfully' });
 });
 
-// Test 8: Save time-and-communication section
-test('POST /api/plan/:planId/time-and-communication saves the section payload', async (t) => {
+// Test 8: Save contact information
+test('POST /api/plan/:planId/contact saves phone and address', async (t) => {
   let saved = false;
 
   const plan = {
     _id: 'plan-1',
     userID: 'user-1',
-    timeAndCommunication: {},
+    phoneNumber: '',
+    address: '',
     async save() {
       saved = true;
     },
@@ -331,24 +324,19 @@ test('POST /api/plan/:planId/time-and-communication saves the section payload', 
   t.after(() => server.close());
 
   const payload = {
-    agreeToTransportationPolicy: true,
-    transportationArrangementDescription: 'Meet halfway',
-    agreeToActivityPolicy: false,
-    activityPolicyDescription: 'Alternate by week',
-    parentingSchedule: { monday: [{ startTime: '08:00', endTime: '17:00' }] },
-    communicationWithCoParentOnPhone: 'yes',
-    communicationWithCoParentOnPhoneDescription: '',
-    notifyCoParentOfChildRelatedEvents: 'sometimes',
-    notifyCoParentOfChildRelatedEventsDescription: 'Only for urgent issues',
+    phone: '614-555-0101',
+    address: '123 Main St, Columbus, OH',
   };
 
-  const { response, json } = await requestJson(server.baseUrl, '/api/plan/plan-1/time-and-communication', {
+  const { response, json } = await requestJson(server.baseUrl, '/api/plan/plan-1/contact', {
     method: 'POST',
     body: payload,
   });
 
   assert.equal(response.status, 201);
   assert.equal(saved, true);
-  assert.deepEqual(plan.timeAndCommunication, payload);
-  assert.deepEqual(json.timeAndCommunication, payload);
+  assert.equal(plan.phoneNumber, payload.phone);
+  assert.equal(plan.address, payload.address);
+  assert.equal(json.phoneNumber, payload.phone);
+  assert.equal(json.address, payload.address);
 });

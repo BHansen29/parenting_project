@@ -34,8 +34,8 @@ Current automated backend API coverage:
    - verifies a new question answer is appended and saved
 7. `POST /api/plan/updateCurrent/:planId/:currQId`
    - verifies the current question pointer is updated and saved
-8. `POST /api/plan/:planId/time-and-communication`
-   - verifies the full section payload is stored on the plan
+8. `POST /api/plan/:planId/contact`
+   - verifies phone number and address are stored on the plan
 
 Those are separate from the current backend API regression command. They are not run by `cd backend && npm test`.
 
@@ -48,7 +48,7 @@ At a practical level, the active backend API suite is testing these behaviors:
 - plan deletion authorization
 - plan answer persistence
 - resume-progress persistence through `currentQuestion`
-- full-section persistence for `timeAndCommunication`
+- contact information persistence
 
 The existing frontend test files indicate there is also some component/page-level UI coverage in the repo, but that coverage is separate from the current backend API suite and is not documented as part of the active API regression workflow.
 
@@ -58,17 +58,18 @@ The current backend API suite does not cover these `plan` routes:
 
 - `GET /api/plan/:planId/current`
 - `GET /api/plan/:planId`
-- `POST /api/plan/:planId/contact`
 - `POST /api/plan/:planId/children`
 - `POST /api/plan/setShareMode/:planId`
+- `GET /api/plan/prevQuestion/:qkey/:planId`
+- `PATCH /api/plan/:planId/name`
 
 The current backend API suite also does not cover these important `plan` route behaviors:
 
+- creating a plan with an existing `caseId` for co-parent join flow
 - updating an existing answer in `POST /api/plan/:planId/answer`
 - pruning later answers after an earlier answer changes
 - forbidden access on `POST /api/plan/:planId/answer`
-- forbidden access on `POST /api/plan/:planId/time-and-communication`
-- case cleanup behavior when deleting a plan linked to a case
+- forbidden access on `POST /api/plan/:planId/contact`
 - error paths when model operations throw
 
 ## What Is Not Currently Tested End-To-End
