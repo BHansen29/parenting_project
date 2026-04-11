@@ -206,6 +206,8 @@ export default function ParentingTimeAndCommunication() {
                                 placeholder: 'Describe how you would like transportation to be handled if you do not agree to the standard policy',
                                 error: errors.transportationArrangementDescription,
                             }}
+                            disclaimer="Legal Disclaimer: This tool does not give instructions or legal advice about your rights or choices. If you have questions, please consult with a lawyer."
+                            disclaimerVariant="info"
                         />
 
                         <hr className="section-divider" />
@@ -239,6 +241,8 @@ export default function ParentingTimeAndCommunication() {
                                 placeholder: 'Describe how you would like activities and scheduling to be handled if you do not agree to the standard policy',
                                 error: errors.activityPolicyDescription,
                             }}
+                            disclaimer="Legal Disclaimer: This tool does not give instructions or legal advice about your rights or choices. If you have questions, please consult with a lawyer."
+                            disclaimerVariant="info"
                         />
 
                         <hr className="section-divider" />
@@ -305,6 +309,8 @@ export default function ParentingTimeAndCommunication() {
                                 placeholder: 'Describe when your child can talk to your co-parent on the phone',
                                 error: errors.communicationWithCoParentOnPhoneDescription,
                             }}
+                            disclaimer="Legal Disclaimer: This tool does not give instructions or legal advice about your rights or choices. If you have questions, please consult with a lawyer."
+                            disclaimerVariant="info"
                         />
                         <RadioQuestion
                             question="Should your co-parent be told if your children get sick or injured?"
@@ -329,6 +335,8 @@ export default function ParentingTimeAndCommunication() {
                                 placeholder: 'Describe when you would notify your co-parent if your child gets sick or injured',
                                 error: errors.notifyCoParentOfChildRelatedEventsDescription,
                             }}
+                            disclaimer="Legal Disclaimer: This tool does not give instructions or legal advice about your rights or choices. If you have questions, please consult with a lawyer."
+                            disclaimerVariant="info"
                         />
                     </CardContent>
                 </Card>

@@ -92,7 +92,7 @@ export default function ParentalRights() {
 
         dispatch({
             type: 'UPDATE_SECTION',
-            section: 'parentalRights',
+            section: 'parental_rights',
             payload: { errors: formErrors }
         });
 
@@ -110,7 +110,7 @@ export default function ParentalRights() {
    const handleBack = () => {
     dispatch({
       type: 'UPDATE_SECTION',
-      section: 'parentalRights',
+      section: 'parental_rights',
       payload: { errors: {} }
     });
     navigate('/getting-started');
@@ -149,6 +149,9 @@ export default function ParentalRights() {
                                         flag={childrenApplicationFlag}
                                         error={errors.currAnswer}
                                         options={question.options}
+                                        disclaimers={[
+                                            { disclaimer: "Legal Disclaimer: This tool does not give instructions or legal advice about your rights or choices. If you have questions, please consult with a lawyer.", disclaimerVariant: "info" }
+                                        ]}
                                     />
                                 );
                             }
