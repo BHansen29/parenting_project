@@ -175,7 +175,7 @@ router.post('/:planId/answer', verifyToken, async (req, res) => {
   }
 });
 
-// GET /api/plan/prevQuestion/:qkey - get prev question answered before current question
+// GET /api/plan/prevQuestion/:qkey/:planId - get prev question answered before current question
 // returns "none" if there is no previous question
 router.get('/prevQuestion/:qkey/:planId', verifyToken, async (req, res) => {
   const qKey = req.params.qkey
@@ -194,8 +194,7 @@ router.get('/prevQuestion/:qkey/:planId', verifyToken, async (req, res) => {
       // if index < 0, that means we are on a question we haven't answered yet, thus prev question will be most recent one answered
       index = plan.answers.length
     }
-    const prevQKey = (index - 1) >= 0 ? plan.answers[index - 1].qKey : 'none'
-    const prevQuestion = await Question.findOne({qKey: prevQKey})
+    const prevQuestion = (index - 1) >= 0 ? await Question.findOne({qKey: plan.answers[index - 1].qKey}) : "none"
     return res.status(200).json(prevQuestion)
   } catch (error) {
     console.error(error);
