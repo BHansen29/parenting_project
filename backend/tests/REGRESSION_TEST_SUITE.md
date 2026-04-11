@@ -15,34 +15,12 @@ npm run test:api
 
 ## Automated Backend API Tests
 
-Automated backend API tests live in:
-- `backend/tests/`
-
-Primary command:
-```powershell
-cd backend
-npm test
-```
-
 API-only command:
 ```powershell
 cd backend
 npm run test:api
 ```
-
-Expected console output:
-- Node's `spec` reporter prints a separate line for each test
-- passing tests display a green check mark
-- a green check mark means that the backend API behavior being tested worked as expected for that scenario
-
 ## Current Automated Test Counts
-
-When you run:
-
-```powershell
-cd backend
-npm test
-```
 
 you are currently running:
 - 8 backend API tests
