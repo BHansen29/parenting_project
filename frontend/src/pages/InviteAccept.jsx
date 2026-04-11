@@ -41,6 +41,7 @@ export default function InviteAccept() {
   useEffect(() => {
     if (!caseId || user === undefined) return;
     if (!user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPageState('auth_required');
       return;
     }
@@ -70,7 +71,7 @@ export default function InviteAccept() {
             const plan = await planRes.json();
             dispatch({ type: 'UPDATE_SECTION', section: 'plan', payload: plan });
           }
-        } catch (e) { /* non-fatal */ }
+        } catch { /* non-fatal */ }
 
         setPageState('success');
         // Redirect to Dashboard so Parent 2 sees their new shared plan card.
