@@ -26,7 +26,7 @@ export default function Dashboard() {
   const collaborationMode = state.collaborationMode ?? '';
 
   // Mock plan data — replace with real data fetching later
-  const [plans, setPlans] = useState([{ id: 1, name: 'Loading', status: 'DRAFT', lastModified: '3/3/2026'}]);
+  const [plans, setPlans] = useState([]);
 
   const [editingId, setEditingId] = useState(null);
   const [editingName, setEditingName] = useState('');
@@ -104,13 +104,22 @@ export default function Dashboard() {
   };
 
   const startEditing = (plan) => {
-    setEditingId(plan.id);
+    setEditingId(plan._id);
     setEditingName(plan.name);
   };
 
   const commitEdit = (id) => {
-    setPlans(prev => prev.map(p => p.id === id ? { ...p, name: editingName.trim() || p.name } : p));
+    const trimmed = editingName.trim();
+    if (!trimmed) { setEditingId(null); return; }
+    setPlans(prev => prev.map(p => p._id === id ? { ...p, name: trimmed } : p));
     setEditingId(null);
+    user.getIdToken().then((idToken) => {
+      fetch(buildApiUrl(`api/plan/${id}/name`), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+        body: JSON.stringify({ name: trimmed }),
+      }).catch(e => console.error('Failed to save plan name', e));
+    });
   };
 
   const handleNewPlan = async () => {
@@ -367,11 +376,10 @@ export default function Dashboard() {
                         <button
                           className="plan-card__open-btn"
                           onClick={() => {
-                            dispatch({
-                                type: 'UPDATE_SECTION',
-                                section: "plan",
-                                payload: plan
-                            });
+                            // Replace plan in context with the selected plan
+                            dispatch({ type: 'UPDATE_SECTION', section: "plan", payload: plan });
+                            // Clear stale question state from a previous session so the new plan starts fresh
+                            dispatch({ type: 'UPDATE_SECTION', section: "question", payload: {} });
                             if (plan.caseId) setActiveCaseId(plan.caseId);
                             navigate('/getting-started')
                           }}

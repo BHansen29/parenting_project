@@ -59,6 +59,8 @@ export default function SignIn() {
         // Try to sync Mongo profile, but do not block sign-in if backend/database is down.
         await syncFirebaseUserProfileSafely(userCredential.user);
 
+        // Clear any stale form state from a previous user's session
+        localStorage.removeItem('sharedCareForm');
         // Next Step
         navigate(redirect || '/dashboard');
       } catch (err) {

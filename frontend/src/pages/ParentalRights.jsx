@@ -13,20 +13,20 @@ export default function ParentalRights() {
     const navigate = useNavigate();
     const { state, dispatch } = useForm();
     const question = state.question
-    //form data and errors for this section
+    // If the question hasn't been loaded into context yet, show nothing rather than crash
+    if (!question?.qKey) return null;
 
-    // if plan doesn't match plan in the context, update context to be consistent
-    if (state.parental_rights.planID !== state.plan._id) {
-        let planAnswers = state.plan.answers.map((qAnswer) => {return {qKey: qAnswer.qKey, answer: qAnswer.answer}})
-        if (!planAnswers) {
-            planAnswers = []
+    useEffect(() => {
+        if (state.parental_rights.planID !== state.plan?._id) {
+            const planAnswers = (state.plan?.answers ?? []).map((qAnswer) => ({ qKey: qAnswer.qKey, answer: qAnswer.answer }));
+            dispatch({
+                type: 'UPDATE_SECTION',
+                section: 'parental_rights',
+                payload: { planID: state.plan._id, responses: planAnswers, errors: {} },
+            });
         }
-        dispatch({
-            type: 'UPDATE_SECTION',
-            section: "parental_rights",
-            payload: {planID: state.plan._id, responses: planAnswers, errors: {}}
-        });
-    }
+    }, [state.plan?._id]);
+
     const formData = state.parental_rights
     let curr = formData.responses.find((response) => {return response.qKey === question.qKey})
     if (!curr) {
@@ -34,6 +34,12 @@ export default function ParentalRights() {
         formData.responses.push(curr)
     }
     const currAnswer = curr.answer
+
+    useEffect(() => {
+        if (state.currAnswer !== currAnswer) {
+            dispatch({ type: 'UPDATE_SECTION', section: 'currAnswer', payload: currAnswer });
+        }
+    }, [currAnswer]);
 
     const errors = state.parental_rights?.errors ?? {};
 
