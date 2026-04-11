@@ -226,8 +226,8 @@ router.post('/:planId/children', verifyToken, async (req, res) => {
 });
 
 // Update phone and address to the plan
-// POST/api/plan/:planId/contact
-router.post('/:planId/contact', verifyToken, async (req, res) => {
+// POST/api/plan/:planId/information
+router.post('/:planId/information', verifyToken, async (req, res) => {
   try {
     const planID = req.params.planId;
     //Retrieve plan and fetch from Mongo
@@ -237,9 +237,13 @@ router.post('/:planId/contact', verifyToken, async (req, res) => {
     if (!plan || plan.userID !== req.user.uid) {
       return res.status(403).json({ error: 'Forbidden' });
     }
-    const { phone, address } = req.body
+    const { parentFName, parentLName, phone, address, userRole, residentialParent } = req.body
+    plan.parentFName = parentFName
+    plan.parentLName = parentLName
     plan.phoneNumber = phone
     plan.address = address
+    plan.userRole = userRole
+    plan.residentialParent = residentialParent
     //Save the plan and write back to DB
     await plan.save();
     res.status(201).json(plan);
@@ -269,9 +273,9 @@ router.get('/:planId', verifyToken, async (req, res) => {
   }
 });
 
-// Set a plan's allowShare field
-// POST/api/plan/setShareMode/:planId
-router.post('/setShareMode/:planId', verifyToken, async (req, res) => {
+// Set a plan's collaborationMode field
+// POST/api/plan/setCollabMode/:planId
+router.post('/setCollabMode/:planId', verifyToken, async (req, res) => {
   try {
     const planID = req.params.planId;
     //Retrieve plan and fetch from Mongo
@@ -281,8 +285,8 @@ router.post('/setShareMode/:planId', verifyToken, async (req, res) => {
     if (!plan || plan.userID !== req.user.uid) {
       return res.status(403).json({ error: 'Forbidden' });
     }
-    const { allowShare } = req.body
-    plan.allowSharing = allowShare
+    const { mode } = req.body
+    plan.collaborationMode = mode
     await plan.save()
     res.status(201).json(plan)
   } catch (error) {
