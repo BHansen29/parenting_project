@@ -10,26 +10,25 @@ import { useNavigation } from '../context/NavigationContext';
 import './Page.css';
 import SectionHeader from '../components/forms/SectionHeader';
 import RadioQuestion from '../components/forms/RadioQuestion';
+import Disclaimer from '../components/forms/Disclaimer';
+import SafetyPrivacyQuestion from '../components/forms/SafetyPrivacyQuestion';
 
 export default function GettingStarted() {
   const navigate = useNavigate();
-  const { state, dispatch } = useForm(); //state reads data, dispatch writes data
+  const { state, dispatch } = useForm();
   const { setOnNext, setOnBack } = useNavigation();
 
-  // Parents stay in global context
   const formData = state.parents ?? { name: '', secondParentName: '', errors: {} };
-  const allowSharing = state.plan.allowSharing ? "true" : "false"
+  const collaborationMode = state.collaborationMode ?? '';
   const caseFilingStatus = state.caseFilingStatus ?? '';
   const errors = formData.errors ?? {};
 
-  //these errors use the local useState
-  const [safetyConcernError, setSafetyConcernError] = useState('');
+  const [collaborationModeError, setCollaborationModeError] = useState('');
   const [caseFilingError, setCaseFilingError] = useState('');
 
   const caseFilingFlag = useSectionFlag('caseFilingStatus');
   const childrenFlag = useSectionFlag('children');
 
-  //pull children from the stored state, calling setChildren will add a new child to the existing list
   const [children, setChildren] = useState(() => {
     let startKey = 1
     return state.plan.children?.length > 0
@@ -43,28 +42,29 @@ export default function GettingStarted() {
 
   useEffect(() => {
     dispatch({ type: 'UPDATE_SECTION', section: 'parents', payload: { errors: {} } });
-    setSafetyConcernError('');
+    setCollaborationModeError('');
     setCaseFilingError('');
     setChildren(prev => prev.map(c => ({ ...c, errors: {} })));
-  }, []); //clears all errors as soon as the page loads
+  }, []);
 
   useEffect(() => {
     const fixedChildren = children.map(child => ({...child, isEmancipatedAdult: child.isEmancipatedAdult === "emancipated"})) 
     dispatch({ type: 'UPDATE_SECTION', section: "plan", payload: {children: fixedChildren} });
   }, [children]);
 
+  const handleCollaborationModeChange = (mode) => {
+    dispatch({ type: 'UPDATE_SECTION', section: 'collaborationMode', payload: mode });
+    if (mode) setCollaborationModeError('');
+  };
+
   const handleRadioChange = (section) => (value) => {
     dispatch({ type: 'UPDATE_SECTION', section: section, payload: value });
-    //clear the relevant error when user makes a selection
-    if (section === 'safetyConcern') setSafetyConcernError('');
     if (section === 'caseFilingStatus') setCaseFilingError('');
   };
 
   const handleFormChange = (section, field) => (value) => {
-    //updates the formContext with the new returned value
     dispatch({ type: 'UPDATE_SECTION', section: section, payload: { [field]: value } });
     if (errors[field]) {
-      //clear previous errors for a field since it has been changed
       dispatch({ type: 'UPDATE_SECTION', section: section, payload: { errors: { ...errors, [field]: '' } } });
     }
   };
@@ -95,7 +95,6 @@ export default function GettingStarted() {
     }
   };
 
-  // Tracks when a failed submission happens - controls when to show validation errors
   const [submitAttempted, setSubmitAttempted] = useState(false);
 
   useEffect(() => {
@@ -130,15 +129,10 @@ export default function GettingStarted() {
                 title="Safety & Privacy"
                 intro="Your safety is our priority."
               />
-              <RadioQuestion
-                question="Would sharing information from this questionnaire with your co-parent make you fear for your safety in any way?"
-                name="allowSharing"
-                value={allowSharing}
-                onChange={handleFormChange('plan', 'allowSharing')}
-                options={[
-                  { value: "false", label: 'Yes, please keep my information private', description: 'You and your co-parent will fill out the form separately' },
-                  { value: "true",  label: 'No, I wish to collaborate with my co-parent', description: 'Your answers will be shared with your co-parent' },
-                ]}
+              <SafetyPrivacyQuestion
+                collaborationMode={collaborationMode}
+                onModeChange={handleCollaborationModeChange} 
+                error={collaborationModeError} 
               />
             </section>
             <hr className="section-divider" />
@@ -206,6 +200,9 @@ export default function GettingStarted() {
                 onChange={handleRadioChange('caseFilingStatus')}
                 error={caseFilingError}
                 flag={caseFilingFlag}
+                disclaimers={[
+                    { disclaimer: "Please note: ShareCare cannot confirm if your answer is correct or if there is an active divorce, separation, or child support case.", disclaimerVariant: "info" }
+                ]}
                 options={[
                   { value: 'yes',     label: 'Yes, it was me',         description: 'You will be identified as Parent 1/Petitioner 1/Plaintiff in the parenting plan' },
                   { value: 'no',      label: 'No, my co-parent filed', description: 'You will be identified as Parent 2/Petitioner 2/Defendant in the parenting plan' },
@@ -313,10 +310,10 @@ export default function GettingStarted() {
                             {child.errors.classification}
                           </p>
                         )}
-                    </form>
-                  </CardContent>
-                </Card>
-              ))}
+                      </form>
+                    </CardContent>
+                  </Card>
+                ))}
 
               <button
                 type="button"

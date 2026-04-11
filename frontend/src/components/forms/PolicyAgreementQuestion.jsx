@@ -1,6 +1,7 @@
 import { Card, CardHeader, CardDescription, CardContent } from '../common/card';
 import Checkbox from './Checkbox';
 import TextInput from './TextInput';
+import Disclaimer from './Disclaimer';
 
 /**
  * A policy agreement card: displays a titled policy list, a "I agree" checkbox,
@@ -12,8 +13,8 @@ import TextInput from './TextInput';
  * @param {string}   checkboxLabel     - Label text for the agree checkbox
  * @param {boolean}  checked           - Whether the user has agreed to the standard policy
  * @param {function} onCheckboxChange  - Called with boolean when checkbox changes
- * @param {object}   textInput         - Config for the custom-description input:
- *                                       { id, label, value, onChange, placeholder, error? }
+ * @param {object}   textInput         - Config for the custom-description input:{ id, label, value, onChange, placeholder, error? }
+ * @param {Array}    disclaimers       - Optional array of disclaimers, each with { disclaimer, disclaimerVariant } default variant is 'info'
  */
 export default function PolicyAgreementQuestion({
   policyTitle,
@@ -24,6 +25,7 @@ export default function PolicyAgreementQuestion({
   onCheckboxChange,
   textInput,
   requiredNote,
+  disclaimers,
 }) {
   // Derive a stable DOM id for the collapsible section from the checkbox id
   const sectionId = checkboxId === 'agreeToTransportationPolicy'
@@ -71,6 +73,11 @@ export default function PolicyAgreementQuestion({
             onChange={textInput.onChange}
             placeholder={textInput.placeholder}
           />
+          {disclaimers?.map((item, index) => (
+            <Disclaimer key={index} variant={item.disclaimerVariant ?? 'info'}>
+            {item.disclaimer}
+            </Disclaimer>
+          ))}
           {textInput.error && (
             <div className="text-input__error-message" role="alert">
               {textInput.error}

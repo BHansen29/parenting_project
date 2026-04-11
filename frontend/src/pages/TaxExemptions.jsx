@@ -381,6 +381,8 @@ export default function TaxExemptions() {
               flag={parentalRoleFlag}
               error={errors.parentRole}
               options={PARENT_ROLE_OPTIONS}
+              disclaimer="Legal Disclaimer: This tool does not give instructions or legal advice about your rights or choices. If you have questions, please consult with a lawyer."
+              disclaimerVariant="info"
             />
 
             <hr className="section-divider" />

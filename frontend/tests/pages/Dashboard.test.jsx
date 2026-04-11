@@ -1,0 +1,478 @@
+import { screen, fireEvent, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { vi } from 'vitest'
+import Dashboard from '../../src/pages/Dashboard'
+import { renderWithRouter } from '../../src/utils/renderWithRouter'
+
+// ── Mocks ─────────────────────────────────────────────────────────────────────
+
+vi.mock('firebase/auth', () => ({
+  onAuthStateChanged: vi.fn((auth, callback) => {
+    callback({ 
+      uid: '123', 
+      email: 'test@example.com',
+      getIdToken: vi.fn().mockResolvedValue('fake-token'),  // add this
+    })
+    return vi.fn()
+  }),
+  signOut: vi.fn(() => Promise.resolve()),
+  getAuth: vi.fn(),
+}))
+
+vi.mock('../../src/lib/firebase', () => ({
+  auth: {},
+}))
+
+const mockNavigate = vi.fn()
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom')
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  }
+})
+
+vi.mock('../../src/components/common/Header', () => ({
+  default: ({ onSignOut }) => (
+    <header>
+      <button onClick={onSignOut}>Sign Out</button>
+    </header>
+  ),
+}))
+
+vi.mock('../../src/components/common/InviteModal', () => ({
+  default: ({ isOpen, onClose }) => {
+    if (!isOpen) return null
+    return (
+      <div role="dialog" aria-label="Invite Modal">
+        <button onClick={onClose}>Close Invite Modal</button>
+      </div>
+    )
+  },
+}))
+
+let mockCollaborationMode = ''
+const mockDispatch = vi.fn()
+
+vi.mock('../../src/hooks/useForm', () => ({
+  useForm: () => ({
+    state: { collaborationMode: mockCollaborationMode },
+    dispatch: mockDispatch,
+  }),
+}))
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+const renderDashboard = () => renderWithRouter(<Dashboard />)
+const setMode = (mode) => { mockCollaborationMode = mode }
+
+// Opens the switch prompt by clicking the first "Switch & Invite" banner button
+const openSwitchPrompt = async () => {
+  const switchBtns = screen.getAllByRole('button', { name: /switch & invite co-parent/i })
+  await userEvent.click(switchBtns[0])
+  await screen.findByText('Switch to collaborative mode?')
+}
+
+// Clicks the confirm button inside the switch prompt modal specifically,
+// avoiding ambiguity with the banner button that stays visible behind it.
+const confirmSwitch = () => {
+  fireEvent.click(document.querySelector('.delete-modal__confirm'))
+}
+
+// ── Tests ─────────────────────────────────────────────────────────────────────
+
+describe('Dashboard', () => {
+  beforeEach(() => {
+    mockNavigate.mockReset()
+    mockDispatch.mockReset()
+    mockCollaborationMode = ''
+  })
+
+  // ─── Render ──────────────────────────────────────────────────────────────
+
+  it('renders without crashing', () => {
+    renderDashboard()
+  })
+
+  it('displays the Your Plans section', () => {
+    renderDashboard()
+    expect(screen.getByText('Your Plans')).toBeInTheDocument()
+  })
+
+  it('renders the New Plan button', () => {
+    renderDashboard()
+    expect(screen.getByRole('button', { name: /new plan/i })).toBeInTheDocument()
+  })
+
+  it('renders the default plan card', () => {
+    renderDashboard()
+    expect(screen.getByText('Untitled Plan')).toBeInTheDocument()
+  })
+
+  it('renders the Open Plan button on plan cards', () => {
+    renderDashboard()
+    expect(screen.getByRole('button', { name: /open plan/i })).toBeInTheDocument()
+  })
+
+  it('renders the Sign Out button via Header', () => {
+    renderDashboard()
+    expect(screen.getByRole('button', { name: /sign out/i })).toBeInTheDocument()
+  })
+
+  // ─── Auth ─────────────────────────────────────────────────────────────────
+
+  it('signs out and navigates to "/" when Sign Out is clicked', async () => {
+    const { signOut } = await import('firebase/auth')
+    renderDashboard()
+    await userEvent.click(screen.getByRole('button', { name: /sign out/i }))
+    await waitFor(() => {
+      expect(signOut).toHaveBeenCalled()
+      expect(mockNavigate).toHaveBeenCalledWith('/')
+    })
+  })
+
+  it('navigates to /signin when no user is authenticated', async () => {
+    const { onAuthStateChanged } = await import('firebase/auth')
+    vi.mocked(onAuthStateChanged).mockImplementationOnce((auth, callback) => {
+      callback(null)
+      return vi.fn()
+    })
+    renderDashboard()
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/signin')
+    })
+  })
+
+  // ─── Invite Banner — mode: '' (not yet set) ───────────────────────────────
+
+  it('shows the invite banner when collaborationMode is not yet set', () => {
+    setMode('')
+    renderDashboard()
+    expect(screen.getByText('Co-parenting works better together')).toBeInTheDocument()
+  })
+
+  it('shows the default "Invite Co-parent" button when mode is not set', () => {
+    setMode('')
+    renderDashboard()
+    expect(screen.getAllByRole('button', { name: /invite co-parent/i }).length).toBeGreaterThanOrEqual(1)
+  })
+
+  // ─── Invite Banner — mode: 'collaborative' ────────────────────────────────
+
+  it('shows the collaborative invite banner', () => {
+    setMode('collaborative')
+    renderDashboard()
+    expect(screen.getByText('Co-parenting works better together')).toBeInTheDocument()
+  })
+
+  it('shows "Invite Co-parent" button in collaborative mode', () => {
+    setMode('collaborative')
+    renderDashboard()
+    expect(screen.getAllByRole('button', { name: /^invite co-parent$/i }).length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('shows "Free for both parents" note in collaborative mode', () => {
+    setMode('collaborative')
+    renderDashboard()
+    expect(screen.getByText('Free for both parents')).toBeInTheDocument()
+  })
+
+  it('opens the invite modal directly in collaborative mode', async () => {
+    setMode('collaborative')
+    renderDashboard()
+    const inviteBtns = screen.getAllByRole('button', { name: /^invite co-parent$/i })
+    await userEvent.click(inviteBtns[0])
+    expect(screen.getByRole('dialog', { name: /invite modal/i })).toBeInTheDocument()
+  })
+
+  // ─── Invite Banner — mode: 'individual' ──────────────────────────────────
+
+  it('shows the individual mode banner title', () => {
+    setMode('individual')
+    renderDashboard()
+    expect(screen.getByText("You're working individually")).toBeInTheDocument()
+  })
+
+  it('shows the individual mode description', () => {
+    setMode('individual')
+    renderDashboard()
+    expect(screen.getByText(/You chose to complete this plan on your own/i)).toBeInTheDocument()
+  })
+
+  it('shows "Switch & Invite Co-parent" button label in individual mode', () => {
+    setMode('individual')
+    renderDashboard()
+    expect(screen.getAllByRole('button', { name: /switch & invite co-parent/i }).length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('shows "You are currently in individual mode" note', () => {
+    setMode('individual')
+    renderDashboard()
+    expect(screen.getByText('You are currently in individual mode')).toBeInTheDocument()
+  })
+
+  it('shows the switch prompt when invite is clicked in individual mode', async () => {
+    setMode('individual')
+    renderDashboard()
+    await openSwitchPrompt()
+    expect(screen.getByText('Switch to collaborative mode?')).toBeInTheDocument()
+  })
+
+  it('does not open the invite modal directly in individual mode', async () => {
+    setMode('individual')
+    renderDashboard()
+    await openSwitchPrompt()
+    expect(screen.queryByRole('dialog', { name: /invite modal/i })).not.toBeInTheDocument()
+  })
+
+  // ─── Invite Banner — mode: 'locked-individual' ───────────────────────────
+
+  it('hides the invite banner entirely in locked-individual mode', () => {
+    setMode('locked-individual')
+    renderDashboard()
+    expect(screen.queryByText('Co-parenting works better together')).not.toBeInTheDocument()
+    expect(screen.queryByText("You're working individually")).not.toBeInTheDocument()
+  })
+
+  it('hides all invite buttons in locked-individual mode', () => {
+    setMode('locked-individual')
+    renderDashboard()
+    expect(screen.queryByRole('button', { name: /invite/i })).not.toBeInTheDocument()
+  })
+
+  it('hides the per-card invite button in locked-individual mode', () => {
+    setMode('locked-individual')
+    renderDashboard()
+    expect(screen.queryByRole('button', { name: /invite parent/i })).not.toBeInTheDocument()
+  })
+
+  // ─── Switch Prompt ────────────────────────────────────────────────────────
+
+  it('shows the switch prompt description', async () => {
+    setMode('individual')
+    renderDashboard()
+    await openSwitchPrompt()
+    expect(screen.getByText(/You're currently completing this plan individually/i)).toBeInTheDocument()
+  })
+
+  it('renders the Stay in individual mode button in the switch prompt', async () => {
+    setMode('individual')
+    renderDashboard()
+    await openSwitchPrompt()
+    expect(screen.getByRole('button', { name: /stay in individual mode/i })).toBeInTheDocument()
+  })
+
+  it('renders the confirm button inside the switch prompt modal', async () => {
+    setMode('individual')
+    renderDashboard()
+    await openSwitchPrompt()
+    expect(document.querySelector('.delete-modal__confirm')).toBeInTheDocument()
+  })
+
+  it('closes the switch prompt when "Stay in individual mode" is clicked', async () => {
+    setMode('individual')
+    renderDashboard()
+    await openSwitchPrompt()
+    await userEvent.click(screen.getByRole('button', { name: /stay in individual mode/i }))
+    expect(screen.queryByText('Switch to collaborative mode?')).not.toBeInTheDocument()
+  })
+
+  it('closes the switch prompt when the overlay is clicked', async () => {
+    setMode('individual')
+    renderDashboard()
+    await openSwitchPrompt()
+    fireEvent.click(document.querySelector('.delete-modal__overlay'))
+    expect(screen.queryByText('Switch to collaborative mode?')).not.toBeInTheDocument()
+  })
+
+  it('does not dispatch when staying in individual mode', async () => {
+    setMode('individual')
+    renderDashboard()
+    await openSwitchPrompt()
+    await userEvent.click(screen.getByRole('button', { name: /stay in individual mode/i }))
+    expect(mockDispatch).not.toHaveBeenCalled()
+  })
+
+  it('dispatches collaborationMode update when switch is confirmed', async () => {
+    setMode('individual')
+    renderDashboard()
+    await openSwitchPrompt()
+    confirmSwitch()
+    expect(mockDispatch).toHaveBeenCalledWith({
+      type: 'UPDATE_SECTION',
+      section: 'collaborationMode',
+      payload: 'collaborative',
+    })
+  })
+
+  it('opens the invite modal after confirming the switch', async () => {
+    setMode('individual')
+    renderDashboard()
+    await openSwitchPrompt()
+    confirmSwitch()
+    expect(screen.getByRole('dialog', { name: /invite modal/i })).toBeInTheDocument()
+  })
+
+  it('closes the switch prompt after confirming', async () => {
+    setMode('individual')
+    renderDashboard()
+    await openSwitchPrompt()
+    confirmSwitch()
+    expect(screen.queryByText('Switch to collaborative mode?')).not.toBeInTheDocument()
+  })
+
+  // ─── Plan Management — Add ────────────────────────────────────────────────
+
+  it('adds a new plan when New Plan is clicked', async () => {
+    renderDashboard()
+    await userEvent.click(screen.getByRole('button', { name: /new plan/i }))
+    expect(screen.getAllByText('Untitled Plan').length).toBe(2)
+  })
+
+  it('can add multiple plans', async () => {
+    renderDashboard()
+    const newPlanBtn = screen.getByRole('button', { name: /new plan/i })
+    await userEvent.click(newPlanBtn)
+    await userEvent.click(newPlanBtn)
+    expect(screen.getAllByText('Untitled Plan').length).toBe(3)
+  })
+
+  it("new plans show today's date as last modified", async () => {
+    renderDashboard()
+    await userEvent.click(screen.getByRole('button', { name: /new plan/i }))
+    const today = new Date().toLocaleDateString('en-US')
+    expect(screen.getAllByText(`Last modified: ${today}`).length).toBeGreaterThanOrEqual(1)
+  })
+
+  // ─── Plan Management — Open ───────────────────────────────────────────────
+
+  it('navigates to /getting-started when Open Plan is clicked', async () => {
+    renderDashboard()
+    await userEvent.click(screen.getByRole('button', { name: /open plan/i }))
+    expect(mockNavigate).toHaveBeenCalledWith('/getting-started')
+  })
+
+  // ─── Plan Management — Delete ─────────────────────────────────────────────
+
+  it('shows a delete confirmation modal when the trash icon is clicked', async () => {
+    renderDashboard()
+    fireEvent.click(document.querySelector('.plan-card__delete-btn'))
+    expect(screen.getByText('Delete plan?')).toBeInTheDocument()
+  })
+
+  it('shows the plan name in the delete confirmation', async () => {
+    renderDashboard()
+    fireEvent.click(document.querySelector('.plan-card__delete-btn'))
+    expect(screen.getByText(/"Untitled Plan"/)).toBeInTheDocument()
+  })
+
+  it('closes the delete modal when Cancel is clicked', async () => {
+    renderDashboard()
+    fireEvent.click(document.querySelector('.plan-card__delete-btn'))
+    await userEvent.click(screen.getByRole('button', { name: /^cancel$/i }))
+    expect(screen.queryByText('Delete plan?')).not.toBeInTheDocument()
+  })
+
+  it('closes the delete modal when the overlay is clicked', async () => {
+    renderDashboard()
+    fireEvent.click(document.querySelector('.plan-card__delete-btn'))
+    fireEvent.click(document.querySelector('.delete-modal__overlay'))
+    expect(screen.queryByText('Delete plan?')).not.toBeInTheDocument()
+  })
+
+  it('removes the plan after confirming delete', async () => {
+    renderDashboard()
+    fireEvent.click(document.querySelector('.plan-card__delete-btn'))
+    // Use class selector to avoid ambiguity with any other "Delete" text
+    fireEvent.click(document.querySelector('.delete-modal__confirm'))
+    expect(screen.queryByText('Untitled Plan')).not.toBeInTheDocument()
+  })
+
+  it('closes the delete modal after confirming delete', async () => {
+    renderDashboard()
+    fireEvent.click(document.querySelector('.plan-card__delete-btn'))
+    fireEvent.click(document.querySelector('.delete-modal__confirm'))
+    expect(screen.queryByText('Delete plan?')).not.toBeInTheDocument()
+  })
+
+  // ─── Plan Management — Rename ─────────────────────────────────────────────
+
+  it('shows an edit input when the pencil icon is clicked', async () => {
+    renderDashboard()
+    fireEvent.click(document.querySelector('.plan-card__edit-btn'))
+    expect(document.querySelector('.plan-card__name-input')).toBeInTheDocument()
+  })
+
+  it('commits the new name when Enter is pressed', async () => {
+    renderDashboard()
+    fireEvent.click(document.querySelector('.plan-card__edit-btn'))
+    const input = document.querySelector('.plan-card__name-input')
+    await userEvent.clear(input)
+    await userEvent.type(input, 'My New Plan{Enter}')
+    expect(screen.getByText('My New Plan')).toBeInTheDocument()
+  })
+
+  it('commits the new name when the input loses focus', async () => {
+    renderDashboard()
+    fireEvent.click(document.querySelector('.plan-card__edit-btn'))
+    const input = document.querySelector('.plan-card__name-input')
+    await userEvent.clear(input)
+    await userEvent.type(input, 'Focused Plan')
+    fireEvent.blur(input)
+    expect(screen.getByText('Focused Plan')).toBeInTheDocument()
+  })
+
+  it('keeps the original name if the edit input is cleared and blurred', async () => {
+    renderDashboard()
+    fireEvent.click(document.querySelector('.plan-card__edit-btn'))
+    const input = document.querySelector('.plan-card__name-input')
+    await userEvent.clear(input)
+    fireEvent.blur(input)
+    expect(screen.getByText('Untitled Plan')).toBeInTheDocument()
+  })
+
+  // ─── Per-card Invite Button ───────────────────────────────────────────────
+
+  it('shows "Invite Parent" on the plan card in collaborative mode', () => {
+    setMode('collaborative')
+    renderDashboard()
+    expect(screen.getByRole('button', { name: /invite parent/i })).toBeInTheDocument()
+  })
+
+  it('shows "Switch & Invite" on the plan card in individual mode', () => {
+    setMode('individual')
+    renderDashboard()
+    expect(screen.getAllByRole('button', { name: /switch & invite/i }).length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('opens invite modal from per-card button in collaborative mode', async () => {
+    setMode('collaborative')
+    renderDashboard()
+    await userEvent.click(screen.getByRole('button', { name: /invite parent/i }))
+    expect(screen.getByRole('dialog', { name: /invite modal/i })).toBeInTheDocument()
+  })
+
+  it('opens switch prompt from per-card button in individual mode', async () => {
+    setMode('individual')
+    renderDashboard()
+    // The per-card button is the last matching button
+    const switchBtns = screen.getAllByRole('button', { name: /switch & invite/i })
+    await userEvent.click(switchBtns[switchBtns.length - 1])
+    expect(screen.getByText('Switch to collaborative mode?')).toBeInTheDocument()
+  })
+
+  // ─── Invite Modal ─────────────────────────────────────────────────────────
+
+  it('invite modal is not shown on initial render', () => {
+    renderDashboard()
+    expect(screen.queryByRole('dialog', { name: /invite modal/i })).not.toBeInTheDocument()
+  })
+
+  it('closes the invite modal when it is dismissed', async () => {
+    setMode('collaborative')
+    renderDashboard()
+    await userEvent.click(screen.getAllByRole('button', { name: /^invite co-parent$/i })[0])
+    await userEvent.click(screen.getByRole('button', { name: /close invite modal/i }))
+    expect(screen.queryByRole('dialog', { name: /invite modal/i })).not.toBeInTheDocument()
+  })
+})

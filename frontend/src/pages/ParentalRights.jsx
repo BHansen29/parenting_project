@@ -84,6 +84,44 @@ export default function ParentalRights() {
         });
     };
 
+    const validateForm = () => {
+        const formErrors = {};
+        if (!formData.appliesToAllChildren) {
+            formErrors.appliesToAllChildren = 'Please select an option';
+        }
+        if (!formData.livingArrangements) {
+            formErrors.livingArrangements = 'Please select an option';
+        }
+        if (!formData.decisionMaking) {
+            formErrors.decisionMaking = 'Please select an option';
+        }
+
+        dispatch({
+            type: 'UPDATE_SECTION',
+            section: 'parental_rights',
+            payload: { errors: formErrors }
+        });
+
+        return Object.keys(formErrors).length === 0;
+    }
+
+    const handleNext = () => {
+    if (validateForm()) {
+      navigate('/parenting-time-communication');
+    } else {
+      setSubmitAttempted(true);
+    }
+  };
+
+   const handleBack = () => {
+    dispatch({
+      type: 'UPDATE_SECTION',
+      section: 'parental_rights',
+      payload: { errors: {} }
+    });
+    navigate('/getting-started');
+  };
+
     return (
         <div className="page-container">
             <div className="page-content">
@@ -117,6 +155,9 @@ export default function ParentalRights() {
                                         flag={childrenApplicationFlag}
                                         error={errors.currAnswer}
                                         options={question.options}
+                                        disclaimers={[
+                                            { disclaimer: "Legal Disclaimer: This tool does not give instructions or legal advice about your rights or choices. If you have questions, please consult with a lawyer.", disclaimerVariant: "info" }
+                                        ]}
                                     />
                                 );
                             }

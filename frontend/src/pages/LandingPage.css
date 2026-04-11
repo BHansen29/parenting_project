@@ -183,12 +183,6 @@
   background-color: #6570b5;
 }
 
-.feature-card_left:hover,
-.feature-card_center:hover,
-.feature-card_right:hover {
-  transform: translateY(-4px);
-}
-
 .feature-card_left__icon-bg,
 .feature-card_center__icon-bg,
 .feature-card_right__icon-bg {

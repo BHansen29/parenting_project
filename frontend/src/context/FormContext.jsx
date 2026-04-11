@@ -3,6 +3,7 @@ import { createContext, useReducer, useEffect } from "react";
 export const FormContext = createContext(null);
 
 const initialState = {
+  collaborationMode: '', //added this
   caseFilingStatus: '',
   flags: {},
   parents: {
