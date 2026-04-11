@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { Users, FileText, Calendar, UserPlus, Plus, Trash2, Pencil, Lock } from 'lucide-react';
@@ -8,6 +8,7 @@ import Header from '../components/common/Header';
 import InviteModal from '../components/common/InviteModal';
 import './Dashboard.css';
 import { API_BASE_URL, buildApiUrl } from '../lib/apiClient';
+import { hydratePlanIntoForm, resetPlanForm } from '../lib/planState';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -19,13 +20,13 @@ export default function Dashboard() {
   const { state, dispatch } = useForm();
 
   // collaborationMode drives all invite UI:
-  //   'locked-individual' — safety concern; hide all invite surfaces entirely
-  //   'individual'        — user chose solo; show invite button with a switch prompt
-  //   'collaborative'     — user chose collaborative; invite button works normally
-  //   ''                  — not yet set (user hasn't completed Getting Started)
+  //   'locked-individual' â€” safety concern; hide all invite surfaces entirely
+  //   'individual'        â€” user chose solo; show invite button with a switch prompt
+  //   'collaborative'     â€” user chose collaborative; invite button works normally
+  //   ''                  â€” not yet set (user hasn't completed Getting Started)
   const collaborationMode = state.collaborationMode ?? '';
 
-  // Mock plan data — replace with real data fetching later
+  // Mock plan data â€” replace with real data fetching later
   const [plans, setPlans] = useState([]);
 
   const [editingId, setEditingId] = useState(null);
@@ -86,13 +87,18 @@ export default function Dashboard() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${idToken}`,
           },
-          body: JSON.stringify({userID: user.uid, pID: id})
+          body: JSON.stringify({ pID: id })
         })
         .then( async (response) => {
           if (!response.ok) {
             console.error("Failed to delete plan: ", response.message)
           } else {
-            setPlans(prev => prev.filter(plan => plan._id !== id));
+            const nextPlans = plans.filter(plan => plan._id !== id);
+            setPlans(nextPlans);
+            if (state.plan?._id === id || nextPlans.length === 0) {
+              resetPlanForm(dispatch);
+              setActiveCaseId(null);
+            }
             setDeleteTarget(null);
           }
         });
@@ -138,7 +144,7 @@ export default function Dashboard() {
           } else {
             const plan = await response.json()
             setPlans(prev => [...prev, plan]);
-            dispatch({ type: 'UPDATE_SECTION', section: 'plan', payload: plan });
+            hydratePlanIntoForm(dispatch, plan);
             if (plan.caseId) setActiveCaseId(plan.caseId);
           }
         });
@@ -166,13 +172,13 @@ export default function Dashboard() {
   // Routes based on current collaborationMode.
   const handleInviteClick = () => {
     if (collaborationMode === 'collaborative') {
-      // Already in collaborative mode — open invite directly
+      // Already in collaborative mode â€” open invite directly
       setIsInviteOpen(true);
     } else if (collaborationMode === 'individual') {
-      // User chose individual mode — ask if they want to switch first
+      // User chose individual mode â€” ask if they want to switch first
       setShowSwitchPrompt(true);
     }
-    // 'locked-individual' — button is not rendered at all, so this is unreachable
+    // 'locked-individual' â€” button is not rendered at all, so this is unreachable
   };
 
   // User confirmed they want to switch from individual to collaborative mode.
@@ -244,7 +250,7 @@ export default function Dashboard() {
 
       <main className="dashboard__main">
 
-        {/* Invite co-parent banner — hidden entirely for locked-individual users */}
+        {/* Invite co-parent banner â€” hidden entirely for locked-individual users */}
         {showInviteUI && (
           <div className="dashboard__invite-banner">
             <div className="dashboard__invite-icon">
@@ -342,11 +348,7 @@ export default function Dashboard() {
                         <button
                           className="plan-card__open-btn"
                           onClick={() => {
-                            dispatch({
-                                type: 'UPDATE_SECTION',
-                                section: "plan",
-                                payload: plan
-                            });
+                            hydratePlanIntoForm(dispatch, plan);
                             if (plan.caseId) setActiveCaseId(plan.caseId);
                             fetch(buildApiUrl("/api/logic-engine/question/" + plan.currentQuestion), {
                               method: "GET",
@@ -380,6 +382,7 @@ export default function Dashboard() {
                             dispatch({ type: 'UPDATE_SECTION', section: "plan", payload: plan });
                             // Clear stale question state from a previous session so the new plan starts fresh
                             dispatch({ type: 'UPDATE_SECTION', section: "question", payload: {} });
+                            hydratePlanIntoForm(dispatch, plan);
                             if (plan.caseId) setActiveCaseId(plan.caseId);
                             navigate('/getting-started')
                           }}
@@ -390,7 +393,7 @@ export default function Dashboard() {
                     }
                 })()}
 
-                {/* Per-card invite button — hidden for locked-individual users */}
+                {/* Per-card invite button â€” hidden for locked-individual users */}
                 {showInviteUI && (
                   <button className="plan-card__invite-btn" onClick={() => { setActiveCaseId(plan.caseId || null); handleInviteClick(); }}>
                   <UserPlus size={14} />

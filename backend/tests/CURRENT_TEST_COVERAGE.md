@@ -37,13 +37,6 @@ Current automated backend API coverage:
 8. `POST /api/plan/:planId/time-and-communication`
    - verifies the full section payload is stored on the plan
 
-### Additional automated tests present in the repo
-
-The repository also contains frontend unit/component/page tests under:
-- `frontend/tests/components`
-- `frontend/tests/layouts`
-- `frontend/tests/pages`
-
 Those are separate from the current backend API regression command. They are not run by `cd backend && npm test`.
 
 ## What Is Currently Being Tested
@@ -78,30 +71,6 @@ The current backend API suite also does not cover these important `plan` route b
 - case cleanup behavior when deleting a plan linked to a case
 - error paths when model operations throw
 
-## What Is Not Currently Tested Across The Rest Of The Backend
-
-These route groups currently have no automated backend coverage in the active API suite:
-
-- [backend/src/routes/index.js](c:/Users/nabee/OneDrive/Documents/VSCode Projects/parenting_project/backend/src/routes/index.js)
-  - `/api/health`
-  - `/api/documents`
-  - `/api/documents/:id`
-  - `/api/users`
-  - `/api/auth/firebase/session`
-- [backend/src/routes/email.js](c:/Users/nabee/OneDrive/Documents/VSCode Projects/parenting_project/backend/src/routes/email.js)
-  - `/api/email/invite`
-- [backend/src/routes/logic-engine.js](c:/Users/nabee/OneDrive/Documents/VSCode Projects/parenting_project/backend/src/routes/logic-engine.js)
-  - question lookup and next-question flow
-- [backend/src/routes/cases.js](c:/Users/nabee/OneDrive/Documents/VSCode Projects/parenting_project/backend/src/routes/cases.js)
-  - case status
-  - response save/submit
-  - comparison endpoints
-- [backend/src/routes/invitations.js](c:/Users/nabee/OneDrive/Documents/VSCode Projects/parenting_project/backend/src/routes/invitations.js)
-  - invite creation
-  - token validation
-  - invite acceptance
-  - pending invite retrieval
-
 ## What Is Not Currently Tested End-To-End
 
 These important real-world integrations are not covered by the current automated backend API suite:
@@ -123,13 +92,3 @@ Even with the current automated backend API suite, these areas still need manual
 - sign-in and sign-out flows
 - invite UX and email delivery
 - any UI-specific validation or rendering behavior
-
-## Bottom Line
-
-Current strongest automated coverage:
-- plan route ownership and persistence behavior
-
-Current biggest gaps:
-- non-plan backend routes
-- real external integrations
-- full end-to-end browser workflows

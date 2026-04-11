@@ -5,16 +5,45 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../co
 import { useForm } from '../hooks/useForm';
 import { useSectionFlag } from '../hooks/useSectionFlag';
 import { useNavigation } from '../context/NavigationContext';
+import { buildApiUrl } from '../lib/apiClient';
+import { auth } from '../lib/firebase';
 import './Page.css';
 import SectionHeader from '../components/forms/SectionHeader';
 import RadioQuestion from '../components/forms/RadioQuestion';
 import PolicyAgreementQuestion from '../components/forms/PolicyAgreementQuestion';
 import ScheduleBuilder from '../components/forms/ScheduleBuilder';
 
+const EMPTY_TIME_AND_COMMUNICATION = {
+    agreeToTransportationPolicy: false,
+    transportationArrangementDescription: '',
+    agreeToActivityPolicy: false,
+    activityPolicyDescription: '',
+    parentingSchedule: {},
+    communicationWithCoParentOnPhone: '',
+    communicationWithCoParentOnPhoneDescription: '',
+    notifyCoParentOfChildRelatedEvents: '',
+    notifyCoParentOfChildRelatedEventsDescription: '',
+    errors: {}
+};
+
+function hasTimeAndCommunicationData(value = {}) {
+    return Boolean(
+        value.transportationArrangementDescription?.trim() ||
+        value.activityPolicyDescription?.trim() ||
+        Object.keys(value.parentingSchedule ?? {}).length > 0 ||
+        value.communicationWithCoParentOnPhone?.trim() ||
+        value.communicationWithCoParentOnPhoneDescription?.trim() ||
+        value.notifyCoParentOfChildRelatedEvents?.trim() ||
+        value.notifyCoParentOfChildRelatedEventsDescription?.trim() ||
+        value.agreeToTransportationPolicy ||
+        value.agreeToActivityPolicy
+    );
+}
+
 export default function ParentingTimeAndCommunication() {
     const navigate = useNavigate();
     const { state, dispatch } = useForm();
-    const { setOnNext, setOnBack } = useNavigation();
+    const { setOnNext, setOnBack, setOnLeave } = useNavigation();
 
     const transportationAgreementFlag = useSectionFlag('transportationAgreement');
     const activitiesAndSchedulingFlag = useSectionFlag('activitiesAndScheduling');
@@ -22,30 +51,40 @@ export default function ParentingTimeAndCommunication() {
     const communicationWithCoParentOnPhoneFlag = useSectionFlag('communicationWithCoParentOnPhone');
     const notifyCoParentOfChildRelatedEventsFlag = useSectionFlag('notifyCoParentOfChildRelatedEvents');
 
-    const formData = state.timeAndCommunication ?? {
-        agreeToTransportationPolicy: false,
-        transportationArrangementDescription: '',
-        agreeToActivityPolicy: false,
-        activityPolicyDescription: '',
-        parentingSchedule: {},
-        communicationWithCoParentOnPhone: '',
-        communicationWithCoParentOnPhoneDescription: '',
-        notifyCoParentOfChildRelatedEvents: '',
-        notifyCoParentOfChildRelatedEventsDescription: '',
-        errors: {}
+    const formData = {
+        ...EMPTY_TIME_AND_COMMUNICATION,
+        ...(state.timeAndCommunication ?? {})
     };
     const errors = state.timeAndCommunication?.errors ?? {};
 
     // Separate error state for radio groups (not stored in formData.errors)
     const [communicationError, setCommunicationError] = useState('');
     const [notifyError, setNotifyError] = useState('');
+    const [saveError, setSaveError] = useState('');
 
     // ── Clear all errors on mount (e.g. user navigated away and came back) ──
     useEffect(() => {
         dispatch({ type: 'UPDATE_SECTION', section: 'timeAndCommunication', payload: { errors: {} } });
         setCommunicationError('');
         setNotifyError('');
+        setSaveError('');
     }, []);
+
+    useEffect(() => {
+        const savedSection = state.plan?.timeAndCommunication;
+        if (!savedSection || !hasTimeAndCommunicationData(savedSection) || hasTimeAndCommunicationData(state.timeAndCommunication)) {
+            return;
+        }
+
+        dispatch({
+            type: 'UPDATE_SECTION',
+            section: 'timeAndCommunication',
+            payload: {
+                ...savedSection,
+                errors: {}
+            }
+        });
+    }, [dispatch, state.plan?.timeAndCommunication, state.timeAndCommunication]);
 
     const [submitAttempted, setSubmitAttempted] = useState(false);
 
@@ -66,6 +105,7 @@ export default function ParentingTimeAndCommunication() {
         }
         if (field === 'communicationWithCoParentOnPhone') setCommunicationError('');
         if (field === 'notifyCoParentOfChildRelatedEvents') setNotifyError('');
+        setSaveError('');
     };
 
     const handlePolicyChange = (field) => (value) => {
@@ -83,6 +123,7 @@ export default function ParentingTimeAndCommunication() {
                 dispatch({ type: 'UPDATE_SECTION', section: 'timeAndCommunication', payload: { errors: { ...errors, [descriptionField]: '' } } });
             }
         }
+        setSaveError('');
     };
 
     const handleScheduleChange = useCallback((schedule) => {
@@ -94,6 +135,7 @@ export default function ParentingTimeAndCommunication() {
         if (errors.parentingSchedule) {
             dispatch({ type: 'UPDATE_SECTION', section: 'timeAndCommunication', payload: { errors: { ...errors, parentingSchedule: '' } } });
         }
+        setSaveError('');
     }, [dispatch, errors.parentingSchedule]);
 
     const validateForm = () => {
@@ -146,22 +188,82 @@ export default function ParentingTimeAndCommunication() {
         return isValid;
     };
 
-    const handleNext = () => {
-        if (validateForm()) {
-            navigate('/informationsharing');
-        } else {
-            setSubmitAttempted(true);
+    const saveTimeAndCommunicationDraft = useCallback(async () => {
+        const currentUser = auth.currentUser;
+        if (!currentUser || !state.plan?._id) {
+            setSaveError('Your session expired. Please sign in again.');
+            throw new Error('No authenticated user or plan selected');
         }
-    };
 
-    const handleBack = () => {
+        try {
+            const idToken = await currentUser.getIdToken();
+            const payload = {
+                agreeToTransportationPolicy: formData.agreeToTransportationPolicy,
+                transportationArrangementDescription: formData.transportationArrangementDescription,
+                agreeToActivityPolicy: formData.agreeToActivityPolicy,
+                activityPolicyDescription: formData.activityPolicyDescription,
+                parentingSchedule: formData.parentingSchedule,
+                communicationWithCoParentOnPhone: formData.communicationWithCoParentOnPhone,
+                communicationWithCoParentOnPhoneDescription: formData.communicationWithCoParentOnPhoneDescription,
+                notifyCoParentOfChildRelatedEvents: formData.notifyCoParentOfChildRelatedEvents,
+                notifyCoParentOfChildRelatedEventsDescription: formData.notifyCoParentOfChildRelatedEventsDescription,
+            };
+
+            const response = await fetch(buildApiUrl(`api/plan/${state.plan._id}/time-and-communication`), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${idToken}`,
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                throw new Error(`Response status: ${response.status}`);
+            }
+
+            const updatedPlan = await response.json();
+            dispatch({
+                type: 'UPDATE_SECTION',
+                section: 'plan',
+                payload: updatedPlan,
+            });
+            setSaveError('');
+        } catch (error) {
+            setSaveError('Failed to save this section. Please try again.');
+            throw error;
+        }
+    }, [dispatch, formData, state.plan?._id]);
+
+    const handleNext = useCallback(async () => {
+        if (!validateForm()) {
+            setSubmitAttempted(true);
+            return;
+        }
+
+        try {
+            await saveTimeAndCommunicationDraft();
+            navigate('/informationsharing');
+        } catch (error) {
+            console.error('Failed to save Parenting Time & Communication:', error.message);
+        }
+    }, [navigate, saveTimeAndCommunicationDraft]);
+
+    const handleBack = useCallback(() => {
         navigate('/parental-rights');
-    };
+    }, [navigate]);
 
     useEffect(() => {
         setOnNext(handleNext);
         setOnBack(handleBack);
-    }, [state, communicationError, notifyError]);
+        setOnLeave(saveTimeAndCommunicationDraft);
+
+        return () => {
+            setOnNext(null);
+            setOnBack(null);
+            setOnLeave(null);
+        };
+    }, [handleNext, handleBack, saveTimeAndCommunicationDraft, setOnNext, setOnBack, setOnLeave]);
 
     return (
         <div className="page-container">
@@ -173,6 +275,9 @@ export default function ParentingTimeAndCommunication() {
                             Establish how parenting time will be structured and communication will work.
                             Fields marked with <span className="required-asterisk">*</span> are required.
                         </CardDescription>
+                        {saveError && (
+                            <p className="text-input__error-message">{saveError}</p>
+                        )}
                     </CardHeader>
                     <CardContent>
                         <hr className="section-divider" />

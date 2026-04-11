@@ -1,84 +1,98 @@
-import { useEffect, useRef } from 'react';
-import { Scale, House } from 'lucide-react';
+﻿import { useState, useEffect, useCallback } from 'react';
+import { Scale } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/card';
 import { useForm } from '../hooks/useForm';
 import { useSectionFlag } from '../hooks/useSectionFlag';
+import { useNavigation } from '../context/NavigationContext';
+import { buildApiUrl } from '../lib/apiClient';
+import { auth } from '../lib/firebase';
 import './Page.css';
 import SectionHeader from '../components/forms/SectionHeader';
 import RadioQuestion from '../components/forms/RadioQuestion';
 
 export default function ParentalRights() {
-
     const navigate = useNavigate();
     const { state, dispatch } = useForm();
-    const question = state.question
+    const { setOnNext, setOnBack, setOnLeave } = useNavigation();
+    const question = state.question ?? {};
 
-    useEffect(() => {
-        if (state.parental_rights.planID !== state.plan?._id) {
-            const planAnswers = (state.plan?.answers ?? []).map((qAnswer) => ({ qKey: qAnswer.qKey, answer: qAnswer.answer }));
-            dispatch({
-                type: 'UPDATE_SECTION',
-                section: 'parental_rights',
-                payload: { planID: state.plan._id, responses: planAnswers, errors: {} },
-            });
-        }
-    }, [state.plan?._id]);
+    const formData = state.parental_rights ?? { planID: '', responses: [], errors: {} };
+    const responses = Array.isArray(formData.responses) ? formData.responses : [];
+    const curr = responses.find((response) => response.qKey === question.qKey);
+    const currAnswer = curr?.answer ?? '';
+    const errors = state.parental_rights?.errors ?? {};
 
-    useEffect(() => {
-        if (!question?.qKey) return;
-        const curr = state.parental_rights.responses.find(r => r.qKey === question.qKey);
-        const currAnswer = curr?.answer ?? '';
-        if (state.currAnswer !== currAnswer) {
-            dispatch({ type: 'UPDATE_SECTION', section: 'currAnswer', payload: currAnswer });
-        }
-    }, [question?.qKey, state.parental_rights.responses, state.currAnswer, dispatch]);
-
-    //flag states for this section
     const childrenApplicationFlag = useSectionFlag('childrenApplication');
 
-    //scroll to first error when validation fails
-    const submitAttempted = useRef(false);
+    const [saveError, setSaveError] = useState('');
+    const [submitAttempted, setSubmitAttempted] = useState(false);
+
     useEffect(() => {
-        if (submitAttempted.current) {
-            submitAttempted.current = false;
-            const firstError = document.querySelector('.text-input__error-message, .date-picker__error-message');
+        if (!state.plan?._id || formData.planID === state.plan._id) {
+            return;
+        }
+
+        const planAnswers = Array.isArray(state.plan.answers)
+            ? state.plan.answers.map((qAnswer) => ({ qKey: qAnswer.qKey, answer: qAnswer.answer }))
+            : [];
+
+        dispatch({
+            type: 'UPDATE_SECTION',
+            section: 'parental_rights',
+            payload: { planID: state.plan._id, responses: planAnswers, errors: {} }
+        });
+    }, [dispatch, formData.planID, state.plan?._id, state.plan?.answers]);
+
+    useEffect(() => {
+        if (!question?.qKey) {
+            return;
+        }
+
+        const savedAnswer = responses.find((response) => response.qKey === question.qKey)?.answer ?? '';
+        if (state.currAnswer !== savedAnswer) {
+            dispatch({
+                type: 'UPDATE_SECTION',
+                section: 'currAnswer',
+                payload: savedAnswer
+            });
+        }
+    }, [dispatch, question?.qKey, responses, state.currAnswer]);
+
+    useEffect(() => {
+        if (submitAttempted) {
+            const firstError = document.querySelector('.text-input__error-message, .date-picker__error-message, .radio-group-error');
             if (firstError) {
                 firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
+            setSubmitAttempted(false);
         }
-    }, [state.parental_rights]);
+    }, [submitAttempted, state.parental_rights]);
 
-    // If the question hasn't been loaded into context yet, show nothing rather than crash
-    if (!question?.qKey) return null;
-
-    const formData = state.parental_rights
-    let curr = formData.responses.find((response) => {return response.qKey === question.qKey})
-    if (!curr) {
-        curr = {qKey: question.qKey, answer: ''}
-        formData.responses.push(curr)
-    }
-    const currAnswer = curr.answer
-
-    const errors = state.parental_rights?.errors ?? {};
-
-    //generic change handler for form fields in this section
     const handleFormChange = (section, field) => (value) => {
-        // update the answer in the responses field
-        const updated = formData.responses.map((res) => {return res.qKey === question.qKey ? {qKey: res.qKey, answer: value} : res})
+        const updated = responses.some((response) => response.qKey === question.qKey)
+            ? responses.map((response) => (
+                response.qKey === question.qKey
+                    ? { qKey: response.qKey, answer: value }
+                    : response
+            ))
+            : [...responses, { qKey: question.qKey, answer: value }];
+
         dispatch({
             type: 'UPDATE_SECTION',
-            section: section,
+            section,
             payload: { [field]: updated }
         });
-        if (errors[field]) {
+
+        setSaveError('');
+        if (errors.currAnswer) {
             dispatch({
                 type: 'UPDATE_SECTION',
-                section: section,
-                payload: { errors: { ...errors, [field]: '' } }
+                section,
+                payload: { errors: { ...errors, currAnswer: '' } }
             });
         }
-        // update question answer field
+
         dispatch({
             type: 'UPDATE_SECTION',
             section: 'currAnswer',
@@ -88,14 +102,8 @@ export default function ParentalRights() {
 
     const validateForm = () => {
         const formErrors = {};
-        if (!formData.appliesToAllChildren) {
-            formErrors.appliesToAllChildren = 'Please select an option';
-        }
-        if (!formData.livingArrangements) {
-            formErrors.livingArrangements = 'Please select an option';
-        }
-        if (!formData.decisionMaking) {
-            formErrors.decisionMaking = 'Please select an option';
+        if (!currAnswer?.trim()) {
+            formErrors.currAnswer = 'Please select an option';
         }
 
         dispatch({
@@ -105,24 +113,94 @@ export default function ParentalRights() {
         });
 
         return Object.keys(formErrors).length === 0;
-    }
+    };
 
-    const handleNext = () => {
-    if (validateForm()) {
-      navigate('/parenting-time-communication');
-    } else {
-      submitAttempted.current = true;
-    }
-  };
+    const saveParentalRightsDraft = useCallback(async () => {
+        const currentUser = auth.currentUser;
+        if (!currentUser || !state.plan?._id || !question?._id || !question?.qKey || !currAnswer?.trim()) {
+            setSaveError('');
+            return;
+        }
 
-   const handleBack = () => {
-    dispatch({
-      type: 'UPDATE_SECTION',
-      section: 'parental_rights',
-      payload: { errors: {} }
-    });
-    navigate('/getting-started');
-  };
+        try {
+            const idToken = await currentUser.getIdToken();
+
+            const updateCurrentResponse = await fetch(buildApiUrl(`api/plan/updateCurrent/${state.plan._id}/${question._id}`), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${idToken}`,
+                },
+            });
+
+            if (!updateCurrentResponse.ok) {
+                throw new Error(`Response status: ${updateCurrentResponse.status}`);
+            }
+
+            const response = await fetch(buildApiUrl(`api/plan/${state.plan._id}/answer`), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${idToken}`,
+                },
+                body: JSON.stringify({ qKey: question.qKey, answer: currAnswer }),
+            });
+
+            if (!response.ok) {
+                throw new Error(`Response status: ${response.status}`);
+            }
+
+            const updatedPlan = await response.json();
+            dispatch({
+                type: 'UPDATE_SECTION',
+                section: 'plan',
+                payload: updatedPlan,
+            });
+            setSaveError('');
+        } catch (error) {
+            setSaveError('Failed to save this section. Please try again.');
+            throw error;
+        }
+    }, [currAnswer, dispatch, question?._id, question?.qKey, state.plan?._id]);
+
+    const handleNext = useCallback(async () => {
+        if (!validateForm()) {
+            setSubmitAttempted(true);
+            return;
+        }
+
+        try {
+            await saveParentalRightsDraft();
+            navigate('/parenting-time-communication');
+        } catch (error) {
+            console.error('Failed to save parental rights answer:', error.message);
+        }
+    }, [navigate, saveParentalRightsDraft]);
+
+    const handleBack = useCallback(() => {
+        dispatch({
+            type: 'UPDATE_SECTION',
+            section: 'parental_rights',
+            payload: { errors: {} }
+        });
+        navigate('/getting-started');
+    }, [dispatch, navigate]);
+
+    useEffect(() => {
+        setOnNext(handleNext);
+        setOnBack(handleBack);
+        setOnLeave(saveParentalRightsDraft);
+
+        return () => {
+            setOnNext(null);
+            setOnBack(null);
+            setOnLeave(null);
+        };
+    }, [handleNext, handleBack, saveParentalRightsDraft, setOnNext, setOnBack, setOnLeave]);
+
+    if (!question?.qKey) {
+        return null;
+    }
 
     return (
         <div className="page-container">
@@ -131,11 +209,14 @@ export default function ParentalRights() {
                     <CardHeader>
                         <CardTitle>Parental Rights</CardTitle>
                         <CardDescription>Define where your children live and who will make legal decisions. </CardDescription>
+                        {saveError && (
+                            <p className="text-input__error-message">{saveError}</p>
+                        )}
                     </CardHeader>
 
                     <CardContent>
                         <hr className="section-divider" />
-                        <section className={question.qKey + "-section"}>
+                        <section className={question.qKey + '-section'}>
                             <SectionHeader
                                 iconClassName={question.qIcon}
                                 icon={<Scale size={25} />}
@@ -143,30 +224,23 @@ export default function ParentalRights() {
                                 intro={question.qIntro}
                             />
                         </section>
-                        {(() => {
-                            if (question.type === "multiple choice") {
-                                return (
-                                    <RadioQuestion
-                                        question={question.qText}
-                                        name={question.qKey}
-                                        value={currAnswer}
-                                        // need to change the 1st & 2nd value in FormContext.jsx maybe?
-                                        // def need to make changes regarding this since i think it broke some things
-                                        onChange={handleFormChange(question.section.replaceAll("-", "_"), 'responses')}
-                                        //onchange={handleFormChange('parentalRights', 'appliesToAllChildren')}
-                                        flag={childrenApplicationFlag}
-                                        error={errors.currAnswer}
-                                        options={question.options}
-                                        disclaimers={[
-                                            { disclaimer: "Legal Disclaimer: This tool does not give instructions or legal advice about your rights or choices. If you have questions, please consult with a lawyer.", disclaimerVariant: "info" }
-                                        ]}
-                                    />
-                                );
-                            }
-                        })()}
-                    </CardContent>    
+                        {question.type === 'multiple choice' && (
+                            <RadioQuestion
+                                question={question.qText}
+                                name={question.qKey}
+                                value={currAnswer}
+                                onChange={handleFormChange(question.section.replaceAll('-', '_'), 'responses')}
+                                flag={childrenApplicationFlag}
+                                error={errors.currAnswer}
+                                options={question.options}
+                                disclaimers={[
+                                    { disclaimer: 'Legal Disclaimer: This tool does not give instructions or legal advice about your rights or choices. If you have questions, please consult with a lawyer.', disclaimerVariant: 'info' }
+                                ]}
+                            />
+                        )}
+                    </CardContent>
                 </Card>
             </div>
         </div>
-    )
+    );
 }

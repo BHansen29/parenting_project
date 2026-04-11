@@ -5,12 +5,20 @@ const NavigationContext = createContext(null);
 export function NavigationProvider({ children }) {
   const [onNext, setOnNextFn] = useState(null);
   const [onBack, setOnBackFn] = useState(null);
+  const [onLeave, setOnLeaveFn] = useState(null);
 
-  const setOnNext = useCallback((fn) => setOnNextFn(() => fn), []);
-  const setOnBack = useCallback((fn) => setOnBackFn(() => fn), []);
+  const setOnNext = useCallback((fn) => {
+    setOnNextFn(fn ? () => fn : null);
+  }, []);
+  const setOnBack = useCallback((fn) => {
+    setOnBackFn(fn ? () => fn : null);
+  }, []);
+  const setOnLeave = useCallback((fn) => {
+    setOnLeaveFn(fn ? () => fn : null);
+  }, []);
 
   return (
-    <NavigationContext.Provider value={{ onNext, onBack, setOnNext, setOnBack }}>
+    <NavigationContext.Provider value={{ onNext, onBack, onLeave, setOnNext, setOnBack, setOnLeave }}>
       {children}
     </NavigationContext.Provider>
   );

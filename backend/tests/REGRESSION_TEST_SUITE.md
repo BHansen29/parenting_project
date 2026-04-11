@@ -9,6 +9,10 @@ The split is intentional:
 - API correctness, ownership, validation, and database writes are automated on the backend
 - page flow, navigation, visual behavior, and browser recovery are tested manually on the frontend
 
+command:
+cd backend
+npm run test:api
+
 ## Automated Backend API Tests
 
 Automated backend API tests live in:

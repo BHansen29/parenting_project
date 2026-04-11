@@ -1,9 +1,10 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ChevronLeftIcon, ChevronRightIcon, UserIcon, CalendarIcon, CarIcon, CheckCircleIcon, LayoutDashboard, ShareIcon, ReceiptIcon } from 'lucide-react';
 import './Sidebar.css';
 
-export default function Sidebar({ isCollapsed, onToggle }) {
+export default function Sidebar({ isCollapsed, onToggle, onBeforeNavigate }) {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const navItems = [
     { path: '/getting-started', label: 'Getting Started', icon: UserIcon },
@@ -16,6 +17,29 @@ export default function Sidebar({ isCollapsed, onToggle }) {
 
   const currentStepIndex = navItems.findIndex(item => item.path === location.pathname);
   const isFormStep = currentStepIndex >= 0; // one of the form sections
+
+  const handleNavigate = async (event, path) => {
+    if (
+      path === location.pathname ||
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.altKey ||
+      event.ctrlKey ||
+      event.shiftKey
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+
+    try {
+      await onBeforeNavigate?.();
+      navigate(path);
+    } catch (error) {
+      console.error('Failed to save current section before navigation:', error);
+    }
+  };
 
   return (
     <aside className={`sidebar ${isCollapsed ? 'sidebar--collapsed' : ''}`}>
@@ -46,6 +70,7 @@ export default function Sidebar({ isCollapsed, onToggle }) {
               <li key={item.path} className="sidebar__nav-item">
                 <Link
                   to={item.path}
+                  onClick={(event) => handleNavigate(event, item.path)}
                   className={`sidebar__nav-link ${
                     isActive ? 'sidebar__nav-link--active' : ''
                   } ${
@@ -75,6 +100,7 @@ export default function Sidebar({ isCollapsed, onToggle }) {
       <div className="sidebar__back">
         <Link
           to="/dashboard"
+          onClick={(event) => handleNavigate(event, '/dashboard')}
           className="sidebar__back-link"
           title={isCollapsed ? 'Back to Dashboard' : ''}
         >

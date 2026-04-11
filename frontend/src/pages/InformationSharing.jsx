@@ -187,7 +187,11 @@ export default function InformationSharing() {
   useEffect(() => {
     setOnNext(handleNext);
     setOnBack(handleBack);
-  }, [handleNext, handleBack]);
+    return () => {
+      setOnNext(null);
+      setOnBack(null);
+    };
+  }, [handleNext, handleBack, setOnNext, setOnBack]);
 
   // ── Render ────────────────────────────────────────────────────────────────
 
