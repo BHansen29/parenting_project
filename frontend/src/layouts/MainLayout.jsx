@@ -232,6 +232,12 @@ export default function Layout({ children }) {
           section: "question",
           payload: data
         });
+        // temporary solution until frontend page for health-insurance-coverage is made
+        // until then, display health insurance coverage questions in parental-rights page
+        if (data.section === "health-insurance-coverage") {
+          navigate("/parental-rights")
+          return
+        }
         navigate("/" + data.section);
       })
     } catch (e) {
