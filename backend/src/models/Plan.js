@@ -44,6 +44,46 @@ const childSchema = new mongoose.Schema(
   timestamp: { type: Date, default: Date.now }
 });
 
+const timeAndCommunicationSchema = new mongoose.Schema(
+{
+  agreeToTransportationPolicy: {
+    type: Boolean,
+    default: false
+  },
+  transportationArrangementDescription: {
+    type: String,
+    default: ''
+  },
+  agreeToActivityPolicy: {
+    type: Boolean,
+    default: false
+  },
+  activityPolicyDescription: {
+    type: String,
+    default: ''
+  },
+  parentingSchedule: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
+  },
+  communicationWithCoParentOnPhone: {
+    type: String,
+    default: ''
+  },
+  communicationWithCoParentOnPhoneDescription: {
+    type: String,
+    default: ''
+  },
+  notifyCoParentOfChildRelatedEvents: {
+    type: String,
+    default: ''
+  },
+  notifyCoParentOfChildRelatedEventsDescription: {
+    type: String,
+    default: ''
+  }
+}, { _id: false });
+
 const planSchema = new mongoose.Schema(
 {
   userID: { 
@@ -88,6 +128,10 @@ const planSchema = new mongoose.Schema(
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Case',
     default: null
+  },
+  timeAndCommunication: {
+    type: timeAndCommunicationSchema,
+    default: () => ({})
   },
   answers: [questionResponseSchema],
   children: [childSchema]

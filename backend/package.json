@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "test": "node tests/env-contract.test.js"
+    "test": "node --test --test-reporter=spec tests/plan-routes.test.js",
+    "test:api": "node --test --test-reporter=spec tests/plan-routes.test.js"
   },
   "keywords": [],
   "author": "",
