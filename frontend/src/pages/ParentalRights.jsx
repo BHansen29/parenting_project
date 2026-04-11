@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Scale, House } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/card';
@@ -34,6 +34,21 @@ export default function ParentalRights() {
         }
     }, [question?.qKey, state.parental_rights.responses, state.currAnswer, dispatch]);
 
+    //flag states for this section
+    const childrenApplicationFlag = useSectionFlag('childrenApplication');
+
+    //scroll to first error when validation fails
+    const submitAttempted = useRef(false);
+    useEffect(() => {
+        if (submitAttempted.current) {
+            submitAttempted.current = false;
+            const firstError = document.querySelector('.text-input__error-message, .date-picker__error-message');
+            if (firstError) {
+                firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+    }, [state.parental_rights]);
+
     // If the question hasn't been loaded into context yet, show nothing rather than crash
     if (!question?.qKey) return null;
 
@@ -46,23 +61,6 @@ export default function ParentalRights() {
     const currAnswer = curr.answer
 
     const errors = state.parental_rights?.errors ?? {};
-
-    //flag states for this section
-    const childrenApplicationFlag = useSectionFlag('childrenApplication');
-    const livingArrangementsFlag = useSectionFlag('livingArrangements');
-    const decisionMakingFlag = useSectionFlag('decisionMaking');
-
-    //scroll to first error when validation fails
-    const [submitAttempted, setSubmitAttempted] = useState(false);
-    useEffect(() => {
-        if (submitAttempted) {
-            const firstError = document.querySelector('.text-input__error-message, .date-picker__error-message');
-            if (firstError) {
-                firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-            setSubmitAttempted(false);
-        }
-    }, [formData, submitAttempted]);
 
     //generic change handler for form fields in this section
     const handleFormChange = (section, field) => (value) => {
@@ -113,7 +111,7 @@ export default function ParentalRights() {
     if (validateForm()) {
       navigate('/parenting-time-communication');
     } else {
-      setSubmitAttempted(true);
+      submitAttempted.current = true;
     }
   };
 
