@@ -254,9 +254,8 @@ export default function Review() {
                 </button>
               </div>
 
-              {/* Show comparison button whenever this plan has a caseId.
-                  The comparison page handles the "co-parent not joined yet" state itself. */}
-              {state.plan?.caseId && (
+              {/* Only show comparison button in collaborative mode — comparison requires a co-parent. */}
+              {state.plan?.caseId && collaborationMode === 'collaborative' && (
                 <button
                   className="review__btn-invite"
                   onClick={() => navigate(`/comparison/${state.plan.caseId}`)}
