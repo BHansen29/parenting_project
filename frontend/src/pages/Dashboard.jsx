@@ -342,11 +342,9 @@ export default function Dashboard() {
                         <button
                           className="plan-card__open-btn"
                           onClick={() => {
-                            dispatch({
-                                type: 'UPDATE_SECTION',
-                                section: "plan",
-                                payload: plan
-                            });
+                            dispatch({ type: 'UPDATE_SECTION', section: "plan", payload: plan });
+                            dispatch({ type: 'UPDATE_SECTION', section: "parents", payload: {firstName: plan.parentFName, lastName: plan.parentLName, phone: plan.phone, address: plan.address} });
+                            dispatch({ type: 'UPDATE_SECTION', section: "parentingGuideInfo", payload: {} });
                             if (plan.caseId) setActiveCaseId(plan.caseId);
                             fetch(buildApiUrl("/api/logic-engine/question/" + plan.currentQuestion), {
                               method: "GET",
@@ -359,11 +357,12 @@ export default function Dashboard() {
                                 throw new Error("Failed to retrieve question");
                               }
                               res.json().then(q => {
-                                dispatch({
-                                  type: 'UPDATE_SECTION',
-                                  section: "question",
-                                  payload: q
-                                });
+                                dispatch({ type: 'UPDATE_SECTION', section: "question", payload: q });
+                                if (q.section === "health-insurance-coverage") {
+                                  // this is temporary until there is frontend page for health-insurance-coverage
+                                  navigate("/parental-rights");
+                                  return
+                                }
                                 navigate('/' + q.section)})
                             })
                           }}
@@ -380,6 +379,8 @@ export default function Dashboard() {
                             dispatch({ type: 'UPDATE_SECTION', section: "plan", payload: plan });
                             // Clear stale question state from a previous session so the new plan starts fresh
                             dispatch({ type: 'UPDATE_SECTION', section: "question", payload: {} });
+                            dispatch({ type: 'UPDATE_SECTION', section: "parentingGuideInfo", payload: {} });
+                            dispatch({ type: 'UPDATE_SECTION', section: "parents", payload: {firstName: plan.parentFName, lastName: plan.parentLName, phone: plan.phoneNumber, address: plan.address} });
                             if (plan.caseId) setActiveCaseId(plan.caseId);
                             navigate('/getting-started')
                           }}

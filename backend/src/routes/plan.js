@@ -175,7 +175,7 @@ router.post('/:planId/answer', verifyToken, async (req, res) => {
   }
 });
 
-// GET /api/plan/prevQuestion/:qkey - get prev question answered before current question
+// GET /api/plan/prevQuestion/:qkey/:planId - get prev question answered before current question
 // returns "none" if there is no previous question
 router.get('/prevQuestion/:qkey/:planId', verifyToken, async (req, res) => {
   const qKey = req.params.qkey
@@ -194,8 +194,7 @@ router.get('/prevQuestion/:qkey/:planId', verifyToken, async (req, res) => {
       // if index < 0, that means we are on a question we haven't answered yet, thus prev question will be most recent one answered
       index = plan.answers.length
     }
-    const prevQKey = (index - 1) >= 0 ? plan.answers[index - 1].qKey : 'none'
-    const prevQuestion = await Question.findOne({qKey: prevQKey})
+    const prevQuestion = (index - 1) >= 0 ? await Question.findOne({qKey: plan.answers[index - 1].qKey}) : "none"
     return res.status(200).json(prevQuestion)
   } catch (error) {
     console.error(error);
@@ -227,8 +226,8 @@ router.post('/:planId/children', verifyToken, async (req, res) => {
 });
 
 // Update phone and address to the plan
-// POST/api/plan/:planId/contact
-router.post('/:planId/contact', verifyToken, async (req, res) => {
+// POST/api/plan/:planId/information
+router.post('/:planId/information', verifyToken, async (req, res) => {
   try {
     const planID = req.params.planId;
     //Retrieve plan and fetch from Mongo
@@ -238,9 +237,13 @@ router.post('/:planId/contact', verifyToken, async (req, res) => {
     if (!plan || plan.userID !== req.user.uid) {
       return res.status(403).json({ error: 'Forbidden' });
     }
-    const { phone, address } = req.body
+    const { parentFName, parentLName, phone, address, userRole, residentialParent } = req.body
+    plan.parentFName = parentFName
+    plan.parentLName = parentLName
     plan.phoneNumber = phone
     plan.address = address
+    plan.userRole = userRole
+    plan.residentialParent = residentialParent
     //Save the plan and write back to DB
     await plan.save();
     res.status(201).json(plan);
@@ -270,9 +273,9 @@ router.get('/:planId', verifyToken, async (req, res) => {
   }
 });
 
-// Set a plan's allowShare field
-// POST/api/plan/setShareMode/:planId
-router.post('/setShareMode/:planId', verifyToken, async (req, res) => {
+// Set a plan's collaborationMode field
+// POST/api/plan/setCollabMode/:planId
+router.post('/setCollabMode/:planId', verifyToken, async (req, res) => {
   try {
     const planID = req.params.planId;
     //Retrieve plan and fetch from Mongo
@@ -282,8 +285,8 @@ router.post('/setShareMode/:planId', verifyToken, async (req, res) => {
     if (!plan || plan.userID !== req.user.uid) {
       return res.status(403).json({ error: 'Forbidden' });
     }
-    const { allowShare } = req.body
-    plan.allowSharing = allowShare
+    const { mode } = req.body
+    plan.collaborationMode = mode
     await plan.save()
     res.status(201).json(plan)
   } catch (error) {

@@ -34,7 +34,7 @@ const fillValidForm = async () => {
   await userEvent.type(document.querySelector('#firstParentLastName'), 'Doe')
   await userEvent.type(document.querySelector('#firstParentPhone'), '555-555-5555')
   await userEvent.type(document.querySelector('#firstParentAddress'), '123 Main St, Columbus, OH 43215')
-  await userEvent.click(document.querySelector('input[name="caseFilingStatus"][value="yes"]'))
+  await userEvent.click(document.querySelector('input[name="caseFilingStatus"][value="parent1/petitioner1/plaintiff"]'))
   await userEvent.type(document.querySelector('#child-1-firstName'), 'Alex')
   await userEvent.type(document.querySelector('#child-1-lastName'), 'Doe')
   fireEvent.change(document.querySelector('#child-1-dateOfBirth'), { target: { value: '2015-06-15' } })
@@ -268,8 +268,8 @@ describe('GettingStarted', () => {
 
   it('renders all four case filing status options', () => {
     renderWithRouter(<GettingStarted />)
-    expect(document.querySelector('input[name="caseFilingStatus"][value="yes"]')).toBeInTheDocument()
-    expect(document.querySelector('input[name="caseFilingStatus"][value="no"]')).toBeInTheDocument()
+    expect(document.querySelector('input[name="caseFilingStatus"][value="parent1/petitioner1/plaintiff"]')).toBeInTheDocument()
+    expect(document.querySelector('input[name="caseFilingStatus"][value="parent2/petitioner2/defendant"]')).toBeInTheDocument()
     expect(document.querySelector('input[name="caseFilingStatus"][value="flagged"]')).toBeInTheDocument()
     expect(document.querySelector('input[name="caseFilingStatus"][value="defer"]')).toBeInTheDocument()
   })
@@ -284,14 +284,14 @@ describe('GettingStarted', () => {
 
   it('no case filing status radio is checked by default', () => {
     renderWithRouter(<GettingStarted />)
-    ;['yes', 'no', 'flagged', 'defer'].forEach(value => {
+    ;['parent1/petitioner1/plaintiff', 'parent2/petitioner2/defendant', 'flagged', 'defer'].forEach(value => {
       expect(document.querySelector(`input[name="caseFilingStatus"][value="${value}"]`)).not.toBeChecked()
     })
   })
 
   it('can select each case filing status option', async () => {
     renderWithRouter(<GettingStarted />)
-    for (const value of ['yes', 'no', 'flagged', 'defer']) {
+    for (const value of ['parent1/petitioner1/plaintiff', 'parent2/petitioner2/defendant', 'flagged', 'defer']) {
       const radio = document.querySelector(`input[name="caseFilingStatus"][value="${value}"]`)
       await userEvent.click(radio)
       expect(radio).toBeChecked()
@@ -300,8 +300,8 @@ describe('GettingStarted', () => {
 
   it('selecting a new case filing option deselects the previous one', async () => {
     renderWithRouter(<GettingStarted />)
-    const yes = document.querySelector('input[name="caseFilingStatus"][value="yes"]')
-    const no = document.querySelector('input[name="caseFilingStatus"][value="no"]')
+    const yes = document.querySelector('input[name="caseFilingStatus"][value="parent1/petitioner1/plaintiff"]')
+    const no = document.querySelector('input[name="caseFilingStatus"][value="parent2/petitioner2/defendant"]')
     await userEvent.click(yes)
     await userEvent.click(no)
     expect(no).toBeChecked()
@@ -631,7 +631,7 @@ describe('GettingStarted', () => {
     await userEvent.type(document.querySelector('#firstParentLastName'), 'Doe')
     await userEvent.type(document.querySelector('#firstParentPhone'), '555-555-5555')
     await userEvent.type(document.querySelector('#firstParentAddress'), '123 Main St')
-    await userEvent.click(document.querySelector('input[name="caseFilingStatus"][value="yes"]'))
+    await userEvent.click(document.querySelector('input[name="caseFilingStatus"][value="parent1/petitioner1/plaintiff"]'))
     await userEvent.type(document.querySelector('#child-1-firstName'), 'Alex')
     await userEvent.type(document.querySelector('#child-1-lastName'), 'Doe')
     fireEvent.change(document.querySelector('#child-1-dateOfBirth'), { target: { value: '2015-06-15' } })
@@ -671,7 +671,7 @@ describe('GettingStarted', () => {
     await userEvent.type(document.querySelector('#firstParentLastName'), 'Doe')
     await userEvent.type(document.querySelector('#firstParentPhone'), '555-555-5555')
     await userEvent.type(document.querySelector('#firstParentAddress'), '123 Main St, Columbus, OH 43215')
-    await userEvent.click(document.querySelector('input[name="caseFilingStatus"][value="yes"]'))
+    await userEvent.click(document.querySelector('input[name="caseFilingStatus"][value="parent1/petitioner1/plaintiff"]'))
     await userEvent.type(document.querySelector('#child-1-firstName'), 'Alex')
     await userEvent.type(document.querySelector('#child-1-lastName'), 'Doe')
     fireEvent.change(document.querySelector('#child-1-dateOfBirth'), { target: { value: '2015-06-15' } })
@@ -690,7 +690,7 @@ describe('GettingStarted', () => {
       await userEvent.type(document.querySelector('#firstParentLastName'), 'Doe')
       await userEvent.type(document.querySelector('#firstParentPhone'), '555-555-5555')
       await userEvent.type(document.querySelector('#firstParentAddress'), '123 Main St, Columbus, OH 43215')
-      await userEvent.click(document.querySelector('input[name="caseFilingStatus"][value="yes"]'))
+      await userEvent.click(document.querySelector('input[name="caseFilingStatus"][value="parent1/petitioner1/plaintiff"]'))
       await userEvent.type(document.querySelector('#child-1-firstName'), 'Alex')
       await userEvent.type(document.querySelector('#child-1-lastName'), 'Doe')
       fireEvent.change(document.querySelector('#child-1-dateOfBirth'), { target: { value: '2015-06-15' } })
@@ -730,10 +730,10 @@ describe('GettingStarted', () => {
 
   it('persists case filing status selection when returning to the page', async () => {
     const { unmount } = renderWithRouter(<GettingStarted />)
-    await userEvent.click(document.querySelector('input[name="caseFilingStatus"][value="no"]'))
+    await userEvent.click(document.querySelector('input[name="caseFilingStatus"][value="parent2/petitioner2/defendant"]'))
     unmount()
     renderWithRouter(<GettingStarted />)
-    expect(document.querySelector('input[name="caseFilingStatus"][value="no"]')).toBeChecked()
+    expect(document.querySelector('input[name="caseFilingStatus"][value="parent2/petitioner2/defendant"]')).toBeChecked()
   })
 
   it('persists parent first name when returning to the page', async () => {

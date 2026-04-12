@@ -19,8 +19,10 @@ export default function GettingStarted() {
   const { setOnNext, setOnBack } = useNavigation();
 
   const formData = state.parents ?? { name: '', secondParentName: '', errors: {} };
-  const collaborationMode = state.collaborationMode ?? '';
-  const caseFilingStatus = state.caseFilingStatus ?? '';
+  const collaborationMode = state.plan.collaborationMode ?? '';
+  const caseFilingStatus = state.plan.userRole ?? '';
+  const residentialParent = state.plan.residentialParent ?? '';
+  const parentingGuideInfo = state?.parentingGuideInfo ?? '';
   const errors = formData.errors ?? {};
 
   const [collaborationModeError, setCollaborationModeError] = useState('');
@@ -54,12 +56,12 @@ export default function GettingStarted() {
 
   const handleCollaborationModeChange = (mode) => {
     dispatch({ type: 'UPDATE_SECTION', section: 'collaborationMode', payload: mode });
+    dispatch({ type: 'UPDATE_SECTION', section: 'plan', payload: {collaborationMode: mode} });
     if (mode) setCollaborationModeError('');
   };
 
   const handleRadioChange = (section) => (value) => {
     dispatch({ type: 'UPDATE_SECTION', section: section, payload: value });
-    if (section === 'caseFilingStatus') setCaseFilingError('');
   };
 
   const handleFormChange = (section, field) => (value) => {
@@ -197,17 +199,17 @@ export default function GettingStarted() {
                 question="Did you file the divorce, separation, or child custody case that led to this parenting plan?"
                 name="caseFilingStatus"
                 value={caseFilingStatus}
-                onChange={handleRadioChange('caseFilingStatus')}
+                onChange={handleFormChange('plan', 'userRole')}
                 error={caseFilingError}
                 flag={caseFilingFlag}
                 disclaimers={[
                     { disclaimer: "Please note: ShareCare cannot confirm if your answer is correct or if there is an active divorce, separation, or child support case.", disclaimerVariant: "info" }
                 ]}
                 options={[
-                  { value: 'yes',     label: 'Yes, it was me',         description: 'You will be identified as Parent 1/Petitioner 1/Plaintiff in the parenting plan' },
-                  { value: 'no',      label: 'No, my co-parent filed', description: 'You will be identified as Parent 2/Petitioner 2/Defendant in the parenting plan' },
-                  { value: 'flagged', label: 'I need more information' },
-                  { value: 'defer',   label: 'Defer to co-parent' },
+                  { value: 'parent1/petitioner1/plaintiff',     label: 'Yes, it was me',         description: 'You will be identified as Parent 1/Petitioner 1/Plaintiff in the parenting plan' },
+                  { value: 'parent2/petitioner2/defendant',     label: 'No, my co-parent filed', description: 'You will be identified as Parent 2/Petitioner 2/Defendant in the parenting plan' },
+                  { value: 'flagged',                           label: 'I need more information' },
+                  { value: 'defer',                             label: 'Defer to co-parent' },
                 ]}
               />
             </section>
@@ -322,6 +324,45 @@ export default function GettingStarted() {
               >
                 + Add Another Child
               </button>
+            </section>
+            <hr className="section-divider" />
+
+            <section className="residential-parent-section">
+              <SectionHeader
+                iconClassName="users-icon"
+                icon={<Users size={25} />}
+                title="Residential Parent"
+                intro="This means your child spends most of their time with you"
+              />
+              <RadioQuestion
+                question="Are you the residential parent?"
+                name="residentialParent"
+                value={residentialParent}
+                onChange={handleFormChange('plan', 'residentialParent')}
+                options={[
+                  { value: 'yes',   label: 'Yes, I am the residential parent' },
+                  { value: 'no',    label: 'No, I am not' }
+                ]}
+              />
+            </section>
+            <hr className="section-divider" />
+
+            <section className="residential-parent-section">
+              <SectionHeader
+                iconClassName="info-icon"
+                icon={<Info size={25} />}
+                title="More Information"
+                intro="Link to Ohio Supreme Court Parenting Guide: https://www.supremecourt.ohio.gov/docs/Publications/JCS/parentingGuide.pdf"
+              />
+              <RadioQuestion
+                question="If you are unsure about what parts of this parenting plan mean or how to answer questions, you can find more information about parenting plans in Ohio linked above. Please remember that the Ohio Supreme Court’s guide nor this form are not legal advice nor substitutes for talking to an attorney. Please talk to an attorney if you need more information."
+                name="parentingGuideInfo"
+                value={parentingGuideInfo}
+                onChange={handleRadioChange('parentingGuideInfo')}
+                options={[
+                  { value: 'yes',   label: 'I understand' }
+                ]}
+              />
             </section>
           </CardContent>
         </Card>

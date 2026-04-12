@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react';
 import { Scale, House } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/card';
 import { useForm } from '../hooks/useForm';
 import { useSectionFlag } from '../hooks/useSectionFlag';
@@ -10,7 +9,6 @@ import RadioQuestion from '../components/forms/RadioQuestion';
 
 export default function ParentalRights() {
 
-    const navigate = useNavigate();
     const { state, dispatch } = useForm();
     const question = state.question
 
@@ -86,44 +84,6 @@ export default function ParentalRights() {
         });
     };
 
-    const validateForm = () => {
-        const formErrors = {};
-        if (!formData.appliesToAllChildren) {
-            formErrors.appliesToAllChildren = 'Please select an option';
-        }
-        if (!formData.livingArrangements) {
-            formErrors.livingArrangements = 'Please select an option';
-        }
-        if (!formData.decisionMaking) {
-            formErrors.decisionMaking = 'Please select an option';
-        }
-
-        dispatch({
-            type: 'UPDATE_SECTION',
-            section: 'parental_rights',
-            payload: { errors: formErrors }
-        });
-
-        return Object.keys(formErrors).length === 0;
-    }
-
-    const handleNext = () => {
-    if (validateForm()) {
-      navigate('/parenting-time-communication');
-    } else {
-      submitAttempted.current = true;
-    }
-  };
-
-   const handleBack = () => {
-    dispatch({
-      type: 'UPDATE_SECTION',
-      section: 'parental_rights',
-      payload: { errors: {} }
-    });
-    navigate('/getting-started');
-  };
-
     return (
         <div className="page-container">
             <div className="page-content">
@@ -152,13 +112,14 @@ export default function ParentalRights() {
                                         value={currAnswer}
                                         // need to change the 1st & 2nd value in FormContext.jsx maybe?
                                         // def need to make changes regarding this since i think it broke some things
-                                        onChange={handleFormChange(question.section.replaceAll("-", "_"), 'responses')}
+                                        onChange={handleFormChange("parental_rights", 'responses')}
                                         //onchange={handleFormChange('parentalRights', 'appliesToAllChildren')}
                                         flag={childrenApplicationFlag}
                                         error={errors.currAnswer}
                                         options={question.options}
                                         disclaimers={[
-                                            { disclaimer: "Legal Disclaimer: This tool does not give instructions or legal advice about your rights or choices. If you have questions, please consult with a lawyer.", disclaimerVariant: "info" }
+                                            { disclaimer: "Legal Disclaimer: This tool does not give instructions or legal advice about your rights or choices. If you have questions, please consult with a lawyer.", disclaimerVariant: "info" },
+                                            ...(question?.disclaimers || [])
                                         ]}
                                     />
                                 );
