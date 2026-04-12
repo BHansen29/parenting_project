@@ -1,0 +1,593 @@
+/* Delete confirmation modal */
+.delete-modal__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.delete-modal {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.16);
+}
+
+.delete-modal__title {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.delete-modal__body {
+  margin: 0 0 1.25rem;
+  font-size: 0.9rem;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.delete-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
+.delete-modal__cancel {
+  padding: 0.5rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #374151;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.delete-modal__cancel:hover {
+  background-color: #f3f4f6;
+}
+
+.delete-modal__confirm {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 8px;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.delete-modal__confirm:hover {
+  background-color: #dc2626;
+}
+
+/* Context menu */
+.context-menu {
+  position: fixed;
+  z-index: 1000;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  padding: 0.25rem;
+  margin: 0;
+  list-style: none;
+  min-width: 140px;
+}
+
+.context-menu li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: #374151;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.context-menu li:hover {
+  background-color: #f3f4f6;
+}
+
+.context-menu__delete {
+  color: #ef4444 !important;
+}
+
+.context-menu__delete:hover {
+  background-color: #fef2f2 !important;
+}
+
+/* Dashboard page layout */
+.dashboard {
+  min-height: 100vh;
+  background-color: #f5f7fa;
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard__main {
+  max-width: 1100px;
+  width: 100%;
+  margin: 2.5rem auto;
+  padding: 0 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+/* ── Invite Co-parent Banner ── */
+.dashboard__invite-banner {
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  padding: 1.75rem 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.dashboard__invite-icon {
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background-color: #e0f4fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dashboard__invite-text {
+  flex: 1;
+}
+
+.dashboard__invite-title {
+  margin: 0 0 0.4rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.dashboard__invite-description {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.dashboard__invite-action {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.dashboard__invite-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #14abdd;
+  color: #ffffff;
+  border: none;
+  border-radius: 50px;
+  padding: 0.65rem 1.4rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.2s;
+}
+
+.dashboard__invite-btn:hover {
+  background-color: #1090bb;
+  border-color: transparent;
+  color: #ffffff;
+}
+
+.dashboard__invite-note {
+  font-size: 0.78rem;
+  color: #9ca3af;
+}
+
+/* ── Your Plans Section ── */
+.dashboard__plans-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.dashboard__plans-title {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #111827;
+}
+
+.dashboard__new-plan-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background-color: transparent;
+  color: #14abdd;
+  border: 2px solid #14abdd;
+  border-radius: 50px;
+  padding: 0.5rem 1.2rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.dashboard__new-plan-btn:hover {
+  background-color: #14abdd;
+  color: #ffffff;
+  border-color: #14abdd;
+}
+
+.dashboard__plans-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 260px));
+  gap: 1.25rem;
+}
+
+/* ── Plan Card ── */
+.plan-card {
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.plan-card__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.plan-card__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background-color: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.plan-card__delete-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 0.25rem;
+  border-radius: 6px;
+  color: #d1d5db;
+  cursor: pointer;
+  transition: color 0.2s, background-color 0.2s;
+}
+
+.plan-card__delete-btn:hover {
+  color: #ef4444;
+  background-color: #fef2f2;
+}
+
+.plan-card__name-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.plan-card__name {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.plan-card__edit-btn {
+  display: flex;
+  align-items: center;
+  background: none;
+  border: none;
+  padding: 0.2rem;
+  border-radius: 4px;
+  color: #d1d5db;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.plan-card__edit-btn:hover {
+  color: #6b7280;
+}
+
+.plan-card__name-input {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+  border: none;
+  border-bottom: 2px solid #14abdd;
+  outline: none;
+  background: transparent;
+  width: 100%;
+}
+
+.plan-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+
+.plan-card__open-btn {
+  width: 100%;
+  background-color: #14abdd;
+  color: #ffffff;
+  border: none;
+  border-radius: 50px;
+  padding: 0.6rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.plan-card__open-btn:hover {
+  background-color: #1090bb;
+  border-color: transparent;
+  color: #ffffff;
+}
+
+.plan-card__invite-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  background-color: #ffffff;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 50px;
+  padding: 0.6rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.plan-card__invite-btn:hover {
+  border-color: #14abdd;
+  color: #14abdd;
+  background-color: #ffffff;
+}
+
+/* ── Dark Mode ── */
+@media (prefers-color-scheme: dark) {
+  /* Delete modal */
+  .delete-modal__overlay {
+    background: rgba(0, 0, 0, 0.6);
+  }
+
+  .delete-modal {
+    background: #1f2937;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  }
+
+  .delete-modal__title {
+    color: #e5e7eb;
+  }
+
+  .delete-modal__body {
+    color: #9ca3af;
+  }
+
+  .delete-modal__cancel {
+    background: #374151;
+    border-color: #4b5563;
+    color: #d1d5db;
+  }
+
+  .delete-modal__cancel:hover {
+    background-color: #4b5563;
+  }
+
+  .delete-modal__confirm {
+    background: #ef4444;
+  }
+
+  .delete-modal__confirm:hover {
+    background-color: #dc2626;
+  }
+
+  /* Context menu */
+  .context-menu {
+    background: #1f2937;
+    border-color: #374151;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  }
+
+  .context-menu li {
+    color: #d1d5db;
+  }
+
+  .context-menu li:hover {
+    background-color: #374151;
+  }
+
+  .context-menu__delete:hover {
+    background-color: rgba(239, 68, 68, 0.1) !important;
+  }
+
+  /* Dashboard page */
+  .dashboard {
+    background-color: #374151;
+  }
+
+  /* Invite banner */
+  .dashboard__invite-banner {
+    background-color: #1f2937;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  .dashboard__invite-icon {
+    background-color: rgba(20, 171, 221, 0.15);
+  }
+
+  .dashboard__invite-title {
+    color: #e5e7eb;
+  }
+
+  .dashboard__invite-description {
+    color: #9ca3af;
+  }
+
+  .dashboard__invite-btn {
+    background-color: #14abdd;
+  }
+
+  .dashboard__invite-btn:hover {
+    background-color: #0c7a9e;
+  }
+
+  .dashboard__invite-note {
+    color: #9ca3af;
+  }
+
+  /* Plans section */
+  .dashboard__plans-title {
+    color: #e5e7eb;
+  }
+
+  .dashboard__new-plan-btn {
+    background-color: transparent;
+    color: #14abdd;
+    border-color: #14abdd;
+  }
+
+  .dashboard__new-plan-btn:hover {
+    background-color: #14abdd;
+    color: #ffffff;
+  }
+
+  /* Plan card */
+  .plan-card {
+    background-color: #1f2937;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  .plan-card__icon {
+    background-color: #374151;
+  }
+
+  .plan-card__delete-btn {
+    color: #6b7280;
+  }
+
+  .plan-card__delete-btn:hover {
+    color: #ef4444;
+    background-color: rgba(239, 68, 68, 0.1);
+  }
+
+  .plan-card__name {
+    color: #e5e7eb;
+  }
+
+  .plan-card__edit-btn {
+    color: #6b7280;
+  }
+
+  .plan-card__edit-btn:hover {
+    color: #9ca3af;
+  }
+
+  .plan-card__name-input {
+    color: #e5e7eb;
+    border-bottom-color: #14abdd;
+  }
+
+  .plan-card__meta {
+    color: #9ca3af;
+  }
+
+  .plan-card__open-btn {
+    background-color: #14abdd;
+  }
+
+  .plan-card__open-btn:hover {
+    background-color: #0c7a9e;
+  }
+
+  .plan-card__invite-btn {
+    background-color: #374151;
+    border-color: #4b5563;
+    color: #d1d5db;
+  }
+
+  .plan-card__invite-btn:hover {
+    border-color: #14abdd;
+    color: #14abdd;
+    background-color: #374151;
+  }
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .dashboard__main {
+    margin: 1.5rem auto;
+    padding: 0 1rem;
+  }
+
+  .dashboard__invite-banner {
+    flex-direction: column;
+    text-align: center;
+    padding: 1.25rem;
+  }
+
+  .dashboard__invite-action {
+    width: 100%;
+  }
+
+  .dashboard__invite-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .dashboard__plans-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.plan-card--shared {
+  border: 1.5px solid #14abdd;
+}
+
+.plan-card__shared-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #e0f5fc;
+  color: #14abdd;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 20px;
+  margin-left: auto;
+  margin-right: 8px;
+}

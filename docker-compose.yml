@@ -13,5 +13,38 @@ services:
       - mongodb_data:/data/db
     restart: unless-stopped
 
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: parenting-backend
+    volumes:
+      - .:/app
+      - /app/backend/node_modules
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    depends_on:
+      - mongodb
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: parenting-frontend
+    command: >
+      sh -c "echo 'Frontend available at http://127.0.0.1:5173/' &&
+      npm run dev -- --host 0.0.0.0"
+    volumes:
+      - .:/app
+      - /app/frontend/node_modules
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
 volumes:
   mongodb_data:

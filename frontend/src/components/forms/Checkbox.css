@@ -1,0 +1,199 @@
+/* Block - container */
+.checkbox {
+  margin-bottom: var(--form-field-spacing);
+  width: 100%;
+}
+
+/* Element - label wrapper */
+.checkbox__label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Element - checkbox input */
+.checkbox__input {
+  margin-top: 0.25rem;
+  width: 1.125rem;
+  height: 1.125rem;
+  cursor: pointer;
+  accent-color: #14abdd;
+  flex-shrink: 0;
+}
+
+.checkbox__input:focus {
+  outline: 2px solid #14abdd;
+  outline-offset: 2px;
+}
+
+/* Element - content wrapper */
+.checkbox__content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+/* Element - label text */
+.checkbox__label-text {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #374151;
+  line-height: 1.5;
+}
+
+.checkbox__label-required {
+  color: var(--error-color);
+  margin-left: 0.25rem;
+}
+
+/* Element - description */
+.checkbox__description {
+  font-size: 0.875rem;
+  color: #666;
+  line-height: 1.5;
+  margin-top: 0.125rem;
+}
+
+/* Element - error message */
+.checkbox__error-message {
+  display: block;
+  margin-top: 0.5rem;
+  margin-left: 1.875rem; /* Align with label text (checkbox width + gap) */
+  font-size: 0.875rem;
+  color: var(--error-color);
+  text-align: left;
+}
+
+/* Element - help text */
+.checkbox__help-text {
+  display: block;
+  margin-top: 0.5rem;
+  margin-left: 1.875rem; /* Align with label text */
+  font-size: 0.875rem;
+  color: var(--help-text-color);
+  text-align: left;
+}
+
+/* Modifier - card variant (bordered like RadioButton) */
+.checkbox--card {
+  margin-bottom: 0; /* Remove margin when used in groups */
+}
+
+.checkbox--card .checkbox__label {
+  padding: 1rem;
+  border: 1.5px solid #d1d5db;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.checkbox--card .checkbox__label:hover {
+  border-color: #14abdd;
+  background-color: rgba(20, 171, 221, 0.05);
+}
+
+.checkbox--card.checkbox--checked .checkbox__label {
+  border-color: #14abdd;
+  background-color: rgba(20, 171, 221, 0.1);
+}
+
+.checkbox--card .checkbox__label-text {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #444;
+}
+
+.checkbox--card .checkbox__description {
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.checkbox--card .checkbox__error-message,
+.checkbox--card .checkbox__help-text {
+  margin-left: 0; /* Don't indent for card variant */
+  padding: 0 1rem;
+}
+
+/* Modifier - error state */
+.checkbox--error .checkbox__label-text {
+  color: var(--error-color);
+}
+
+.checkbox--error.checkbox--card .checkbox__label {
+  border-color: var(--error-color);
+}
+
+/* Modifier - disabled state */
+.checkbox--disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.checkbox--disabled .checkbox__label {
+  cursor: not-allowed;
+}
+
+.checkbox--disabled .checkbox__input {
+  cursor: not-allowed;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .checkbox__label-text {
+    color: #d1d5db;
+  }
+
+  .checkbox__description {
+    color: #9ca3af;
+  }
+
+  .checkbox--card .checkbox__label {
+    border-color: #374151;
+    background-color: transparent;
+  }
+
+  .checkbox--card .checkbox__label:hover {
+    border-color: #14abdd;
+    background-color: #1f2937;
+  }
+
+  .checkbox--card.checkbox--checked .checkbox__label {
+    border-color: #14abdd;
+    background-color: #1f2937;
+  }
+
+  .checkbox--card .checkbox__label-text {
+    color: #d1d5db;
+  }
+
+  .checkbox--card .checkbox__description {
+    color: #9ca3af;
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .checkbox__label {
+    gap: 0.5rem;
+  }
+
+  .checkbox__input {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .checkbox__label-text {
+    font-size: 0.9375rem;
+  }
+
+  .checkbox__description {
+    font-size: 0.8125rem;
+  }
+
+  .checkbox__error-message,
+  .checkbox__help-text {
+    margin-left: 1.5rem; /* Adjust for smaller checkbox */
+  }
+}
