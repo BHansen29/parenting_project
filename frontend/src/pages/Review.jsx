@@ -159,6 +159,7 @@ export default function Review() {
   // previously sent invites (if any) need to be revoked or re-sent.
   const handleConfirmSwitch = () => {
     dispatch({ type: 'UPDATE_SECTION', section: 'collaborationMode', payload: 'collaborative' });
+    dispatch({ type: 'UPDATE_SECTION', section: 'plan', payload: {collaborationMode: 'collaborative'} });
     setShowSwitchPrompt(false);
     setInviteOpen(true);
   };

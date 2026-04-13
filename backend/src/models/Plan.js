@@ -70,10 +70,28 @@ const planSchema = new mongoose.Schema(
     type: mongoose.Schema.Types.ObjectId,
     ref: "Question"
   },
-  allowSharing: {
-    type: Boolean,
-    required: true,
-    default: false
+  collaborationMode: {
+    //TODO Update this
+    type: String,
+    enum: ['collaborative', 'individual', 'locked-individual', ''],
+    default: ''
+  },
+  parentFName: {
+    type: String,
+    default: ''
+  },
+  parentLName: {
+    type: String,
+    default: ''
+  },
+  userRole: {
+    type: String,
+    enum: ['parent1/petitioner1/plaintiff', 'parent2/petitioner2/defendant', 'flagged', 'defer', ''],
+    default: ''
+  },
+  residentialParent: {
+    type: String,
+    default: ''
   },
   isShared: {
     type: Boolean,

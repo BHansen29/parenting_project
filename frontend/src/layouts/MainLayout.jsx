@@ -91,6 +91,11 @@ export default function Layout({ children }) {
                 section: "question",
                 payload: data
               });
+              if (data.section === "health-insurance-coverage") {
+                // this is temporary until there is frontend page for health-insurance-coverage
+                navigate("/parental-rights");
+                return
+              }
               navigate("/" + data.section);
             })
           })
@@ -102,15 +107,14 @@ export default function Layout({ children }) {
   };
 
   function gettingStartedNext(idToken) {
-    // API call to update sharing status if neccessary
-    const isSharing = (plan.allowSharing === "true")
-    fetch(buildApiUrl("api/plan/setShareMode/" + state.plan._id), {
+    // API call to update collab mode
+    fetch(buildApiUrl("api/plan/setCollabMode/" + state.plan._id), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${idToken}`,
       },
-      body: JSON.stringify({allowShare: isSharing})
+      body: JSON.stringify({mode: plan.collaborationMode})
     })
     .then( async (response) => {
       if (!response.ok) {
@@ -131,14 +135,14 @@ export default function Layout({ children }) {
       if (!response.ok) {
         console.error("Failed to update plan children: ", response.message)
       }
-      // api call to update plan with user's phone and address
-      fetch(buildApiUrl('api/plan/' + plan._id + '/contact'), {
+      // api call to update plan with user's name, phone, address, and role in plan
+      fetch(buildApiUrl('api/plan/' + plan._id + '/information'), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${idToken}`,
         },
-        body: JSON.stringify({phone: parents.phone, address: parents.address })
+        body: JSON.stringify({parentFName: parents.firstName , parentLName: parents.lastName, phone: parents.phone, address: parents.address, userRole: plan.userRole, residentialParent: plan.residentialParent })
       })
       .then( async (response) => {
         if (!response.ok) {
@@ -232,6 +236,12 @@ export default function Layout({ children }) {
           section: "question",
           payload: data
         });
+        // temporary solution until frontend page for health-insurance-coverage is made
+        // until then, display health insurance coverage questions in parental-rights page
+        if (data.section === "health-insurance-coverage") {
+          navigate("/parental-rights")
+          return
+        }
         navigate("/" + data.section);
       })
     } catch (e) {

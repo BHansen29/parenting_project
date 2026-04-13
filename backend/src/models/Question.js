@@ -61,8 +61,10 @@ const questionSchema = new mongoose.Schema({
       "getting-started", 
       "parental-rights", 
       "parenting-time-communication",
+      "health-insurance-coverage",
       "custody-schedule",
       "transportation",
+      "tax-exemptions",
       "review"],
     required: true
   },
