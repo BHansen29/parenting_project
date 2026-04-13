@@ -197,7 +197,7 @@ export default function TaxExemptions() {
   const { state, dispatch } = useForm();
   const { setOnNext, setOnBack } = useNavigation();
 
-  const children         = state.children ?? [];
+  const children         = state.plan?.children ?? [];
   const formData         = state.taxExemptions ?? {};
   const errors           = formData.errors ?? {};
   const parentRole       = formData.parentRole ?? '';
@@ -208,8 +208,8 @@ export default function TaxExemptions() {
   const parentalRoleFlag     = useSectionFlag('taxParentalRole');
   const claimingChildrenFlag = useSectionFlag('taxClaimingChildren');
 
-  const allChildNames = children.map(c =>
-    `${c.firstName} ${c.lastName}`.trim() || `Child ${c.id}`
+  const allChildNames = children.map((c, i) =>
+    `${c.fName ?? c.firstName ?? ''} ${c.lName ?? c.lastName ?? ''}`.trim() || `Child ${i + 1}`
   );
 
   // ── Sync: remove deleted children from claimingChildren and childAnswers ──
