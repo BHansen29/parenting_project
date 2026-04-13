@@ -27,6 +27,7 @@ export default function Layout({ children }) {
     '/parenting-time-communication',
     '/custody-schedule',
     '/transportation',
+    '/tax-exemptions',
     '/review'
   ];
 
@@ -200,11 +201,16 @@ export default function Layout({ children }) {
   }
 
   const handleNext = async () => {
+    // Tax exemptions page has its own static form — just go to review.
+    if (pageOrder[currentPageIndex] === '/tax-exemptions') {
+      navigate('/review');
+      return;
+    }
     // prevent user from clicking next if answer is not selected
     if ((pageOrder[currentPageIndex] !== '/getting-started') && (!q?.options || q.options.findIndex(qAnswer => qAnswer.value === answer) < 0)) {
       return
     }
-    const apiURL = pageOrder[currentPageIndex] === '/getting-started' 
+    const apiURL = pageOrder[currentPageIndex] === '/getting-started'
       ? '/api/logic-engine/question/69c57450e794c12043e820fb' // default starting question (probably change to const or something)
       : '/api/logic-engine/nextQuestion/' + q.qKey + '/' + answer
     try {
