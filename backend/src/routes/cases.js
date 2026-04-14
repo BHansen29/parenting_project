@@ -333,22 +333,25 @@ router.post('/:caseId/resolutions/final', verifyToken, async (req, res) => {
       return res.status(400).json({ error: 'finalAnswers object is required' });
     }
 
-    // Update the Resolution doc: apply final answers for changed keys.
-    // Convert ALL items to plain objects first to avoid mixing Mongoose subdocuments
-    // with plain objects in the array, which causes Mongoose to throw on save.
+    // Apply final answers using arrayFilters so we only touch changed items
+    // and never re-validate untouched subdocuments.
+    const changedKeys = Object.keys(finalAnswers);
+    if (changedKeys.length > 0) {
+      const updateOps = { submittedAt: new Date() };
+      const arrayFilters = changedKeys.map((qKey, i) => ({ [`elem${i}.qKey`]: qKey }));
+      changedKeys.forEach((qKey, i) => {
+        updateOps[`resolutions.$[elem${i}].proposedAnswer`] = finalAnswers[qKey];
+        updateOps[`resolutions.$[elem${i}].source`] = 'custom';
+      });
+      await Resolution.findOneAndUpdate(
+        { caseId: parentingCase._id },
+        { $set: updateOps },
+        { arrayFilters, new: true }
+      );
+    }
+
     const resolution = await Resolution.findOne({ caseId: parentingCase._id });
     if (!resolution) return res.status(404).json({ error: 'No resolutions found for this case' });
-
-    resolution.resolutions = resolution.resolutions.map((item) => {
-      const plain = item.toObject ? item.toObject() : { ...item };
-      if (finalAnswers[plain.qKey] !== undefined) {
-        return { ...plain, proposedAnswer: finalAnswers[plain.qKey], source: 'custom' };
-      }
-      return plain;
-    });
-    resolution.submittedAt = new Date();
-    resolution.markModified('resolutions');
-    await resolution.save();
 
     // Determine remaining disagreements from P2's review.
     // Items P2 flagged AND P1 did not change in this final pass are still in disagreement.

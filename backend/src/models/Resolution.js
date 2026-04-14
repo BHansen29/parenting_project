@@ -7,7 +7,7 @@ const mongoose = require('mongoose');
  */
 const resolutionItemSchema = new mongoose.Schema({
   qKey: { type: String, required: true },
-  proposedAnswer: { type: mongoose.Schema.Types.Mixed, required: true },
+  proposedAnswer: { type: mongoose.Schema.Types.Mixed },
   // 'parent1' = kept own answer, 'parent2' = adopted co-parent's, 'custom' = free-text
   source: { type: String, enum: ['parent1', 'parent2', 'custom'], required: true },
 }, { _id: false });

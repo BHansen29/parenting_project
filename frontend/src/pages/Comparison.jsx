@@ -30,6 +30,8 @@ export default function Comparison() {
 
   // Final resolved answers for resolved/needs_discussion view
   const [resolvedAnswers, setResolvedAnswers] = useState({});
+  // qKeys P2 flagged that P1 kept (still need discussion)
+  const [needsDiscussionKeys, setNeedsDiscussionKeys] = useState(new Set());
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
@@ -78,16 +80,37 @@ export default function Comparison() {
           setQuestionMap(map);
         }
 
-        // For resolved/needs_discussion: fetch Resolution to show final answers
+        // For resolved/needs_discussion: fetch Resolution (and review for needs_discussion)
         if (['resolved', 'needs_discussion'].includes(status)) {
-          const resRes = await fetch(buildApiUrl(`/api/v1/cases/${caseId}/resolutions`), {
-            headers: { Authorization: `Bearer ${idToken}` },
-          });
+          const fetches = [
+            fetch(buildApiUrl(`/api/v1/cases/${caseId}/resolutions`), {
+              headers: { Authorization: `Bearer ${idToken}` },
+            }),
+          ];
+          if (status === 'needs_discussion') {
+            fetches.push(fetch(buildApiUrl(`/api/v1/cases/${caseId}/resolutions/review`), {
+              headers: { Authorization: `Bearer ${idToken}` },
+            }));
+          }
+          const [resRes, reviewRes] = await Promise.all(fetches);
+
           if (resRes.ok) {
             const resData = await resRes.json();
             const answerMap = {};
             (resData.resolutions || []).forEach((r) => { answerMap[r.qKey] = r.proposedAnswer; });
             setResolvedAnswers(answerMap);
+          }
+
+          if (status === 'needs_discussion' && reviewRes?.ok) {
+            const reviewData = await reviewRes.json();
+            // Items P2 flagged AND P1 kept (not in resolvedAnswers changes) are still disagreed.
+            // The backend already computed this: status is needs_discussion only for kept items.
+            // We show exactly the items P2 flagged that P1 chose "keep my answer" for —
+            // those are flagged keys where P1's final answer equals their original proposed answer.
+            const flaggedKeys = new Set(
+              (reviewData.reviews || []).filter((r) => !r.accepted).map((r) => r.qKey)
+            );
+            setNeedsDiscussionKeys(flaggedKeys);
           }
         }
       } catch (e) {
@@ -188,11 +211,48 @@ export default function Comparison() {
 
   // ── needs_discussion view ──────────────────────────────────────────────────
   if (caseStatus === 'needs_discussion') {
+    // Show only items P2 flagged AND where P1's final answer still differs from P2's.
+    // If P1 adopted P2's answer (or a custom answer that matches), exclude it.
     const stillDisagreed = disagreed.filter((item) =>
-      resolvedAnswers[item.questionKey] !== undefined
-        ? JSON.stringify(resolvedAnswers[item.questionKey]) !== JSON.stringify(item.parent2Answer)
-        : true
+      needsDiscussionKeys.has(item.questionKey) &&
+      JSON.stringify(resolvedAnswers[item.questionKey]) !== JSON.stringify(item.parent2Answer)
     );
+
+    // All flagged items were resolved client-side — show merged plan view instead.
+    if (stillDisagreed.length === 0) {
+      const allItems = [
+        ...agreed.map((item) => ({ qKey: item.questionKey, answer: item.parent1Answer })),
+        ...disagreed.map((item) => ({ qKey: item.questionKey, answer: resolvedAnswers[item.questionKey] ?? item.parent1Answer })),
+      ];
+      return (
+        <div className="comparison">
+          <div className="comparison__header">
+            <button className="comparison__nav-back" onClick={() => navigate('/dashboard')}>
+              <ArrowLeft size={18} /> Dashboard
+            </button>
+            <div>
+              <h1 className="comparison__title">Merged Parenting Plan</h1>
+              <p className="comparison__subtitle">
+                <CheckCircle size={16} color="#22c55e" style={{ display: 'inline', verticalAlign: 'middle', marginRight: 6 }} />
+                All conflicts resolved
+              </p>
+            </div>
+          </div>
+          <div className="comparison__content">
+            {allItems.map((item) => (
+              <div key={item.qKey} className="comparison__card comparison__agreed">
+                <div className="comparison__question">{questionMap[item.qKey] || item.qKey}</div>
+                <div className="comparison__answer-agreed">
+                  <CheckCircle size={16} color="#22c55e" />
+                  {formatAnswer(item.answer)}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="comparison">
         <div className="comparison__header">
