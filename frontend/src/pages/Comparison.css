@@ -247,3 +247,110 @@
   color: #ef4444;
   font-size: 15px;
 }
+
+/* ─── Resolution choices (P1 resolving differences) ─────────────────────── */
+
+.comparison__resolution-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.comparison__choice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1.5px solid #e5e7eb;
+  cursor: pointer;
+  font-size: 14px;
+  color: #374151;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.comparison__choice input[type="radio"] {
+  accent-color: #14abdd;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.comparison__choice--selected {
+  border-color: #14abdd;
+  background: #e8f8fd;
+}
+
+.comparison__custom-input {
+  margin-top: 6px;
+  padding: 10px 12px;
+  border: 1.5px solid #14abdd;
+  border-radius: 8px;
+  font-size: 14px;
+  width: 100%;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.comparison__submit-row {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.comparison__submit-hint,
+.comparison__submit-error {
+  font-size: 13px;
+  margin: 0;
+}
+
+.comparison__submit-hint { color: #9ca3af; }
+.comparison__submit-error { color: #ef4444; }
+
+/* ─── Discussion / mediation view ────────────────────────────────────────── */
+
+.comparison__discussion-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #fff7ed;
+  border: 1.5px solid #fdba74;
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+
+.comparison__discussion-banner p {
+  margin: 0;
+  color: #92400e;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.comparison__mediation-box {
+  margin-top: 28px;
+  background: #f0f9ff;
+  border: 1.5px solid #bae6fd;
+  border-radius: 10px;
+  padding: 20px 24px;
+}
+
+.comparison__mediation-box h3 {
+  margin: 0 0 12px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #0c4a6e;
+}
+
+.comparison__mediation-box ul {
+  margin: 0;
+  padding-left: 20px;
+  color: #075985;
+  font-size: 14px;
+  line-height: 1.8;
+}

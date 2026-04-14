@@ -3,8 +3,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { buildApiUrl } from '../lib/apiClient';
-import { CheckCircle, AlertTriangle, Users, Download, ArrowLeft } from 'lucide-react';
+import { CheckCircle, AlertTriangle, Users, ArrowLeft, MessageCircle } from 'lucide-react';
 import './Comparison.css';
+
+const MEDIATION_RESOURCES = [
+  'Ohio Mediation Association: ohiomediation.org',
+  'Ohio State Bar Association Lawyer Referral: ohiobar.org',
+  'Family Court Self-Help Center: contact your local courthouse',
+];
 
 export default function Comparison() {
   const { caseId } = useParams();
@@ -14,56 +20,86 @@ export default function Comparison() {
   const [error, setError] = useState('');
   const [diff, setDiff] = useState([]);
   const [caseStatus, setCaseStatus] = useState('');
-  const [questionMap, setQuestionMap] = useState({}); // qKey → qText
+  const [isParent1, setIsParent1] = useState(false);
+  const [questionMap, setQuestionMap] = useState({});
   const [activeTab, setActiveTab] = useState('merged');
-  // tracks which parent's answer was selected for each disagreed question
+
+  // P1 resolution selections: { [qKey]: { choice: 'parent1'|'parent2'|'custom', customText: '' } }
   const [selections, setSelections] = useState({});
-  // tracks the save state of the merge action
-  const [mergeStatus, setMergeStatus] = useState('idle'); // 'idle' | 'saving' | 'saved' | 'error'
+  const [submitStatus, setSubmitStatus] = useState('idle'); // idle | saving | saved | error
+
+  // Final resolved answers for resolved/needs_discussion view
+  const [resolvedAnswers, setResolvedAnswers] = useState({});
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) { navigate('/signin'); return; }
-
       try {
         const idToken = await user.getIdToken();
 
-        const [compRes, questionsRes] = await Promise.all([
+        const [statusRes, compRes, questionsRes] = await Promise.all([
+          fetch(buildApiUrl(`/api/v1/cases/${caseId}/status`), {
+            headers: { Authorization: `Bearer ${idToken}` },
+          }),
           fetch(buildApiUrl(`/api/v1/cases/${caseId}/plan-comparison`), {
             headers: { Authorization: `Bearer ${idToken}` },
           }),
           fetch(buildApiUrl('/api/logic-engine/questions')),
         ]);
 
-        const compData = await compRes.json();
-        if (!compRes.ok) {
-          setError(compData.error || 'Failed to load comparison.');
-          setLoading(false);
-          return;
+        if (!statusRes.ok) { setError('Failed to load case status.'); setLoading(false); return; }
+        const statusData = await statusRes.json();
+        const status = statusData.status;
+        const parent1 = statusData.isParent1;
+        setCaseStatus(status);
+        setIsParent1(parent1);
+
+        // Redirect based on status + role
+        if (status === 'comparison_ready' && !parent1) {
+          navigate(`/waiting/${caseId}`); return;
+        }
+        if (status === 'resolutions_pending') {
+          navigate(parent1 ? `/waiting/${caseId}` : `/resolution-review/${caseId}`); return;
+        }
+        if (status === 'resolutions_reviewed') {
+          navigate(parent1 ? `/resolution/${caseId}` : `/waiting/${caseId}`); return;
         }
 
-        setCaseStatus(compData.status);
+        const compData = await compRes.json();
+        if (!compRes.ok) { setError(compData.error || 'Failed to load comparison.'); setLoading(false); return; }
+
         setDiff(compData.diff || []);
 
-        // Build qKey → qText lookup from questions response
         if (questionsRes.ok) {
           const questionsData = await questionsRes.json();
           const questions = Array.isArray(questionsData) ? questionsData : questionsData.questions || [];
           const map = {};
-          questions.forEach(q => { if (q.qKey) map[q.qKey] = q.qText || q.qKey; });
+          questions.forEach((q) => { if (q.qKey) map[q.qKey] = q.qText || q.qKey; });
           setQuestionMap(map);
+        }
+
+        // For resolved/needs_discussion: fetch Resolution to show final answers
+        if (['resolved', 'needs_discussion'].includes(status)) {
+          const resRes = await fetch(buildApiUrl(`/api/v1/cases/${caseId}/resolutions`), {
+            headers: { Authorization: `Bearer ${idToken}` },
+          });
+          if (resRes.ok) {
+            const resData = await resRes.json();
+            const answerMap = {};
+            (resData.resolutions || []).forEach((r) => { answerMap[r.qKey] = r.proposedAnswer; });
+            setResolvedAnswers(answerMap);
+          }
         }
       } catch (e) {
         setError('Failed to load comparison data.');
       }
-
       setLoading(false);
     });
     return unsub;
-  }, [caseId]);
+  }, [caseId, navigate]);
 
-  const agreed = diff.filter(d => d.agreement);
-  const disagreed = diff.filter(d => !d.agreement);
+  const agreed = diff.filter((d) => d.agreement);
+  const disagreed = diff.filter((d) => !d.agreement);
 
   const formatAnswer = (val) => {
     if (val === null || val === undefined) return 'Not answered';
@@ -71,33 +107,52 @@ export default function Comparison() {
     return String(val);
   };
 
-  const handleMerge = async () => {
-    setMergeStatus('saving');
-    // Guard against auth session expiring between page load and clicking save
-    if (!auth.currentUser) { setMergeStatus('error'); return; }
+  const setSelection = (qKey, choice) => {
+    setSelections((prev) => ({
+      ...prev,
+      [qKey]: { choice, customText: prev[qKey]?.customText ?? '' },
+    }));
+  };
+
+  const setCustomText = (qKey, text) => {
+    setSelections((prev) => ({
+      ...prev,
+      [qKey]: { choice: 'custom', customText: text },
+    }));
+  };
+
+  const allResolved = disagreed.length > 0 && disagreed.every((item) => {
+    const sel = selections[item.questionKey];
+    if (!sel) return false;
+    if (sel.choice === 'custom') return sel.customText.trim().length > 0;
+    return true;
+  });
+
+  const handleSendResolutions = async () => {
+    setSubmitStatus('saving');
     try {
       const idToken = await auth.currentUser.getIdToken();
-
-      // Build the full merged answer map:
-      // - Agreed items: both parents gave the same answer, use parent1's
-      // - Disagreed items: use whichever parent the user selected
-      const mergedAnswers = {};
-      agreed.forEach(item => { mergedAnswers[item.questionKey] = item.parent1Answer; });
-      disagreed.forEach(item => {
-        const pick = selections[item.questionKey];
-        mergedAnswers[item.questionKey] = pick === 'parent1' ? item.parent1Answer : item.parent2Answer;
+      const resolutions = disagreed.map((item) => {
+        const sel = selections[item.questionKey];
+        const proposedAnswer = sel.choice === 'parent1'
+          ? item.parent1Answer
+          : sel.choice === 'parent2'
+            ? item.parent2Answer
+            : sel.customText.trim();
+        return { qKey: item.questionKey, proposedAnswer, source: sel.choice };
       });
 
-      const res = await fetch(buildApiUrl(`/api/v1/cases/${caseId}/merge`), {
+      const res = await fetch(buildApiUrl(`/api/v1/cases/${caseId}/resolutions`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
-        body: JSON.stringify({ mergedAnswers }),
+        body: JSON.stringify({ resolutions }),
       });
-      if (!res.ok) throw new Error('Save failed');
-      setMergeStatus('saved');
-    } catch (err) {
-      console.error('Merge failed:', err);
-      setMergeStatus('error');
+      if (!res.ok) throw new Error('Failed to submit');
+      setSubmitStatus('saved');
+      navigate(`/waiting/${caseId}`);
+    } catch (e) {
+      console.error(e);
+      setSubmitStatus('error');
     }
   };
 
@@ -120,8 +175,6 @@ export default function Comparison() {
     );
   }
 
-  // Only block if the co-parent hasn't joined yet — an empty diff just means
-  // neither parent has answered questions yet, which is still a valid comparison.
   if (caseStatus === 'waiting_for_coparent') {
     return (
       <div className="comparison comparison--centered">
@@ -133,6 +186,95 @@ export default function Comparison() {
     );
   }
 
+  // ── needs_discussion view ──────────────────────────────────────────────────
+  if (caseStatus === 'needs_discussion') {
+    const stillDisagreed = disagreed.filter((item) =>
+      resolvedAnswers[item.questionKey] !== undefined
+        ? JSON.stringify(resolvedAnswers[item.questionKey]) !== JSON.stringify(item.parent2Answer)
+        : true
+    );
+    return (
+      <div className="comparison">
+        <div className="comparison__header">
+          <button className="comparison__nav-back" onClick={() => navigate('/dashboard')}>
+            <ArrowLeft size={18} /> Dashboard
+          </button>
+          <div>
+            <h1 className="comparison__title">Items Needing Discussion</h1>
+            <p className="comparison__subtitle">
+              <MessageCircle size={16} color="#f97316" style={{ display: 'inline', verticalAlign: 'middle', marginRight: 6 }} />
+              {stillDisagreed.length} item{stillDisagreed.length !== 1 ? 's' : ''} still need agreement
+            </p>
+          </div>
+        </div>
+        <div className="comparison__content">
+          <div className="comparison__discussion-banner">
+            <AlertTriangle size={20} color="#f97316" />
+            <p>You and your co-parent were unable to fully agree on the following items. Please discuss these together or consider seeking mediation support.</p>
+          </div>
+          {stillDisagreed.map((item) => (
+            <div key={item.questionKey} className="comparison__card comparison__disagreed">
+              <div className="comparison__question">{questionMap[item.questionKey] || item.questionKey}</div>
+              <div className="comparison__answer-row">
+                <div className="comparison__answer-col">
+                  <span className="comparison__parent-label">Proposed answer</span>
+                  <span className="comparison__answer-value">{formatAnswer(resolvedAnswers[item.questionKey] ?? item.parent1Answer)}</span>
+                </div>
+                <div className="comparison__answer-divider"><AlertTriangle size={16} color="#f97316" /></div>
+                <div className="comparison__answer-col">
+                  <span className="comparison__parent-label">Co-parent's answer</span>
+                  <span className="comparison__answer-value">{formatAnswer(item.parent2Answer)}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+          <div className="comparison__mediation-box">
+            <h3>Mediation Resources</h3>
+            <ul>
+              {MEDIATION_RESOURCES.map((r) => <li key={r}>{r}</li>)}
+            </ul>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── resolved view ─────────────────────────────────────────────────────────
+  if (caseStatus === 'resolved') {
+    const allItems = [
+      ...agreed.map((item) => ({ qKey: item.questionKey, answer: item.parent1Answer })),
+      ...disagreed.map((item) => ({ qKey: item.questionKey, answer: resolvedAnswers[item.questionKey] ?? item.parent1Answer })),
+    ];
+    return (
+      <div className="comparison">
+        <div className="comparison__header">
+          <button className="comparison__nav-back" onClick={() => navigate('/dashboard')}>
+            <ArrowLeft size={18} /> Dashboard
+          </button>
+          <div>
+            <h1 className="comparison__title">Merged Parenting Plan</h1>
+            <p className="comparison__subtitle">
+              <CheckCircle size={16} color="#22c55e" style={{ display: 'inline', verticalAlign: 'middle', marginRight: 6 }} />
+              All {allItems.length} items resolved
+            </p>
+          </div>
+        </div>
+        <div className="comparison__content">
+          {allItems.map((item) => (
+            <div key={item.qKey} className="comparison__card comparison__agreed">
+              <div className="comparison__question">{questionMap[item.qKey] || item.qKey}</div>
+              <div className="comparison__answer-agreed">
+                <CheckCircle size={16} color="#22c55e" />
+                {formatAnswer(item.answer)}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // ── comparison_ready view (P1 resolution mode) ────────────────────────────
   return (
     <div className="comparison">
       <div className="comparison__header">
@@ -153,7 +295,7 @@ export default function Comparison() {
           className={`comparison__tab ${activeTab === 'merged' ? 'comparison__tab--active' : ''}`}
           onClick={() => setActiveTab('merged')}
         >
-          Merged Plan ({agreed.length})
+          Agreed ({agreed.length})
         </button>
         <button
           className={`comparison__tab ${activeTab === 'differences' ? 'comparison__tab--active' : ''}`}
@@ -167,11 +309,8 @@ export default function Comparison() {
         {activeTab === 'merged' && (
           <div>
             <div className="comparison__section-header">
-              <h2>Your Agreed Plan</h2>
-              <p>These answers are the same for both parents and form the basis of your parenting plan.</p>
-              <button className="comparison__download-btn">
-                <Download size={16} /> Download Plan
-              </button>
+              <h2>Agreed Answers</h2>
+              <p>These answers are identical for both parents and will be included in the final plan.</p>
             </div>
             {agreed.length === 0 ? (
               <div className="comparison__empty">No agreed answers yet — complete more of the questionnaire.</div>
@@ -192,54 +331,79 @@ export default function Comparison() {
         {activeTab === 'differences' && (
           <div>
             <div className="comparison__section-header">
-              <h2>Items Needing Discussion</h2>
-              <p>These are areas where you and your co-parent answered differently. Review and discuss to reach agreement.</p>
+              <h2>Resolve Differences</h2>
+              <p>
+                {isParent1
+                  ? 'For each difference, choose which answer to propose or enter a custom one. When done, send your proposed resolutions to your co-parent.'
+                  : 'Your co-parent is reviewing these differences and will propose resolutions.'}
+              </p>
             </div>
+
             {disagreed.length === 0 ? (
               <div className="comparison__empty">No differences — you agree on everything!</div>
             ) : (
               disagreed.map((item) => {
-                const selected = selections[item.questionKey];
+                const sel = selections[item.questionKey] ?? {};
                 return (
                   <div key={item.questionKey} className="comparison__card comparison__disagreed">
                     <div className="comparison__question">{questionMap[item.questionKey] || item.questionKey}</div>
-                    {/* Clicking a column selects that parent's answer for this question */}
                     <div className="comparison__answer-row">
-                      <div
-                        className="comparison__answer-col"
-                        onClick={() => setSelections(prev => ({ ...prev, [item.questionKey]: 'parent1' }))}
-                        style={{ cursor: 'pointer', borderRadius: 6, padding: 8, background: selected === 'parent1' ? '#dcfce7' : 'transparent', border: selected === 'parent1' ? '2px solid #22c55e' : '2px solid transparent' }}
-                      >
-                        <span className="comparison__parent-label">Parent 1</span>
+                      <div className="comparison__answer-col">
+                        <span className="comparison__parent-label">Your answer</span>
                         <span className="comparison__answer-value">{formatAnswer(item.parent1Answer)}</span>
                       </div>
-                      <div className="comparison__answer-divider">
-                        <AlertTriangle size={16} color="#f97316" />
-                      </div>
-                      <div
-                        className="comparison__answer-col"
-                        onClick={() => setSelections(prev => ({ ...prev, [item.questionKey]: 'parent2' }))}
-                        style={{ cursor: 'pointer', borderRadius: 6, padding: 8, background: selected === 'parent2' ? '#dcfce7' : 'transparent', border: selected === 'parent2' ? '2px solid #22c55e' : '2px solid transparent' }}
-                      >
-                        <span className="comparison__parent-label">Parent 2</span>
+                      <div className="comparison__answer-divider"><AlertTriangle size={16} color="#f97316" /></div>
+                      <div className="comparison__answer-col">
+                        <span className="comparison__parent-label">Co-parent's answer</span>
                         <span className="comparison__answer-value">{formatAnswer(item.parent2Answer)}</span>
                       </div>
                     </div>
+
+                    {isParent1 && (
+                      <div className="comparison__resolution-choices">
+                        <label className={`comparison__choice ${sel.choice === 'parent1' ? 'comparison__choice--selected' : ''}`}>
+                          <input type="radio" name={item.questionKey} value="parent1" checked={sel.choice === 'parent1'} onChange={() => setSelection(item.questionKey, 'parent1')} />
+                          Keep my answer
+                        </label>
+                        <label className={`comparison__choice ${sel.choice === 'parent2' ? 'comparison__choice--selected' : ''}`}>
+                          <input type="radio" name={item.questionKey} value="parent2" checked={sel.choice === 'parent2'} onChange={() => setSelection(item.questionKey, 'parent2')} />
+                          Use co-parent's answer
+                        </label>
+                        <label className={`comparison__choice ${sel.choice === 'custom' ? 'comparison__choice--selected' : ''}`}>
+                          <input type="radio" name={item.questionKey} value="custom" checked={sel.choice === 'custom'} onChange={() => setSelection(item.questionKey, 'custom')} />
+                          Enter a custom answer
+                        </label>
+                        {sel.choice === 'custom' && (
+                          <input
+                            className="comparison__custom-input"
+                            type="text"
+                            placeholder="Type your proposed answer..."
+                            value={sel.customText ?? ''}
+                            onChange={(e) => setCustomText(item.questionKey, e.target.value)}
+                          />
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })
             )}
-            {/* Save button — disabled until every disagreed item has a selection */}
-            {disagreed.length > 0 && (
-              <div style={{ marginTop: 16, textAlign: 'right' }}>
+
+            {isParent1 && disagreed.length > 0 && (
+              <div className="comparison__submit-row">
                 <button
                   className="comparison__download-btn"
-                  onClick={handleMerge}
-                  disabled={disagreed.some(item => !selections[item.questionKey]) || mergeStatus === 'saving'}
+                  onClick={handleSendResolutions}
+                  disabled={!allResolved || submitStatus === 'saving'}
                 >
-                  {mergeStatus === 'saving' ? 'Saving...' : mergeStatus === 'saved' ? 'Saved!' : 'Save Merged Plan'}
+                  {submitStatus === 'saving' ? 'Sending...' : 'Send Resolutions to Co-Parent →'}
                 </button>
-                {mergeStatus === 'error' && <p style={{ color: '#ef4444', marginTop: 8 }}>Failed to save. Try again.</p>}
+                {!allResolved && (
+                  <p className="comparison__submit-hint">Resolve all differences above to continue.</p>
+                )}
+                {submitStatus === 'error' && (
+                  <p className="comparison__submit-error">Failed to send. Please try again.</p>
+                )}
               </div>
             )}
           </div>

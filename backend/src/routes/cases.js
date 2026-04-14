@@ -4,6 +4,8 @@ const Case = require('../models/Case');
 const Plan = require('../models/Plan');
 const User = require('../models/User');
 const QuestionnaireResponse = require('../models/QuestionnaireResponse');
+const Resolution = require('../models/Resolution');
+const ResolutionReview = require('../models/ResolutionReview');
 const verifyToken = require('../middleware/verifyToken');
 const { computeDiff } = require('../services/comparisonService');
 const { getFirstName } = require('../utils/nameUtils');
@@ -20,7 +22,11 @@ router.get('/:caseId/status', verifyToken, async (req, res) => {
     if (!parentingCase) return res.status(404).json({ error: 'Case not found' });
     if (!isCaseMember(parentingCase, req.user.uid)) return res.status(403).json({ error: 'Forbidden' });
 
-    res.status(200).json({ caseId: parentingCase._id, status: parentingCase.status });
+    res.status(200).json({
+      caseId: parentingCase._id,
+      status: parentingCase.status,
+      isParent1: parentingCase.parent1Uid === req.user.uid,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal server error' });
@@ -206,6 +212,156 @@ router.post('/:caseId/merge', verifyToken, async (req, res) => {
     await parentingCase.save();
 
     res.status(200).json({ message: 'Merged plan saved', status: parentingCase.status });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ─── Resolution routes ────────────────────────────────────────────────────────
+
+// POST /api/v1/cases/:caseId/resolutions
+// Parent 1 submits proposed resolutions for each differing question.
+router.post('/:caseId/resolutions', verifyToken, async (req, res) => {
+  try {
+    const parentingCase = await Case.findById(req.params.caseId);
+    if (!parentingCase) return res.status(404).json({ error: 'Case not found' });
+    if (parentingCase.parent1Uid !== req.user.uid) return res.status(403).json({ error: 'Only Parent 1 can submit resolutions' });
+    if (!parentingCase.parent2Uid) return res.status(409).json({ error: 'Co-parent has not joined yet' });
+    const preResolutionStatuses = ['pending_invite', 'both_complete', 'comparison_ready'];
+    if (!preResolutionStatuses.includes(parentingCase.status)) return res.status(409).json({ error: `Cannot submit resolutions in status: ${parentingCase.status}` });
+
+    const { resolutions } = req.body;
+    if (!Array.isArray(resolutions) || resolutions.length === 0) {
+      return res.status(400).json({ error: 'resolutions array is required' });
+    }
+
+    await Resolution.findOneAndUpdate(
+      { caseId: parentingCase._id },
+      { resolutions, submittedAt: new Date() },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    parentingCase.status = 'resolutions_pending';
+    await parentingCase.save();
+
+    res.status(200).json({ message: 'Resolutions submitted', status: parentingCase.status });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// GET /api/v1/cases/:caseId/resolutions
+// Both parents fetch P1's submitted resolutions.
+router.get('/:caseId/resolutions', verifyToken, async (req, res) => {
+  try {
+    const parentingCase = await Case.findById(req.params.caseId);
+    if (!parentingCase) return res.status(404).json({ error: 'Case not found' });
+    if (!isCaseMember(parentingCase, req.user.uid)) return res.status(403).json({ error: 'Forbidden' });
+
+    const resolution = await Resolution.findOne({ caseId: parentingCase._id });
+    if (!resolution) return res.status(404).json({ error: 'No resolutions submitted yet' });
+
+    res.status(200).json(resolution);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/v1/cases/:caseId/resolutions/review
+// Parent 2 submits accept/flag feedback on P1's proposed resolutions.
+router.post('/:caseId/resolutions/review', verifyToken, async (req, res) => {
+  try {
+    const parentingCase = await Case.findById(req.params.caseId);
+    if (!parentingCase) return res.status(404).json({ error: 'Case not found' });
+    if (parentingCase.parent2Uid !== req.user.uid) return res.status(403).json({ error: 'Only Parent 2 can submit a review' });
+    if (parentingCase.status !== 'resolutions_pending') return res.status(409).json({ error: `Cannot submit review in status: ${parentingCase.status}` });
+
+    const { reviews } = req.body;
+    if (!Array.isArray(reviews) || reviews.length === 0) {
+      return res.status(400).json({ error: 'reviews array is required' });
+    }
+
+    await ResolutionReview.findOneAndUpdate(
+      { caseId: parentingCase._id },
+      { reviews, submittedAt: new Date() },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    parentingCase.status = 'resolutions_reviewed';
+    await parentingCase.save();
+
+    res.status(200).json({ message: 'Review submitted', status: parentingCase.status });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// GET /api/v1/cases/:caseId/resolutions/review
+// Both parents fetch P2's review feedback.
+router.get('/:caseId/resolutions/review', verifyToken, async (req, res) => {
+  try {
+    const parentingCase = await Case.findById(req.params.caseId);
+    if (!parentingCase) return res.status(404).json({ error: 'Case not found' });
+    if (!isCaseMember(parentingCase, req.user.uid)) return res.status(403).json({ error: 'Forbidden' });
+
+    const review = await ResolutionReview.findOne({ caseId: parentingCase._id });
+    if (!review) return res.status(404).json({ error: 'No review submitted yet' });
+
+    res.status(200).json(review);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/v1/cases/:caseId/resolutions/final
+// Parent 1 submits final answers for items P2 flagged.
+// If no remaining disagreements after this pass → resolved; otherwise → needs_discussion.
+router.post('/:caseId/resolutions/final', verifyToken, async (req, res) => {
+  try {
+    const parentingCase = await Case.findById(req.params.caseId);
+    if (!parentingCase) return res.status(404).json({ error: 'Case not found' });
+    if (parentingCase.parent1Uid !== req.user.uid) return res.status(403).json({ error: 'Only Parent 1 can submit final answers' });
+    if (parentingCase.status !== 'resolutions_reviewed') return res.status(409).json({ error: `Cannot submit final answers in status: ${parentingCase.status}` });
+
+    const { finalAnswers } = req.body; // { [qKey]: answer }
+    if (!finalAnswers || typeof finalAnswers !== 'object') {
+      return res.status(400).json({ error: 'finalAnswers object is required' });
+    }
+
+    // Update the Resolution doc: apply final answers for changed keys.
+    // Convert ALL items to plain objects first to avoid mixing Mongoose subdocuments
+    // with plain objects in the array, which causes Mongoose to throw on save.
+    const resolution = await Resolution.findOne({ caseId: parentingCase._id });
+    if (!resolution) return res.status(404).json({ error: 'No resolutions found for this case' });
+
+    resolution.resolutions = resolution.resolutions.map((item) => {
+      const plain = item.toObject ? item.toObject() : { ...item };
+      if (finalAnswers[plain.qKey] !== undefined) {
+        return { ...plain, proposedAnswer: finalAnswers[plain.qKey], source: 'custom' };
+      }
+      return plain;
+    });
+    resolution.submittedAt = new Date();
+    resolution.markModified('resolutions');
+    await resolution.save();
+
+    // Determine remaining disagreements from P2's review.
+    // Items P2 flagged AND P1 did not change in this final pass are still in disagreement.
+    const review = await ResolutionReview.findOne({ caseId: parentingCase._id });
+    const flaggedKeys = new Set((review?.reviews ?? []).filter((r) => !r.accepted).map((r) => r.qKey));
+
+    // If P1 submitted a new answer for a flagged key, consider it addressed.
+    const remainingCount = [...flaggedKeys].filter((qKey) => finalAnswers[qKey] === undefined).length;
+
+    parentingCase.status = remainingCount === 0 ? 'resolved' : 'needs_discussion';
+    await parentingCase.save();
+
+    res.status(200).json({ message: 'Final answers submitted', status: parentingCase.status });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal server error' });

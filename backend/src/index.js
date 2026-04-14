@@ -1,5 +1,5 @@
 // Load environment variables from .env file (like MONGODB_URI, PORT)
-require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
+require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
 
 // Import the packages we need
 const express = require('express');  // Web framework for creating APIs
