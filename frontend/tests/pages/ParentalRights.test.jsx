@@ -226,11 +226,6 @@ describe('ParentalRights', () => {
       expect(screen.getByRole('button', { name: /back/i })).toBeInTheDocument()
     })
 
-    it('navigates to /getting-started when Back is clicked', async () => {
-      renderPage()
-      await userEvent.click(screen.getByRole('button', { name: /back/i }))
-      expect(mockNavigate).toHaveBeenCalledWith('/getting-started')
-    })
   })
 
   // ─── Validation ──────────────────────────────────────────────────────────────

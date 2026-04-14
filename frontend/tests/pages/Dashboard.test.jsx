@@ -8,10 +8,10 @@ import { renderWithRouter } from '../../src/utils/renderWithRouter'
 
 vi.mock('firebase/auth', () => ({
   onAuthStateChanged: vi.fn((auth, callback) => {
-    callback({ 
-      uid: '123', 
+    callback({
+      uid: '123',
       email: 'test@example.com',
-      getIdToken: vi.fn().mockResolvedValue('fake-token'),  // add this
+      getIdToken: vi.fn().mockResolvedValue('fake-token'),
     })
     return vi.fn()
   }),
@@ -61,6 +61,28 @@ vi.mock('../../src/hooks/useForm', () => ({
   }),
 }))
 
+// ── Plan fixtures ─────────────────────────────────────────────────────────────
+
+const TODAY = new Date().toLocaleDateString('en-US')
+
+const DEFAULT_PLAN = {
+  _id: 'plan-1',
+  name: 'Untitled Plan',
+  lastModified: TODAY,
+  isShared: false,
+  caseId: null,
+  currentQuestion: null,
+}
+
+const makePlan = () => ({
+  _id: 'plan-' + Math.random(),
+  name: 'Untitled Plan',
+  lastModified: TODAY,
+  isShared: false,
+  caseId: null,
+  currentQuestion: null,
+})
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const renderDashboard = () => renderWithRouter(<Dashboard />)
@@ -79,14 +101,44 @@ const confirmSwitch = () => {
   fireEvent.click(document.querySelector('.delete-modal__confirm'))
 }
 
+// ── Setup ─────────────────────────────────────────────────────────────────────
+
+beforeEach(() => {
+  mockNavigate.mockReset()
+  mockDispatch.mockReset()
+  mockCollaborationMode = ''
+
+  global.fetch = vi.fn((url) => {
+    // GET all plans for a user
+    if (url.includes('/all')) {
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve([DEFAULT_PLAN]),
+      })
+    }
+    // POST create new plan
+    if (url.match(/api\/plan\/$/)) {
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve(makePlan()),
+      })
+    }
+    // POST delete plan
+    if (url.includes('delete')) {
+      return Promise.resolve({ ok: true })
+    }
+    // PATCH rename plan
+    if (url.includes('/name')) {
+      return Promise.resolve({ ok: true })
+    }
+    // Fallback
+    return Promise.resolve({ ok: true, json: () => Promise.resolve({}) })
+  })
+})
+
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe('Dashboard', () => {
-  beforeEach(() => {
-    mockNavigate.mockReset()
-    mockDispatch.mockReset()
-    mockCollaborationMode = ''
-  })
 
   // ─── Render ──────────────────────────────────────────────────────────────
 
@@ -104,14 +156,14 @@ describe('Dashboard', () => {
     expect(screen.getByRole('button', { name: /new plan/i })).toBeInTheDocument()
   })
 
-  it('renders the default plan card', () => {
+  it('renders the default plan card', async () => {
     renderDashboard()
-    expect(screen.getByText('Untitled Plan')).toBeInTheDocument()
+    expect(await screen.findByText('Untitled Plan')).toBeInTheDocument()
   })
 
-  it('renders the Open Plan button on plan cards', () => {
+  it('renders the Open Plan button on plan cards', async () => {
     renderDashboard()
-    expect(screen.getByRole('button', { name: /open plan/i })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: /open plan/i })).toBeInTheDocument()
   })
 
   it('renders the Sign Out button via Header', () => {
@@ -325,30 +377,39 @@ describe('Dashboard', () => {
 
   it('adds a new plan when New Plan is clicked', async () => {
     renderDashboard()
+    await screen.findByText('Untitled Plan') // wait for initial load
     await userEvent.click(screen.getByRole('button', { name: /new plan/i }))
-    expect(screen.getAllByText('Untitled Plan').length).toBe(2)
+    await waitFor(() => {
+      expect(screen.getAllByText('Untitled Plan').length).toBe(2)
+    })
   })
 
   it('can add multiple plans', async () => {
     renderDashboard()
+    await screen.findByText('Untitled Plan') // wait for initial load
     const newPlanBtn = screen.getByRole('button', { name: /new plan/i })
     await userEvent.click(newPlanBtn)
     await userEvent.click(newPlanBtn)
-    expect(screen.getAllByText('Untitled Plan').length).toBe(3)
+    await waitFor(() => {
+      expect(screen.getAllByText('Untitled Plan').length).toBe(3)
+    })
   })
 
   it("new plans show today's date as last modified", async () => {
     renderDashboard()
+    await screen.findByText('Untitled Plan') // wait for initial load
     await userEvent.click(screen.getByRole('button', { name: /new plan/i }))
     const today = new Date().toLocaleDateString('en-US')
-    expect(screen.getAllByText(`Last modified: ${today}`).length).toBeGreaterThanOrEqual(1)
+    await waitFor(() => {
+      expect(screen.getAllByText(`Last modified: ${today}`).length).toBeGreaterThanOrEqual(1)
+    })
   })
 
   // ─── Plan Management — Open ───────────────────────────────────────────────
 
   it('navigates to /getting-started when Open Plan is clicked', async () => {
     renderDashboard()
-    await userEvent.click(screen.getByRole('button', { name: /open plan/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /open plan/i }))
     expect(mockNavigate).toHaveBeenCalledWith('/getting-started')
   })
 
@@ -356,18 +417,21 @@ describe('Dashboard', () => {
 
   it('shows a delete confirmation modal when the trash icon is clicked', async () => {
     renderDashboard()
+    await screen.findByText('Untitled Plan')
     fireEvent.click(document.querySelector('.plan-card__delete-btn'))
     expect(screen.getByText('Delete plan?')).toBeInTheDocument()
   })
 
   it('shows the plan name in the delete confirmation', async () => {
     renderDashboard()
+    await screen.findByText('Untitled Plan')
     fireEvent.click(document.querySelector('.plan-card__delete-btn'))
     expect(screen.getByText(/"Untitled Plan"/)).toBeInTheDocument()
   })
 
   it('closes the delete modal when Cancel is clicked', async () => {
     renderDashboard()
+    await screen.findByText('Untitled Plan')
     fireEvent.click(document.querySelector('.plan-card__delete-btn'))
     await userEvent.click(screen.getByRole('button', { name: /^cancel$/i }))
     expect(screen.queryByText('Delete plan?')).not.toBeInTheDocument()
@@ -375,6 +439,7 @@ describe('Dashboard', () => {
 
   it('closes the delete modal when the overlay is clicked', async () => {
     renderDashboard()
+    await screen.findByText('Untitled Plan')
     fireEvent.click(document.querySelector('.plan-card__delete-btn'))
     fireEvent.click(document.querySelector('.delete-modal__overlay'))
     expect(screen.queryByText('Delete plan?')).not.toBeInTheDocument()
@@ -382,29 +447,36 @@ describe('Dashboard', () => {
 
   it('removes the plan after confirming delete', async () => {
     renderDashboard()
+    await screen.findByText('Untitled Plan')
     fireEvent.click(document.querySelector('.plan-card__delete-btn'))
-    // Use class selector to avoid ambiguity with any other "Delete" text
     fireEvent.click(document.querySelector('.delete-modal__confirm'))
-    expect(screen.queryByText('Untitled Plan')).not.toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.queryByText('Untitled Plan')).not.toBeInTheDocument()
+    })
   })
 
   it('closes the delete modal after confirming delete', async () => {
     renderDashboard()
+    await screen.findByText('Untitled Plan')
     fireEvent.click(document.querySelector('.plan-card__delete-btn'))
     fireEvent.click(document.querySelector('.delete-modal__confirm'))
-    expect(screen.queryByText('Delete plan?')).not.toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.queryByText('Delete plan?')).not.toBeInTheDocument()
+    })
   })
 
   // ─── Plan Management — Rename ─────────────────────────────────────────────
 
   it('shows an edit input when the pencil icon is clicked', async () => {
     renderDashboard()
+    await screen.findByText('Untitled Plan')
     fireEvent.click(document.querySelector('.plan-card__edit-btn'))
     expect(document.querySelector('.plan-card__name-input')).toBeInTheDocument()
   })
 
   it('commits the new name when Enter is pressed', async () => {
     renderDashboard()
+    await screen.findByText('Untitled Plan')
     fireEvent.click(document.querySelector('.plan-card__edit-btn'))
     const input = document.querySelector('.plan-card__name-input')
     await userEvent.clear(input)
@@ -414,6 +486,7 @@ describe('Dashboard', () => {
 
   it('commits the new name when the input loses focus', async () => {
     renderDashboard()
+    await screen.findByText('Untitled Plan')
     fireEvent.click(document.querySelector('.plan-card__edit-btn'))
     const input = document.querySelector('.plan-card__name-input')
     await userEvent.clear(input)
@@ -424,6 +497,7 @@ describe('Dashboard', () => {
 
   it('keeps the original name if the edit input is cleared and blurred', async () => {
     renderDashboard()
+    await screen.findByText('Untitled Plan')
     fireEvent.click(document.querySelector('.plan-card__edit-btn'))
     const input = document.querySelector('.plan-card__name-input')
     await userEvent.clear(input)
@@ -433,29 +507,30 @@ describe('Dashboard', () => {
 
   // ─── Per-card Invite Button ───────────────────────────────────────────────
 
-  it('shows "Invite Parent" on the plan card in collaborative mode', () => {
+  it('shows "Invite Parent" on the plan card in collaborative mode', async () => {
     setMode('collaborative')
     renderDashboard()
-    expect(screen.getByRole('button', { name: /invite parent/i })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: /invite parent/i })).toBeInTheDocument()
   })
 
-  it('shows "Switch & Invite" on the plan card in individual mode', () => {
+  it('shows "Switch & Invite" on the plan card in individual mode', async () => {
     setMode('individual')
     renderDashboard()
+    await screen.findByText('Untitled Plan')
     expect(screen.getAllByRole('button', { name: /switch & invite/i }).length).toBeGreaterThanOrEqual(1)
   })
 
   it('opens invite modal from per-card button in collaborative mode', async () => {
     setMode('collaborative')
     renderDashboard()
-    await userEvent.click(screen.getByRole('button', { name: /invite parent/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /invite parent/i }))
     expect(screen.getByRole('dialog', { name: /invite modal/i })).toBeInTheDocument()
   })
 
   it('opens switch prompt from per-card button in individual mode', async () => {
     setMode('individual')
     renderDashboard()
-    // The per-card button is the last matching button
+    await screen.findByText('Untitled Plan')
     const switchBtns = screen.getAllByRole('button', { name: /switch & invite/i })
     await userEvent.click(switchBtns[switchBtns.length - 1])
     expect(screen.getByText('Switch to collaborative mode?')).toBeInTheDocument()
