@@ -45,6 +45,25 @@
   margin-right: auto;
 }
 
+.footer__button--save {
+  background-color: transparent;
+  border: 1px solid #14abdd;
+  color: #14abdd;
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.footer__button--save:hover {
+  background-color: #14abdd;
+  color: #ffffff;
+}
+
+.footer__button--saved {
+  background-color: #d1fae5;
+  border-color: #10b981;
+  color: #065f46;
+  cursor: default;
+}
+
 .footer__button:disabled {
   opacity: 0.5;
   cursor: not-allowed;

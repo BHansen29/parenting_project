@@ -18,10 +18,13 @@ import './Footer.css';
 export default function Footer({
   showBackButton = false,
   showNextButton = true,
+  showSaveButton = false,
   onBack,
   onNext,
+  onSave,
   nextButtonText = 'Next',
   nextButtonDisabled = false,
+  saved = false,
 }) {
   return (
     <footer className="footer">
@@ -34,6 +37,16 @@ export default function Footer({
               className="footer__button footer__button--back"
             >
               ← Back
+            </button>
+          )}
+
+          {showSaveButton && (
+            <button
+              type="button"
+              onClick={onSave}
+              className={`footer__button footer__button--save${saved ? ' footer__button--saved' : ''}`}
+            >
+              {saved ? 'Saved ✓' : 'Save'}
             </button>
           )}
 

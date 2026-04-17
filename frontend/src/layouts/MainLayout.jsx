@@ -11,6 +11,7 @@ import { onAuthStateChanged, signOut } from 'firebase/auth';
 
 export default function Layout({ children }) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [saved, setSaved] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -199,6 +200,22 @@ export default function Layout({ children }) {
     })
   }
 
+  const handleSave = () => {
+    if (!user) return;
+    const isGettingStarted = location.pathname === '/getting-started';
+    const hasValidAnswer = isGettingStarted || (q?.options && q.options.findIndex(qAnswer => qAnswer.value === answer) >= 0);
+    if (!hasValidAnswer) return;
+    user.getIdToken().then((idToken) => {
+      if (isGettingStarted) {
+        gettingStartedNext(idToken);
+      } else {
+        questionnaireNext(idToken);
+      }
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    });
+  };
+
   const handleNext = async () => {
     // prevent user from clicking next if answer is not selected
     if ((pageOrder[currentPageIndex] !== '/getting-started') && (!q?.options || q.options.findIndex(qAnswer => qAnswer.value === answer) < 0)) {
@@ -271,8 +288,11 @@ export default function Layout({ children }) {
         <Footer
           showBackButton={!isFirstPage}
           showNextButton={!isLastPage}
+          showSaveButton={shouldShowNavigation}
           onBack={handleBack}
           onNext={handleNext}
+          onSave={handleSave}
+          saved={saved}
         />
       </div>
 
