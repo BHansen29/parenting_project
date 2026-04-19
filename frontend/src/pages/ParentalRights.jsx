@@ -110,10 +110,7 @@ export default function ParentalRights() {
                                         question={question.qText}
                                         name={question.qKey}
                                         value={currAnswer}
-                                        // need to change the 1st & 2nd value in FormContext.jsx maybe?
-                                        // def need to make changes regarding this since i think it broke some things
                                         onChange={handleFormChange("parental_rights", 'responses')}
-                                        //onchange={handleFormChange('parentalRights', 'appliesToAllChildren')}
                                         flag={childrenApplicationFlag}
                                         error={errors.currAnswer}
                                         options={question.options}
