@@ -5,10 +5,13 @@ const mongoose = require('mongoose');
  * their questionnaire responses and working toward a shared parenting plan.
  *
  * Status flow:
- *   pending_invite   → Case created, waiting for co-parent to accept invite
- *   both_complete    → Both parents have submitted their questionnaire responses
- *   comparison_ready → Diff is available; parents can review where they agree/disagree
- *   resolved         → All conflicts resolved; a final shared plan can be generated
+ *   pending_invite      → Case created, waiting for co-parent to accept invite
+ *   both_complete       → Both parents have submitted their questionnaire responses
+ *   comparison_ready    → Diff available; P1 resolves differences and proposes answers
+ *   resolutions_pending → P1 sent proposed resolutions; P2 reviewing (accept/flag)
+ *   resolutions_reviewed → P2 submitted feedback; P1 doing final pass on flagged items
+ *   needs_discussion    → P1 submitted final answers; remaining diffs need mediation
+ *   resolved            → All conflicts resolved
  */
 const caseSchema = new mongoose.Schema(
   {
@@ -32,7 +35,15 @@ const caseSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['pending_invite', 'both_complete', 'comparison_ready', 'resolved'],
+      enum: [
+        'pending_invite',
+        'both_complete',
+        'comparison_ready',
+        'resolutions_pending',
+        'resolutions_reviewed',
+        'needs_discussion',
+        'resolved',
+      ],
       default: 'pending_invite',
     },
   },

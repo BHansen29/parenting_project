@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle, Download, UserPlus, Pencil, ChevronDown, ChevronUp } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/card';
 import Disclaimer from '../components/forms/Disclaimer';
 import InviteModal from '../components/common/InviteModal';
 import { useForm } from '../hooks/useForm';
+import { auth } from '../lib/firebase';
+import { buildApiUrl } from '../lib/apiClient';
 import './Page.css';
 import './Review.css';
 
@@ -66,7 +68,7 @@ function SectionBlock({ sectionKey, responses, onEdit, isOpen, onToggle }) {
   return (
     <Card className="review__section-card">
       <CardHeader className="review__section-card-header">
-        <button className="review__section-header" onClick={onToggle} aria-expanded={isOpen}>
+        <div className="review__section-header" onClick={onToggle} role="button" aria-expanded={isOpen} tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && onToggle()}>
           <div className="review__section-header-left">
             <CheckCircle
               size={18}
@@ -85,7 +87,7 @@ function SectionBlock({ sectionKey, responses, onEdit, isOpen, onToggle }) {
             </button>
             {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
           </div>
-        </button>
+        </div>
       </CardHeader>
 
       {isOpen && (
@@ -120,7 +122,6 @@ export default function Review() {
   //   ''                  — not yet set; treat same as individual (no invite)
   const collaborationMode = state.collaborationMode ?? '';
 
-  const planId = state.plan?._id;
   const groupedResponses = groupResponsesBySection(state.plan?.children ?? []);
   const knownSectionKeys = Object.keys(SECTION_META);
 
@@ -130,6 +131,22 @@ export default function Review() {
 
   const [inviteOpen, setInviteOpen] = useState(false);
   const [showSwitchPrompt, setShowSwitchPrompt] = useState(false);
+  const [caseStatus, setCaseStatus] = useState(null);
+
+  const caseId = state.plan?.caseId;
+
+  useEffect(() => {
+    if (!caseId) return;
+    const user = auth.currentUser;
+    if (!user) return;
+    user.getIdToken().then((idToken) =>
+      fetch(buildApiUrl(`api/v1/cases/${caseId}/status`), {
+        headers: { Authorization: `Bearer ${idToken}` },
+      })
+    ).then((res) => res.ok ? res.json() : null)
+     .then((data) => { if (data?.status) setCaseStatus(data.status); })
+     .catch(() => {});
+  }, [caseId]);
 
   const toggleSection = (key) =>
     setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -255,11 +272,11 @@ export default function Review() {
                 </button>
               </div>
 
-              {/* Only show comparison button in collaborative mode — comparison requires a co-parent. */}
-              {state.plan?.caseId && collaborationMode === 'collaborative' && (
+              {/* Show comparison button only in collaborative mode and after an invite has been sent. */}
+              {collaborationMode === 'collaborative' && caseId && caseStatus && caseStatus !== 'draft' && (
                 <button
                   className="review__btn-invite"
-                  onClick={() => navigate(`/comparison/${state.plan.caseId}`)}
+                  onClick={() => navigate(`/comparison/${caseId}`)}
                 >
                   View Comparison →
                 </button>
@@ -271,7 +288,7 @@ export default function Review() {
       </div>
 
       {/* caseId lets the modal send a real invite linked to this shared case */}
-      <InviteModal isOpen={inviteOpen} onClose={() => setInviteOpen(false)} caseId={state.plan?.caseId} />
+      <InviteModal isOpen={inviteOpen} onClose={() => setInviteOpen(false)} caseId={caseId} onInviteSent={() => setCaseStatus('pending_invite')} />
     </div>
   );
 }
