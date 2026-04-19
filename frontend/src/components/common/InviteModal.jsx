@@ -3,7 +3,7 @@ import { X, UserPlus, Mail, Copy, Check } from 'lucide-react';
 import { sendCaseInvite, getPendingInviteLink } from '../../lib/inviteApi';
 import './InviteModal.css';
 
-export default function InviteModal({ isOpen, onClose, caseId }) {
+export default function InviteModal({ isOpen, onClose, caseId, onInviteSent }) {
   const [email, setEmail] = useState('');
   const [copied, setCopied] = useState(false);
   const [sent, setSent] = useState(false);
@@ -21,6 +21,7 @@ export default function InviteModal({ isOpen, onClose, caseId }) {
       await sendCaseInvite(caseId, recipientEmail);
       setSent(true);
       setEmail('');
+      onInviteSent?.();
       const link = await getPendingInviteLink(caseId);
       if (link) setInviteLink(link);
       setTimeout(() => setSent(false), 3000);
