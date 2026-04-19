@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Scale, House } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/card';
 import { useForm } from '../hooks/useForm';
 import { useNavigation } from '../context/NavigationContext';
@@ -203,6 +204,17 @@ export default function TaxExemptions() {
   const parentRole       = formData.parentRole ?? '';
   const claimingChildren = formData.claimingChildren ?? [];
   const childAnswers     = formData.childAnswers ?? {};
+  const question         = state.question
+
+  // If the question hasn't been loaded into context yet, show nothing rather than crash
+  if (!question?.qKey) return null;
+
+  let curr = (formData?.responses || []).find((response) => {return response.qKey === question.qKey})
+  if (!curr) {
+      curr = {qKey: question.qKey, answer: ''}
+      formData.responses.push(curr)
+  }
+  const currAnswer = curr.answer
 
   // ── Flag hooks ────────────────────────────────────────────────────────────
   const parentalRoleFlag     = useSectionFlag('taxParentalRole');
@@ -327,6 +339,30 @@ export default function TaxExemptions() {
     setOnBack(handleBack);
   }, [handleNext, handleBack]);
 
+    //generic change handler for form fields in this section
+  const handleFormChange = (section, field) => (value) => {
+    // update the answer in the responses field
+    const updated = formData.responses.map((res) => {return res.qKey === question.qKey ? {qKey: res.qKey, answer: value} : res})
+    dispatch({
+        type: 'UPDATE_SECTION',
+        section: section,
+        payload: { [field]: updated }
+    });
+    if (errors[field]) {
+        dispatch({
+            type: 'UPDATE_SECTION',
+            section: section,
+            payload: { errors: { ...errors, [field]: '' } }
+        });
+    }
+    // update question answer field
+    dispatch({
+        type: 'UPDATE_SECTION',
+        section: 'currAnswer',
+        payload: value
+    });
+  };
+
   useEffect(() => {
     if (submitAttempted) {
       const firstError = document.querySelector('.text-input__error-message');
@@ -349,121 +385,33 @@ export default function TaxExemptions() {
           </CardHeader>
 
           <CardContent>
-
-            <div className="info-banner">
-              <InfoIcon />
-              <div>
-                <p className="info-banner__title">Tax Exemptions</p>
-                <p className="info-banner__body">
-                  It's important to decide who will claim your child(ren) as dependent(s)
-                  on tax forms. This can have significant financial implications for both parents.
-                </p>
-              </div>
-            </div>
-
-            <hr className="section-divider" />
-
-            {/* ── Parental Role ──
-                SectionHeader replaces the hand-rolled icon + title + description div.
-                RadioQuestion replaces the hand-rolled Card + FlagButton + RadioButton loop.
-                onChange receives a plain string value — RadioQuestion unwraps the event internally. */}
-            <SectionHeader
-              icon={<FileTextIcon />}
-              iconClassName="file-icon"
-              title="Your Parental Role"
-              intro="This determines which tax forms and deadlines apply to you."
-            />
-            <RadioQuestion
-              question="Are you the residential or non-residential parent?"
-              name="parentRole"
-              value={parentRole}
-              onChange={(value) => { update({ parentRole: value }); clearError('parentRole'); }}
-              flag={parentalRoleFlag}
-              error={errors.parentRole}
-              options={PARENT_ROLE_OPTIONS}
-              disclaimer="Legal Disclaimer: This tool does not give instructions or legal advice about your rights or choices. If you have questions, please consult with a lawyer."
-              disclaimerVariant="info"
-            />
-
-            <hr className="section-divider" />
-
-            {/* ── Children to Claim ──
-                SectionHeader replaces the hand-rolled icon + title + description div.
-                The flag is passed to SectionHeader directly via its flag prop.
-                The checkbox list doesn't map to a shared component so it stays as-is. */}
-            <SectionHeader
-              icon={<FileTextIcon />}
-              iconClassName="file-icon"
-              title="Children You Plan to Claim"
-              intro="Select all children you plan to claim on your taxes at any point — even if only in certain years."
-              flag={claimingChildrenFlag}
-            />
-            <Card>
-              <CardHeader>
-                <CardDescription className="card-heading-question-bold">
-                  Which children do you plan to claim on your tax forms (now or in the future)?
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {allChildNames.length === 0 ? (
-                  <p className="text-input__error-message">
-                    No children found. Please go back and add children first.
-                  </p>
-                ) : (
-                  <div className="tax-child-list">
-                    {allChildNames.map(name => (
-                      <Checkbox
-                        key={name}
-                        id={`claim-child-${name}`}
-                        name="claimingChildren"
-                        value={name}
-                        label={name}
-                        checked={claimingChildren.includes(name)}
-                        onChange={() => toggleChild(name)}
-                        variant="card"
-                      />
-                    ))}
-                  </div>
-                )}
-                {errors.claimingChildren && (
-                  <p className="text-input__error-message">{errors.claimingChildren}</p>
-                )}
-                {allChildNames.length > 0 && claimingChildren.length === 0 && (
-                  <p className="tax-none-note">
-                    If you do not plan to claim any children, leave all boxes unchecked and proceed to the next step.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* ── Per-child details ──
-                ChildTaxBlock has conditional sub-questions and disclaimers that don't
-                map cleanly to the shared components, so it keeps its own structure. */}
-            {claimingChildren.length > 0 && (
-              <>
-                <hr className="section-divider" />
-                <SectionHeader
-                  icon={<FileTextIcon />}
-                  iconClassName="file-icon"
-                  title="Tax Claiming Details"
-                  intro="For each child you selected, indicate how you will claim them."
-                />
-                {claimingChildren.map((name) => (
-                  <ChildTaxBlock
-                    key={name}
-                    childName={name}
-                    childIndex={name}
-                    childData={childAnswers[name] ?? {}}
-                    parentRole={parentRole}
-                    onUpdate={(_, payload) => updateChildAnswer(name, payload)}
-                    errors={(childAnswers[name] ?? {}).errors ?? {}}
-                    isFlagged={childAnswers[name]?.flagged ?? false}
-                    onToggleFlag={() => updateChildAnswer(name, { flagged: !childAnswers[name]?.flagged })}
+              <hr className="section-divider" />
+              <section className={question.qKey + "-section"}>
+                  <SectionHeader
+                      iconClassName={question.qIcon}
+                      icon={<Scale size={25} />}
+                      title={question.qTitle}
+                      intro={question.qIntro}
                   />
-                ))}
-              </>
-            )}
-
+              </section>
+              {(() => {
+                  if (question.type === "multiple choice") {
+                      return (
+                          <RadioQuestion
+                              question={question.qText}
+                              name={question.qKey}
+                              value={currAnswer}
+                              onChange={handleFormChange("taxExemptions", 'responses')}
+                              error={errors.currAnswer}
+                              options={question.options}
+                              disclaimers={[
+                                  { disclaimer: "Legal Disclaimer: This tool does not give instructions or legal advice about your rights or choices. If you have questions, please consult with a lawyer.", disclaimerVariant: "info" },
+                                  ...(question?.disclaimers || [])
+                              ]}
+                          />
+                      );
+                  }
+              })()}
           </CardContent>
         </Card>
       </div>
