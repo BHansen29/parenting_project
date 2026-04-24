@@ -1,29 +1,61 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { useEffect } from 'react';
 import { FormProvider } from '../../src/context/FormContext';
 import { NavigationProvider, useNavigation } from '../../src/context/NavigationContext';
 import MainLayout from '../../src/layouts/MainLayout';
 
+const mockNavigate = vi.fn();
+vi.mock('react-router-dom', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
+
+const mockGetIdToken = vi.fn().mockResolvedValue('mock-token');
+const mockUser = { getIdToken: mockGetIdToken };
+
+vi.mock('../../src/lib/firebase', () => ({
+  auth: {},
+}));
+
+vi.mock('firebase/auth', () => ({
+  onAuthStateChanged: (_auth, callback) => {
+    callback(mockUser);
+    return () => {}; 
+  },
+  signOut: vi.fn(),
+}));
+
+const mockNextQuestion = { section: 'parental-rights', qKey: 'q1', options: [] };
+const mockPrevQuestion = { section: 'getting-started', qKey: 'q0', options: [] };
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  global.fetch = vi.fn((url) => {
+    if (url.includes('prevQuestion')) {
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve(mockPrevQuestion),
+      });
+    }
+    // logic-engine next / any other GET
+    return Promise.resolve({
+      ok: true,
+      json: () => Promise.resolve(mockNextQuestion),
+    });
+  });
+});
+
 const TestComponent = () => <div>Test Child Content</div>;
 
-// Helper that registers mock callbacks into NavigationContext
-const RegisterCallbacks = ({ onNext, onBack }) => {
-  const { setOnNext, setOnBack } = useNavigation();
-  useEffect(() => {
-    if (onNext) setOnNext(onNext);
-    if (onBack) setOnBack(onBack);
-  }, []);
-  return null;
-};
-
-const renderWithProviders = (initialRoute = '/getting-started', { mockNext, mockBack } = {}) => {
+const renderWithProviders = (initialRoute = '/getting-started') => {
   return render(
     <MemoryRouter initialEntries={[initialRoute]}>
       <FormProvider>
         <NavigationProvider>
           <MainLayout>
-            <RegisterCallbacks onNext={mockNext} onBack={mockBack} />
             <TestComponent />
           </MainLayout>
         </NavigationProvider>
@@ -100,19 +132,21 @@ describe('MainLayout', () => {
     expect(screen.queryByRole('button', { name: /next/i })).not.toBeInTheDocument();
   });
 
-  // Callback invocation
-  it('calls registered onNext when next button is clicked', () => {
-    const mockNext = vi.fn();
-    renderWithProviders('/getting-started', { mockNext });
+  it('navigates forward when next button is clicked on getting-started', async () => {
+    renderWithProviders('/getting-started');
     fireEvent.click(screen.getByRole('button', { name: /next/i }));
-    expect(mockNext).toHaveBeenCalledOnce();
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/parental-rights');
+    });
   });
 
-  it('calls registered onBack when back button is clicked', () => {
-    const mockBack = vi.fn();
-    renderWithProviders('/parental-rights', { mockBack });
+  it('navigates backward when back button is clicked', async () => {
+    renderWithProviders('/parental-rights');
     fireEvent.click(screen.getByRole('button', { name: /back/i }));
-    expect(mockBack).toHaveBeenCalledOnce();
+    await waitFor(() => {
+      // prevQuestion returns section: 'getting-started'
+      expect(mockNavigate).toHaveBeenCalledWith('/getting-started');
+    });
   });
 
   it('does not crash when next is clicked with no callback registered', () => {
@@ -122,7 +156,6 @@ describe('MainLayout', () => {
     ).not.toThrow();
   });
 
-  // Sidebar collapsed class on layout__main
   it('layout main section has correct class when sidebar is expanded', () => {
     renderWithProviders();
     expect(document.querySelector('.layout__main')).not.toHaveClass('layout__main--sidebar-collapsed');
