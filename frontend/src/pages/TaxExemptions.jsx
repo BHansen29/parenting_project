@@ -183,6 +183,22 @@ function ChildTaxBlock({ childName, childIndex, childData = {}, parentRole, onUp
   );
 }
 
+function ChildTaxBlockWrapper({ name, idx, childData, parentRole, updateChildAnswer }) {
+  const flag = useSectionFlag(`taxChild-${name}`);
+  return (
+    <ChildTaxBlock
+      childName={name}
+      childIndex={idx}
+      childData={childData}
+      parentRole={parentRole}
+      onUpdate={(_, payload) => updateChildAnswer(name, payload)}
+      errors={childData?.errors ?? {}}
+      isFlagged={flag.isFlagged}
+      onToggleFlag={flag.toggle}
+    />
+  );
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const isValidYearList = (value) => {
@@ -373,6 +389,8 @@ export default function TaxExemptions() {
 
   // ── Render ────────────────────────────────────────────────────────────────
 
+    // ── Render ────────────────────────────────────────────────────────────────
+
   return (
     <div className="page-container">
       <div className="page-content">
@@ -385,33 +403,77 @@ export default function TaxExemptions() {
           </CardHeader>
 
           <CardContent>
-              <hr className="section-divider" />
-              <section className={question.qKey + "-section"}>
-                  <SectionHeader
-                      iconClassName={question.qIcon}
-                      icon={<Scale size={25} />}
-                      title={question.qTitle}
-                      intro={question.qIntro}
-                  />
-              </section>
-              {(() => {
-                  if (question.type === "multiple choice") {
-                      return (
-                          <RadioQuestion
-                              question={question.qText}
-                              name={question.qKey}
-                              value={currAnswer}
-                              onChange={handleFormChange("taxExemptions", 'responses')}
-                              error={errors.currAnswer}
-                              options={question.options}
-                              disclaimers={[
-                                  { disclaimer: "Legal Disclaimer: This tool does not give instructions or legal advice about your rights or choices. If you have questions, please consult with a lawyer.", disclaimerVariant: "info" },
-                                  ...(question?.disclaimers || [])
-                              ]}
-                          />
-                      );
-                  }
-              })()}
+            <hr className="section-divider" />
+
+            <Card>
+              <CardHeader className="card-header-with-flag">
+                <CardDescription className="card-heading-question-bold">
+                  What is your parental role?
+                </CardDescription>
+                <FlagButton
+                  isFlagged={parentalRoleFlag.isFlagged}
+                  onClick={parentalRoleFlag.toggle}
+                />
+              </CardHeader>
+              <CardContent>
+                <div className="radio-group">
+                  {PARENT_ROLE_OPTIONS.map(({ value, label }) => (
+                    <RadioButton
+                      key={value}
+                      name="parentRole"
+                      value={value}
+                      checked={parentRole === value}
+                      onChange={() => { update({ parentRole: value }); clearError('parentRole'); }}
+                      label={label}
+                    />
+                  ))}
+                </div>
+                {errors.parentRole && (
+                  <p className="text-input__error-message">{errors.parentRole}</p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="card-header-with-flag">
+                <CardDescription className="card-heading-question-bold">
+                  Which children will you claim as tax exemptions?
+                </CardDescription>
+                <FlagButton
+                  isFlagged={claimingChildrenFlag.isFlagged}
+                  onClick={claimingChildrenFlag.toggle}
+                />
+              </CardHeader>
+              <CardContent>
+                <div className="checkbox-group">
+                  {allChildNames.map((name) => (
+                    <Checkbox
+                      key={name}
+                      label={name}
+                      checked={claimingChildren.includes(name)}
+                      onChange={() => toggleChild(name)}
+                    />
+                  ))}
+                </div>
+                {errors.claimingChildren && (
+                  <p className="text-input__error-message">{errors.claimingChildren}</p>
+                )}
+              </CardContent>
+            </Card>
+
+                        {claimingChildren.map((name) => {
+              const idx = allChildNames.indexOf(name);
+              return (
+                <ChildTaxBlockWrapper
+                  key={name}
+                  name={name}
+                  idx={idx}
+                  childData={childAnswers[name]}
+                  parentRole={parentRole}
+                  updateChildAnswer={updateChildAnswer}
+                />
+              );
+            })}
           </CardContent>
         </Card>
       </div>
