@@ -389,7 +389,9 @@ export default function TaxExemptions() {
   }, [formData, submitAttempted]);
 
   // ── Render ────────────────────────────────────────────────────────────────
-  
+
+  // ── Render ────────────────────────────────────────────────────────────────
+
   return (
     <div className="page-container">
       <div className="page-content">
