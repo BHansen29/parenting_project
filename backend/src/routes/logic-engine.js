@@ -58,7 +58,7 @@ router.get('/questions/:section', async (req, res) => {
   }
 });
 
-// GET /api/logic-engine/question/:qkey - Get the questions with the specified qID
+// GET /api/logic-engine/question/:qkey - Get the questions with the specified qkey
 router.get('/question/:qkey', async (req, res) => {
   try {
     const questions = await Question.findOne({qKey: req.params.qkey});

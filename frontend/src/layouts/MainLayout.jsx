@@ -8,6 +8,7 @@ import { buildApiUrl } from '../lib/apiClient';
 import { useForm } from '../hooks/useForm';
 import { auth } from '../lib/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { useNavigation } from '../context/NavigationContext';
 
 export default function Layout({ children }) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -28,6 +29,7 @@ export default function Layout({ children }) {
     '/parenting-time-communication',
     '/custody-schedule',
     '/transportation',
+    '/informationsharing',
     '/tax-exemptions',
     '/review'
   ];
@@ -217,12 +219,19 @@ export default function Layout({ children }) {
     });
   };
 
+  const { onNext: pageOnNext, setOnNext, setOnBack } = useNavigation();
+
+    useEffect(() => {
+      setOnNext(null);
+      setOnBack(null);
+    }, [location.pathname, setOnNext, setOnBack]);
+
   const handleNext = async () => {
-    // Tax exemptions page has its own static form — just go to review.
-    if (pageOrder[currentPageIndex] === '/tax-exemptions') {
-      navigate('/review');
-      return;
-    }
+    if (pageOnNext) {
+    pageOnNext();
+    return;
+  }
+
     // prevent user from clicking next if answer is not selected
     if ((pageOrder[currentPageIndex] !== '/getting-started') && (!q?.options || q.options.findIndex(qAnswer => qAnswer.value === answer) < 0)) {
       return
