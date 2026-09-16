@@ -6,6 +6,7 @@ import { useSectionFlag } from '../hooks/useSectionFlag';
 import './Page.css';
 import SectionHeader from '../components/forms/SectionHeader';
 import RadioQuestion from '../components/forms/RadioQuestion';
+import { buildApiUrl } from '../lib/apiClient';
 
 export default function ParentalRights() {
 
@@ -22,6 +23,21 @@ export default function ParentalRights() {
             });
         }
     }, [state.plan?._id]);
+
+    useEffect(() => {
+        const needsLoad = !question?.qKey || (question.section !== 'parental-rights' && question.section !== 'health-insurance-coverage');
+        if (needsLoad) {
+            fetch(buildApiUrl('api/logic-engine/question/allocation_parental_rights'))
+                .then(res => {
+                    if (!res.ok) throw new Error('Failed to load starting question');
+                    return res.json();
+                })
+                .then(q => {
+                    dispatch({ type: 'UPDATE_SECTION', section: 'question', payload: q });
+                })
+                .catch(err => console.error(err.message));
+        }
+    }, []);
 
     useEffect(() => {
         if (!question?.qKey) return;

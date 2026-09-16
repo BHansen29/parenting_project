@@ -221,17 +221,7 @@ export default function TaxExemptions() {
   const parentRole       = formData.parentRole ?? '';
   const claimingChildren = formData.claimingChildren ?? [];
   const childAnswers     = formData.childAnswers ?? {};
-  const question         = state.question
 
-  // If the question hasn't been loaded into context yet, show nothing rather than crash
-  if (!question?.qKey) return null;
-
-  let curr = (formData?.responses || []).find((response) => {return response.qKey === question.qKey})
-  if (!curr) {
-      curr = {qKey: question.qKey, answer: ''}
-      formData.responses.push(curr)
-  }
-  const currAnswer = curr.answer
 
   // ── Flag hooks ────────────────────────────────────────────────────────────
   const parentalRoleFlag     = useSectionFlag('taxParentalRole');
@@ -355,30 +345,6 @@ export default function TaxExemptions() {
     setOnNext(handleNext);
     setOnBack(handleBack);
   }, [handleNext, handleBack]);
-
-    //generic change handler for form fields in this section
-  const handleFormChange = (section, field) => (value) => {
-    // update the answer in the responses field
-    const updated = formData.responses.map((res) => {return res.qKey === question.qKey ? {qKey: res.qKey, answer: value} : res})
-    dispatch({
-        type: 'UPDATE_SECTION',
-        section: section,
-        payload: { [field]: updated }
-    });
-    if (errors[field]) {
-        dispatch({
-            type: 'UPDATE_SECTION',
-            section: section,
-            payload: { errors: { ...errors, [field]: '' } }
-        });
-    }
-    // update question answer field
-    dispatch({
-        type: 'UPDATE_SECTION',
-        section: 'currAnswer',
-        payload: value
-    });
-  };
 
   useEffect(() => {
     if (submitAttempted) {
