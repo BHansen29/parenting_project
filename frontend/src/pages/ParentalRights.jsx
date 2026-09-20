@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Scale, House } from 'lucide-react';
+import { Scale, House, Info } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/card';
 import { useForm } from '../hooks/useForm';
 import { useSectionFlag } from '../hooks/useSectionFlag';
@@ -116,7 +116,10 @@ export default function ParentalRights() {
                                 iconClassName={question.qIcon}
                                 icon={<Scale size={25} />}
                                 title={question.qTitle}
-                                intro={question.qIntro}
+                            />
+                            <SectionHeader
+                                icon={<Info size={25} />}
+                                help={question.qIntro}
                             />
                         </section>
                         {(() => {
@@ -124,6 +127,7 @@ export default function ParentalRights() {
                                 return (
                                     <RadioQuestion
                                         question={question.qText}
+                                        help={question.qIntro}
                                         name={question.qKey}
                                         value={currAnswer}
                                         onChange={handleFormChange("parental_rights", 'responses')}

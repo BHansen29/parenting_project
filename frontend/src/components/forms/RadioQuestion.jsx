@@ -3,12 +3,14 @@ import RadioButton from './RadioButton';
 import FlagButton from './FlagButton';
 import TextInput from './TextInput';
 import Disclaimer from './Disclaimer';
+import HelpMenu from '../common/HelpMenu';
 
 /**
  * A complete radio-button question card with optional flag, validation error,
  * and an optional conditional text input that appears when a specific option is selected.
  *
  * @param {string}   question          - The question text displayed in the card header
+ * @param {string}   help              - Optional help text displayed below the question
  * @param {string}   name              - The radio group name attribute
  * @param {string}   value             - The currently selected value
  * @param {function} onChange          - Called with the selected string value: (value: string) => void
@@ -20,6 +22,7 @@ import Disclaimer from './Disclaimer';
  */
 export default function RadioQuestion({
   question,
+  help,
   name,
   value,
   onChange,
@@ -34,12 +37,12 @@ export default function RadioQuestion({
       <CardHeader className={flag ? 'card-header-with-flag' : undefined}>
         <CardDescription className="card-heading-question-bold">
           {question}
+          <HelpMenu text={help} />
         </CardDescription>
         {flag && (
           <FlagButton isFlagged={flag.isFlagged} onClick={flag.toggleFlag} />
         )}
       </CardHeader>
-
       <CardContent>
         <div className="radio-group">
           {options.map((option) => (
