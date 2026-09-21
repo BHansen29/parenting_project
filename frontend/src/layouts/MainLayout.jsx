@@ -8,6 +8,7 @@ import { buildApiUrl } from '../lib/apiClient';
 import { useForm } from '../hooks/useForm';
 import { auth } from '../lib/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { useNavigation } from '../context/NavigationContext';
 
 export default function Layout({ children }) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -28,6 +29,8 @@ export default function Layout({ children }) {
     '/parenting-time-communication',
     '/custody-schedule',
     '/transportation',
+    '/informationsharing',
+    '/tax-exemptions',
     '/review'
   ];
 
@@ -216,13 +219,25 @@ export default function Layout({ children }) {
     });
   };
 
+  const { onNext: pageOnNext, setOnNext, setOnBack } = useNavigation();
+
+    useEffect(() => {
+      setOnNext(null);
+      setOnBack(null);
+    }, [location.pathname, setOnNext, setOnBack]);
+
   const handleNext = async () => {
+    if (pageOnNext) {
+    pageOnNext();
+    return;
+  }
+
     // prevent user from clicking next if answer is not selected
     if ((pageOrder[currentPageIndex] !== '/getting-started') && (!q?.options || q.options.findIndex(qAnswer => qAnswer.value === answer) < 0)) {
       return
     }
-    const apiURL = pageOrder[currentPageIndex] === '/getting-started' 
-      ? '/api/logic-engine/question/69c57450e794c12043e820fb' // default starting question (probably change to const or something)
+    const apiURL = pageOrder[currentPageIndex] === '/getting-started'
+      ? '/api/logic-engine/question/allocation_parental_rights' // default starting question (probably change to const or something)
       : '/api/logic-engine/nextQuestion/' + q.qKey + '/' + answer
     try {
       // get the next 'question' object

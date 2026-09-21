@@ -1,0 +1,1298 @@
+[
+  {
+    "_id": "6aa1830c30889dbc44057e85",
+    "qKey": "living_arrangements",
+    "__v": 0,
+    "createdAt": "2026-09-09T16:02:20.434Z",
+    "options": [
+      {
+        "value": "yes_all_time",
+        "label": "Yes, all the time",
+        "description": "",
+        "_id": "69c57450e794c12043e82101"
+      },
+      {
+        "value": "yes_occasion",
+        "label": "Yes, on occasion",
+        "description": "",
+        "_id": "69c57450e794c12043e82102"
+      },
+      {
+        "value": "no_visiting_only",
+        "label": "No, I just want visiting time",
+        "description": "",
+        "_id": "69c57450e794c12043e82103"
+      },
+      {
+        "value": "needMoreInfo",
+        "label": "I need more information",
+        "description": "",
+        "_id": "69c57450e794c12043e82104"
+      },
+      {
+        "value": "defaultToCoParent",
+        "label": "Default to my co-parent's choice",
+        "description": "",
+        "_id": "69c57450e794c12043e82105"
+      }
+    ],
+    "qIcon": "house-icon",
+    "qIntro": "",
+    "qText": "Do you want your children to live with you?",
+    "qTitle": "Living Arrangements",
+    "section": "parental-rights",
+    "type": "multiple choice",
+    "updatedAt": "2026-09-09T16:02:20.434Z"
+  },
+  {
+    "_id": "6aa1830c30889dbc44057e89",
+    "qKey": "allocation_parental_rights",
+    "__v": 0,
+    "createdAt": "2026-09-09T16:02:20.505Z",
+    "options": [
+      {
+        "value": "yes",
+        "label": "Yes",
+        "description": "My answers will be the same for all children",
+        "_id": "69c57450e794c12043e820fc"
+      },
+      {
+        "value": "no",
+        "label": "No",
+        "description": "I need to answer separately for each child",
+        "_id": "69c57450e794c12043e820fd"
+      },
+      {
+        "value": "needMoreInfo",
+        "label": "I need more information",
+        "description": "",
+        "_id": "69c57450e794c12043e820fe"
+      },
+      {
+        "value": "defaultToCoParent",
+        "label": "Default to my co-parent's choice",
+        "description": "",
+        "_id": "69c57450e794c12043e820ff"
+      }
+    ],
+    "qIcon": "scale-icon",
+    "qIntro": "Simplify by applying answers to all children",
+    "qText": "The next few questions ask about who your children will live with and who will make the legal decisions for them. Will your answers apply to all of your children that you share with your co-parent?",
+    "qTitle": "Applies to All Children?",
+    "section": "parental-rights",
+    "type": "multiple choice",
+    "updatedAt": "2026-09-09T16:02:20.505Z"
+  },
+  {
+    "_id": "6aa1830c30889dbc44057e8b",
+    "qKey": "restrict_records",
+    "__v": 0,
+    "createdAt": "2026-09-09T16:02:20.514Z",
+    "options": [
+      {
+        "value": "change",
+        "label": "This is to be changed to text entry or list entry",
+        "description": "",
+        "_id": "69da6f43c864b493c00db95f"
+      },
+      {
+        "value": "yes",
+        "label": "Yes [Text or List Entry]",
+        "description": "",
+        "_id": "69da6f43c864b493c00db960"
+      },
+      {
+        "value": "no",
+        "label": "No",
+        "description": "",
+        "_id": "69da6f43c864b493c00db961"
+      },
+      {
+        "value": "defaultToCoParent",
+        "label": "Default to my co-parent",
+        "description": "",
+        "_id": "69da6f43c864b493c00db962"
+      },
+      {
+        "value": "needMoreInfo",
+        "label": "I need more information",
+        "description": "",
+        "_id": "69da6f44c864b493c00db963"
+      }
+    ],
+    "qIcon": "house-icon",
+    "qIntro": "**if you are the residential parent** You should only be able to see these questions if you said that you want the child to live with you",
+    "qText": "Are there any records your co-parent shouldn’t be able to access for your child?",
+    "qTitle": "Restrict Records Access",
+    "section": "parental-rights",
+    "type": "multiple choice",
+    "updatedAt": "2026-09-09T16:02:20.514Z"
+  },
+  {
+    "_id": "6aa1830c30889dbc44057e8d",
+    "qKey": "legal_decisions",
+    "__v": 0,
+    "createdAt": "2026-09-09T16:02:20.522Z",
+    "options": [
+      {
+        "value": "yesTogether",
+        "label": "Yes, together",
+        "description": "",
+        "_id": "69da6f44c864b493c00db965"
+      },
+      {
+        "value": "coParentOnly",
+        "label": "No, just my co-parent",
+        "description": "",
+        "_id": "69da6f44c864b493c00db966"
+      },
+      {
+        "value": "meOnly",
+        "label": "No, just me",
+        "description": "",
+        "_id": "69da6f44c864b493c00db967"
+      },
+      {
+        "value": "needMoreInfo",
+        "label": "I need more information",
+        "description": "",
+        "_id": "69da6f44c864b493c00db968"
+      },
+      {
+        "value": "defaultToCoParent",
+        "label": "Default to my co-parent's choice",
+        "description": "",
+        "_id": "69da6f44c864b493c00db969"
+      }
+    ],
+    "qIcon": "scale-icon",
+    "qIntro": "Legal decisions mean you have the authority to make decisions for your children in things like medical matters, school decisions, and extracurricular activities.",
+    "qText": "Do you and your co-parent want to make legal decisions for your children together, or should only one parent be allowed to make these decisions?",
+    "qTitle": "Legal Decision Making",
+    "section": "parental-rights",
+    "type": "multiple choice",
+    "updatedAt": "2026-09-09T16:02:20.522Z"
+  },
+  {
+    "_id": "6aa1830c30889dbc44057e8f",
+    "qKey": "rights_acknowledgement",
+    "__v": 0,
+    "createdAt": "2026-09-09T16:02:20.528Z",
+    "options": [
+      {
+        "value": "yes",
+        "label": "Yes, I understand",
+        "description": "",
+        "_id": "69da6f44c864b493c00db96b"
+      },
+      {
+        "value": "no",
+        "label": "No, I don’t understand",
+        "description": "",
+        "_id": "69da6f44c864b493c00db96c"
+      }
+    ],
+    "qIcon": "scale-icon",
+    "qIntro": "",
+    "qText": "Unless you agree otherwise, both you and your co-parent have:\ni.\tThe right to participate in major decisions about your child’s heath, social situations, morals, welfare, education and economic development.\nii.\tThe right to talk to your child on the phone when they are with their other parent.\niii.\tThe right to participate in choosing doctors, psychologists, psychiatrists, hospitals, and other health care providers for your child.\niv.\tThe right to authorize medical, surgical, hospital, dental, institutional, psychological, and psychiatric care for your child and to get a second opinion about their medical conditions or treatment.\nv.\tThe right to be told about if your child gets sick or injured.\nvi.\tThe right to attend your child’s medical, dental, and other-health related appointments and treatments.\nvii.\tThe right to get and inspect your child’s medical and dental records and the right to talk to any treating physician, dentist, and other health care provider.\nviii.\tThe right to talk with schools officials about your child’s welfare and educational status, and the right to get and inspect your child’s school records to the extent permitted by law.\nix.\tThe right together copies of all school reports, calendars of schools events, notices of parent-teacher conferences, and school programs.\nx.\tThe right to attend and participate in parent-teach conferences, school trips, school programs, and other school activities that parents are invited to.\nxi.\tThe right to attend and participate with your children in athletic programs and other extracurricular activities.\nxii.\tThe right to get notice of the other parent’s intention to move.",
+    "qTitle": "Parental Rights Acknowledgment",
+    "section": "parental-rights",
+    "type": "multiple choice",
+    "updatedAt": "2026-09-09T16:02:20.528Z"
+  },
+  {
+    "_id": "6aa1830c30889dbc44057e91",
+    "qKey": "schedule_understanding",
+    "__v": 0,
+    "createdAt": "2026-09-09T16:02:20.534Z",
+    "options": [
+      {
+        "value": "offshoot",
+        "label": "Offshoot to parenting time schedule (this has not been implemented yet)",
+        "description": "",
+        "_id": "69da6f44c864b493c00db96e"
+      }
+    ],
+    "qIcon": "house-icon",
+    "qIntro": "",
+    "qText": "Next, you will build a parenting time schedule that shows when you and your co-parent will each spend time with your children. This schedule will cover weekdays, weekends, holidays, special occasions, and vacations.\ni.\tYou and your co-parent will decide on a set schedule for when your child will stay with each of you, and this plan includes regular school days, weekends, holidays, and summer vacations. Once your judge approves this plan, both of you must follow this schedule.\nii.\tIf both you and your co-parent agree, you can choose to change the schedule on your own. However, if one parents stops following the new plan, the Court cannot help or step in unless a judge has officially signed off on the change.\niii.\tDuring your parenting time with your child, you should support a positive relationship between your children and your co-parent. This means that you shouldn’t do anything that may damage their relationship or cause your child to think less of their other parent. Your co-parent should do the same.\niv.\tBoth parents should be careful when planning appointments or fun events. You should not pick times that are meant to annoy the other parent or make their life difficult. It is important to remember that kids need to enjoy their activities without any drama. Both parents should support the children and let them go to their activities without a struggle.",
+    "qTitle": "Parenting Schedule Understanding",
+    "section": "parental-rights",
+    "type": "multiple choice",
+    "updatedAt": "2026-09-09T16:02:20.534Z"
+  },
+  {
+    "_id": "6aa1830c30889dbc44057e93",
+    "qKey": "school_pickup_parent",
+    "__v": 0,
+    "createdAt": "2026-09-09T16:02:20.543Z",
+    "options": [
+      {
+        "value": "yes",
+        "label": "Yes, I understand",
+        "description": "",
+        "_id": "69da6f44c864b493c00db970"
+      },
+      {
+        "value": "no",
+        "label": "No, I don’t understand",
+        "description": "",
+        "_id": "69da6f44c864b493c00db971"
+      }
+    ],
+    "qIcon": "house-icon",
+    "qIntro": "",
+    "qText": "Unless you and the other parent have a different plan written down, the parent who is starting their time with the child is the one who must pick them up. Also, while your child is staying with you, it is your job to make sure they get to and from school.",
+    "qTitle": "School Pickup Parent",
+    "section": "parental-rights",
+    "type": "multiple choice",
+    "updatedAt": "2026-09-09T16:02:20.543Z"
+  },
+  {
+    "_id": "6aa1830c30889dbc44057e95",
+    "qKey": "school_address_parent",
+    "__v": 0,
+    "createdAt": "2026-09-09T16:02:20.549Z",
+    "options": [
+      {
+        "value": "me",
+        "label": "Me",
+        "description": "",
+        "_id": "69da6f44c864b493c00db973"
+      },
+      {
+        "value": "coParent",
+        "label": "My co-parent",
+        "description": "",
+        "_id": "69da6f44c864b493c00db974"
+      },
+      {
+        "value": "defaultToCoParent",
+        "label": "Default to my co-parent",
+        "description": "",
+        "_id": "69da6f44c864b493c00db975"
+      },
+      {
+        "value": "needMoreInfo",
+        "label": "I need more information",
+        "description": "",
+        "_id": "69da6f44c864b493c00db976"
+      }
+    ],
+    "qIcon": "house-icon",
+    "qIntro": "This means this parent’s address will be used for the purposes of determining which schools your child will attend.",
+    "qText": "Which parent will be the school-address parent?",
+    "qTitle": "School Address Parent",
+    "section": "parental-rights",
+    "type": "multiple choice",
+    "updatedAt": "2026-09-09T16:02:20.549Z"
+  },
+  {
+    "_id": "6aa1830c30889dbc44057e97",
+    "qKey": "activity_notice",
+    "__v": 0,
+    "createdAt": "2026-09-09T16:02:20.554Z",
+    "options": [
+      {
+        "value": "understand",
+        "label": "I understand",
+        "description": "",
+        "_id": "69da6f44c864b493c00db978"
+      }
+    ],
+    "qIcon": "house-icon",
+    "qIntro": "",
+    "qText": "Unless you both agree to a change, the child should keep doing the same sports, clubs, or school activities that they are in right now. Neither parent should stop the child from going to these activities.\ni.\tAlso, unless you and the other parent have a different plan written down, the parent that has the child is the one that must drive them to their activities.",
+    "qTitle": "Activity Notice",
+    "section": "parental-rights",
+    "type": "multiple choice",
+    "updatedAt": "2026-09-09T16:02:20.554Z"
+  },
+  {
+    "_id": "6aa1830c30889dbc44057e99",
+    "qKey": "elementary_activities",
+    "__v": 0,
+    "createdAt": "2026-09-09T16:02:20.560Z",
+    "options": [
+      {
+        "value": "change",
+        "label": "This is to be changed to text entry or list entry",
+        "description": "",
+        "_id": "69da6f44c864b493c00db97a"
+      },
+      {
+        "value": "defaultToCoParent",
+        "label": "Default to my co-parent",
+        "description": "",
+        "_id": "69da6f44c864b493c00db97b"
+      },
+      {
+        "value": "needMoreInfo",
+        "label": "I need more information",
+        "description": "",
+        "_id": "69da6f44c864b493c00db97c"
+      }
+    ],
+    "qIcon": "house-icon",
+    "qIntro": "",
+    "qText": "What activities would you like your child to participate in in elementary school?",
+    "qTitle": "Elementary Activities",
+    "section": "parental-rights",
+    "type": "multiple choice",
+    "updatedAt": "2026-09-09T16:02:20.560Z"
+  },
+  {
+    "_id": "6aa1830c30889dbc44057e9b",
+    "qKey": "middle_activities",
+    "__v": 0,
+    "createdAt": "2026-09-09T16:02:20.565Z",
+    "options": [
+      {
+        "value": "change",
+        "label": "This is to be changed to text entry or list entry",
+        "description": "",
+        "_id": "69da6f44c864b493c00db97e"
+      },
+      {
+        "value": "defaultToCoParent",
+        "label": "Default to my co-parent",
+        "description": "",
+        "_id": "69da6f44c864b493c00db97f"
+      },
+      {
+        "value": "needMoreInfo",
+        "label": "I need more information",
+        "description": "",
+        "_id": "69da6f44c864b493c00db980"
+      }
+    ],
+    "qIcon": "house-icon",
+    "qIntro": "",
+    "qText": "What activities do you want your child to participate in in middle school?",
+    "qTitle": "Middle School Activities",
+    "section": "parental-rights",
+    "type": "multiple choice",
+    "updatedAt": "2026-09-09T16:02:20.565Z"
+  },
+  {
+    "_id": "6aa1830c30889dbc44057e9d",
+    "qKey": "high_activities",
+    "__v": 0,
+    "createdAt": "2026-09-09T16:02:20.569Z",
+    "options": [
+      {
+        "value": "change",
+        "label": "This is to be changed to text entry or list entry",
+        "description": "",
+        "_id": "69da6f44c864b493c00db982"
+      },
+      {
+        "value": "defaultToCoParent",
+        "label": "Default to my co-parent",
+        "description": "",
+        "_id": "69da6f44c864b493c00db983"
+      },
+      {
+        "value": "needMoreInfo",
+        "label": "I need more information",
+        "description": "",
+        "_id": "69da6f44c864b493c00db984"
+      }
+    ],
+    "qIcon": "house-icon",
+    "qIntro": "",
+    "qText": "What activities do you want your child to participate in in high school?",
+    "qTitle": "High School Activities",
+    "section": "parental-rights",
+    "type": "multiple choice",
+    "updatedAt": "2026-09-09T16:02:20.569Z"
+  },
+  {
+    "_id": "6aa1830c30889dbc44057e9f",
+    "qKey": "expense_notif",
+    "__v": 0,
+    "createdAt": "2026-09-09T16:02:20.575Z",
+    "options": [
+      {
+        "value": "understand",
+        "label": "I understand",
+        "description": "",
+        "_id": "69da6f44c864b493c00db986"
+      }
+    ],
+    "qIcon": "scale-icon",
+    "qIntro": "",
+    "qText": "You should notify your co-parent about any expenses arising from the child’s extracurricular, school-related, or other activities. Unless there is another agreement between you, the parents shall pay the costs that come with their child’s participation in any extracurricular, school-related, or other activities.",
+    "qTitle": "Expense Notification",
+    "section": "parental-rights",
+    "type": "multiple choice",
+    "updatedAt": "2026-09-09T16:02:20.575Z"
+  },
+  {
+    "_id": "6aa1830c30889dbc44057ea1",
+    "qKey": "expense_split",
+    "__v": 0,
+    "createdAt": "2026-09-09T16:02:20.581Z",
+    "options": [
+      {
+        "value": "change",
+        "label": "This is to be changed to integer entry",
+        "description": "",
+        "_id": "69da6f44c864b493c00db988"
+      },
+      {
+        "value": "you",
+        "label": "You: [Numerical Entry]%",
+        "description": "",
+        "_id": "69da6f44c864b493c00db989"
+      },
+      {
+        "value": "coParent",
+        "label": "Your co-parent: [Numerical Entry]%",
+        "description": "",
+        "_id": "69da6f44c864b493c00db98a"
+      },
+      {
+        "value": "defaultToCoParent",
+        "label": "Default to my co-parent",
+        "description": "",
+        "_id": "69da6f44c864b493c00db98b"
+      },
+      {
+        "value": "needMoreInfo",
+        "label": "I need more information",
+        "description": "",
+        "_id": "69da6f44c864b493c00db98c"
+      }
+    ],
+    "qIcon": "scale-icon",
+    "qIntro": "",
+    "qText": "You and your co-parent agree to split up expenses as follows:",
+    "qTitle": "Expenses Split",
+    "section": "parental-rights",
+    "type": "multiple choice",
+    "updatedAt": "2026-09-09T16:02:20.581Z"
+  },
+  {
+    "_id": "6aa1830c30889dbc44057ea3",
+    "qKey": "expense_reimbursement",
+    "__v": 0,
+    "createdAt": "2026-09-09T16:02:20.586Z",
+    "options": [
+      {
+        "value": "change",
+        "label": "This is to be changed to integer entry",
+        "description": "",
+        "_id": "69da6f44c864b493c00db98e"
+      },
+      {
+        "value": "yes",
+        "label": "Yes",
+        "description": "",
+        "_id": "69da6f44c864b493c00db98f"
+      },
+      {
+        "value": "yesLimit",
+        "label": "Yes, but only up to $[Numerical Entry]",
+        "description": "",
+        "_id": "69da6f44c864b493c00db990"
+      },
+      {
+        "value": "no",
+        "label": "No",
+        "description": "",
+        "_id": "69da6f44c864b493c00db991"
+      },
+      {
+        "value": "defaultToCoParent",
+        "label": "Default to my co-parent",
+        "description": "",
+        "_id": "69da6f44c864b493c00db992"
+      },
+      {
+        "value": "needMoreInfo",
+        "label": "I need more information",
+        "description": "",
+        "_id": "69da6f44c864b493c00db993"
+      }
+    ],
+    "qIcon": "scale-icon",
+    "qIntro": "",
+    "qText": "Do you plan to reimburse your co-parent for any expenses?",
+    "qTitle": "Expense Reimbursement",
+    "section": "parental-rights",
+    "type": "multiple choice",
+    "updatedAt": "2026-09-09T16:02:20.586Z"
+  },
+  {
+    "_id": "6aa1830c30889dbc44057ea5",
+    "qKey": "medical_emergency_notice",
+    "__v": 0,
+    "createdAt": "2026-09-09T16:02:20.594Z",
+    "options": [
+      {
+        "value": "yes",
+        "label": "Yes, I understand",
+        "description": "",
+        "_id": "69da6f44c864b493c00db995"
+      },
+      {
+        "value": "no",
+        "label": "No, I don’t understand",
+        "description": "",
+        "_id": "69da6f44c864b493c00db996"
+      }
+    ],
+    "qIcon": "house-icon",
+    "qIntro": "",
+    "qText": "If your child gets a serious injury, stays sick for a long time, or has to go to the emergency room or hospital, you need to tell the other parent right away. You should tell them what happened, how the child is doing, and where the child is. You need to share the information as soon as possible and definitely within 24 hours of the emergency. Additionally, both parents must give each other the names and phone numbers for all of the doctors and healthcare workers who take care of the child.",
+    "qTitle": "Medical Emergency Notification",
+    "section": "parental-rights",
+    "type": "multiple choice",
+    "updatedAt": "2026-09-09T16:02:20.594Z"
+  },
+  {
+    "_id": "6aa1830c30889dbc44057ea7",
+    "qKey": "relocation_notice",
+    "__v": 0,
+    "createdAt": "2026-09-09T16:02:20.597Z",
+    "options": [
+      {
+        "value": "yes",
+        "label": "Yes, I understand",
+        "description": "",
+        "_id": "69da6f44c864b493c00db998"
+      },
+      {
+        "value": "no",
+        "label": "No, I don’t understand",
+        "description": "",
+        "_id": "69da6f44c864b493c00db999"
+      }
+    ],
+    "qIcon": "house-icon",
+    "qIntro": "",
+    "qText": "If the parent who is the “residential parent” plans to move to a new home that is not the one listed in the parenting plan, that parent must tell the Court before moving. After the Court gets the notice, it will send a notice to the “non‑residential parent.” The Court or the non‑residential parent may then ask for a hearing. Both parents will be told about the hearing. The hearing is to decide if any changes should be made to the parenting plan to make sure the child’s best interests are protected.",
+    "qTitle": "Relocation Notice",
+    "section": "parental-rights",
+    "type": "multiple choice",
+    "updatedAt": "2026-09-09T16:02:20.597Z"
+  },
+  {
+    "_id": "6aa1830c30889dbc44057ea9",
+    "qKey": "record_access_notice",
+    "__v": 0,
+    "createdAt": "2026-09-09T16:02:20.600Z",
+    "options": [
+      {
+        "value": "yes",
+        "label": "Yes, I understand",
+        "description": "",
+        "_id": "69da6f44c864b493c00db99b"
+      },
+      {
+        "value": "no",
+        "label": "No, I don’t understand",
+        "description": "",
+        "_id": "69da6f44c864b493c00db99c"
+      }
+    ],
+    "qIcon": "scale-icon",
+    "qIntro": "",
+    "qText": "The non-residential parent has the same legal right to see all of the child or children’s records, just as the residential parent does, unless the Court has placed limits on that access. Anyone who keeps these records must follow the Court’s orders about sharing them. If they do not follow the orders, they could face legal penalties.\nRelevant Ohio Statute can be found here: R.C. 3109.051(H), 3319.321(B)(5)(a), R.C. 3125.16 and 3319.321(F)",
+    "qTitle": "Records Access Notice",
+    "section": "parental-rights",
+    "type": "multiple choice",
+    "updatedAt": "2026-09-09T16:02:20.600Z"
+  },
+  {
+    "_id": "6aa1830c30889dbc44057eab",
+    "qKey": "day_care_access_notice",
+    "__v": 0,
+    "createdAt": "2026-09-09T16:02:20.603Z",
+    "options": [
+      {
+        "value": "yes",
+        "label": "Yes, I understand",
+        "description": "",
+        "_id": "69da6f44c864b493c00db99e"
+      },
+      {
+        "value": "no",
+        "label": "No, I don’t understand",
+        "description": "",
+        "_id": "69da6f44c864b493c00db99f"
+      }
+    ],
+    "qIcon": "house-icon",
+    "qIntro": "",
+    "qText": "Both parents have the right to visit the child’s daycare. This is determined by law under Ohio Revised Code § 5104.039. Even if the child does not live with you most of the time, you can go to the daycare center just like the other parent can. However, this is subject to other agreements between parents, or a specific court order that says you are not allowed to.",
+    "qTitle": "Day Care Access Notice",
+    "section": "parental-rights",
+    "type": "multiple choice",
+    "updatedAt": "2026-09-09T16:02:20.603Z"
+  },
+  {
+    "_id": "6aa1830c30889dbc44057ead",
+    "qKey": "school_access_access_notice",
+    "__v": 0,
+    "createdAt": "2026-09-09T16:02:20.606Z",
+    "options": [
+      {
+        "value": "yes",
+        "label": "Yes, I understand",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9a1"
+      },
+      {
+        "value": "no",
+        "label": "No, I don’t understand",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9a2"
+      }
+    ],
+    "qIcon": "house-icon",
+    "qIntro": "",
+    "qText": "Both parents are allowed to go to their child’s school activities. If one parent is allowed to go to a school event (like a game or a play), the other parent is allowed to go too. They must follow the same rules as everyone else. If a school worker tries to stop a parent from coming in person, they could get in trouble with the court (something called contempt). The only time this changes is if there is an agreement between parents or if the judge makes a special rule to stop a parent from attending.",
+    "qTitle": "School Access Access Notice",
+    "section": "parental-rights",
+    "type": "multiple choice",
+    "updatedAt": "2026-09-09T16:02:20.606Z"
+  },
+  {
+    "_id": "6aa1830c30889dbc44057eaf",
+    "qKey": "your_private_health_insurance",
+    "__v": 0,
+    "createdAt": "2026-09-09T16:02:20.610Z",
+    "options": [
+      {
+        "value": "yes",
+        "label": "Yes",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9a4"
+      },
+      {
+        "value": "no",
+        "label": "No",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9a5"
+      }
+    ],
+    "qIcon": "house-icon",
+    "qIntro": "",
+    "qText": "Do you have private health insurance for your child or children who are under 18?",
+    "qTitle": "Your Private Health Insurance",
+    "section": "health-insurance-coverage",
+    "type": "multiple choice",
+    "updatedAt": "2026-09-09T16:02:20.610Z"
+  },
+  {
+    "_id": "6aa1830c30889dbc44057eb1",
+    "qKey": "co_parent_private_health_insurance",
+    "__v": 0,
+    "createdAt": "2026-09-09T16:02:20.612Z",
+    "options": [
+      {
+        "value": "yes",
+        "label": "Yes",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9a7"
+      },
+      {
+        "value": "no",
+        "label": "No",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9a8"
+      },
+      {
+        "value": "needMoreInfo",
+        "label": "I need more information",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9a9"
+      }
+    ],
+    "qIcon": "house-icon",
+    "qIntro": "",
+    "qText": "Does the other parent of your child have access to private health insurance for your child or children under 18?",
+    "qTitle": "Co-Parent Private Health Insurance",
+    "section": "health-insurance-coverage",
+    "type": "multiple choice",
+    "updatedAt": "2026-09-09T16:02:20.612Z"
+  },
+  {
+    "_id": "6aa1830c30889dbc44057eb3",
+    "qKey": "private_health_insurance_provider",
+    "__v": 0,
+    "createdAt": "2026-09-09T16:02:20.615Z",
+    "options": [
+      {
+        "value": "you",
+        "label": "Parent 1 (you)",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9ab"
+      },
+      {
+        "value": "coParent",
+        "label": "Parent 2 (co-parent)",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9ac"
+      },
+      {
+        "value": "both",
+        "label": "Both parents",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9ad"
+      },
+      {
+        "value": "defaultToCoParent",
+        "label": "Default to my co-parent",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9ae"
+      }
+    ],
+    "qIcon": "house-icon",
+    "qIntro": "",
+    "qText": "Who will provide private health insurance for your child or children?",
+    "qTitle": "Private Health Insurance Provider",
+    "section": "health-insurance-coverage",
+    "type": "multiple choice",
+    "updatedAt": "2026-09-09T16:02:20.615Z"
+  },
+  {
+    "_id": "6aa1830c30889dbc44057eb5",
+    "qKey": "health_care_access",
+    "__v": 0,
+    "createdAt": "2026-09-09T16:02:20.619Z",
+    "options": [
+      {
+        "value": "primary_care_service_close",
+        "label": "There are primary care services within 30 miles of where the child or children live.",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9b0"
+      },
+      {
+        "value": "primary_care_service_far",
+        "label": "The Court allows primary care services to be more than 30 miles from where the child or children live because people in that area usually travel farther for care.",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9b1"
+      },
+      {
+        "value": "public_transportation",
+        "label": "Public transportation is the only way the parent paying child support can travel, and primary care services can be reached that way.",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9b2"
+      }
+    ],
+    "qIcon": "house-icon",
+    "qIntro": "",
+    "qText": "Explain how your health insurance makes health care accessible (easy to get and use) for your child or children. (Choose one option below)",
+    "qTitle": "Health Care Accessibility",
+    "section": "health-insurance-coverage",
+    "type": "multiple choice",
+    "updatedAt": "2026-09-09T16:02:20.619Z"
+  },
+  {
+    "_id": "6aa1830c30889dbc44057eb7",
+    "qKey": "your_health_insurance_spending",
+    "__v": 0,
+    "createdAt": "2026-09-09T16:02:20.624Z",
+    "options": [
+      {
+        "value": "yes",
+        "label": "Yes",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9b4"
+      },
+      {
+        "value": "no",
+        "label": "No",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9b5"
+      }
+    ],
+    "qIcon": "house-icon",
+    "qIntro": "",
+    "qText": "Do you spend 5% or less of your yearly gross income on health insurance?",
+    "qTitle": "Your Health Insurance Income Percentage",
+    "section": "health-insurance-coverage",
+    "type": "multiple choice",
+    "updatedAt": "2026-09-09T16:02:20.624Z"
+  },
+  {
+    "_id": "6aa1830c30889dbc44057eb9",
+    "qKey": "co_parent_health_insurance_spending",
+    "__v": 0,
+    "createdAt": "2026-09-09T16:02:20.628Z",
+    "options": [
+      {
+        "value": "yes",
+        "label": "Yes",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9b7"
+      },
+      {
+        "value": "no",
+        "label": "No",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9b8"
+      },
+      {
+        "value": "needMoreInfo",
+        "label": "I need more information",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9b9"
+      }
+    ],
+    "qIcon": "house-icon",
+    "qIntro": "",
+    "qText": "Does your co-parent pay 5% or less of their yearly income for health insurance?",
+    "qTitle": "Co-Parent Health Insurance Income Percentage",
+    "section": "health-insurance-coverage",
+    "type": "multiple choice",
+    "updatedAt": "2026-09-09T16:02:20.628Z"
+  },
+  {
+    "_id": "6aa1830c30889dbc44057ebb",
+    "qKey": "health_insurance_provider_agreement",
+    "__v": 0,
+    "createdAt": "2026-09-09T16:02:20.631Z",
+    "options": [
+      {
+        "value": "parent1You",
+        "label": "Both parents agree that Parent 1 (you) will provide health insurance, even if it costs more than 5% of their yearly gross income.",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9bb"
+      },
+      {
+        "value": "parent2CoParent",
+        "label": "Both parents agree that Parent 2 (co-parent) will provide health insurance, even if it costs more than 5% of their yearly gross income.",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9bc"
+      },
+      {
+        "value": "both",
+        "label": "Both parents agree that both parents will provide health insurance, even if it costs more than 5% of their yearly income.",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9bd"
+      },
+      {
+        "value": "none",
+        "label": "None",
+        "description": "Move to the next section",
+        "_id": "69da6f44c864b493c00db9be"
+      }
+    ],
+    "qIcon": "house-icon",
+    "qIntro": "",
+    "qText": "Please choose the option that describes you and your co-parent. (If none fit, select “none” and go to the next section)",
+    "qTitle": "Who Will Provide Health Insurance",
+    "section": "health-insurance-coverage",
+    "type": "multiple choice",
+    "updatedAt": "2026-09-09T16:02:20.631Z"
+  },
+  {
+    "_id": "6aa1830c30889dbc44057ebd",
+    "qKey": "ask_for_private_health_insurance",
+    "__v": 0,
+    "createdAt": "2026-09-09T16:02:20.634Z",
+    "options": [
+      {
+        "value": "parent1You",
+        "label": "Parent 1 (you) has asked to get or keep private health insurance, even if it costs more than 5% of their yearly gross income.",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9c0"
+      },
+      {
+        "value": "parent2CoParent",
+        "label": "Parent 2 (co-parent) has asked to get or keep private health insurance, even if it costs more than 5% of their yearly gross income.",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9c1"
+      },
+      {
+        "value": "both",
+        "label": "Both parents agree that both parents will provide health insurance, even if it costs more than 5% of their yearly income.",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9c2"
+      },
+      {
+        "value": "none",
+        "label": "None",
+        "description": "Move to the next section",
+        "_id": "69da6f44c864b493c00db9c3"
+      }
+    ],
+    "qIcon": "house-icon",
+    "qIntro": "",
+    "qText": "Please choose the option that describes you and your co-parent. (If none fit, select “none” and go to the next section)",
+    "qTitle": "Ask To Get Or Keep Private Health Insurance",
+    "section": "health-insurance-coverage",
+    "type": "multiple choice",
+    "updatedAt": "2026-09-09T16:02:20.634Z"
+  },
+  {
+    "_id": "6aa1830c30889dbc44057ebf",
+    "qKey": "best_private_insurance_option",
+    "__v": 0,
+    "createdAt": "2026-09-09T16:02:20.637Z",
+    "options": [
+      {
+        "value": "parent1You",
+        "label": "It is best for the child or children if Parent 1 (you) gets or keeps private health insurance, even if it costs more than 5% of their yearly gross income.",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9c5"
+      },
+      {
+        "value": "parent2CoParent",
+        "label": "It is best for the child or children if Parent 2 (co-parent) gets or keeps private health insurance, even if it costs more than 5% of their yearly gross income.",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9c6"
+      }
+    ],
+    "qIcon": "house-icon",
+    "qIntro": "",
+    "qText": "Please choose the option that best shows your preference.",
+    "qTitle": "Best Private Insurance Option",
+    "section": "health-insurance-coverage",
+    "type": "multiple choice",
+    "updatedAt": "2026-09-09T16:02:20.637Z"
+  },
+  {
+    "_id": "6aa1830c30889dbc44057ec1",
+    "qKey": "health_insurance_plan_cost_ok",
+    "__v": 0,
+    "createdAt": "2026-09-09T16:02:20.642Z",
+    "options": [
+      {
+        "value": "change",
+        "label": "This is to be changed to text entry",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9c8"
+      }
+    ],
+    "qIcon": "house-icon",
+    "qIntro": "",
+    "qText": "Please explain why the cost of the health insurance plan would not be a financial problem.",
+    "qTitle": "Cost Of Health Insurance Plan",
+    "section": "health-insurance-coverage",
+    "type": "multiple choice",
+    "updatedAt": "2026-09-09T16:02:20.642Z"
+  },
+  {
+    "_id": "6aa1830c30889dbc44057ec3",
+    "qKey": "health_insurance_provider_explanation",
+    "__v": 0,
+    "createdAt": "2026-09-09T16:02:20.645Z",
+    "options": [
+      {
+        "value": "childSupportParentShouldProvide",
+        "label": "The parent who pays child support should provide health insurance for the child or children. ",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9ca"
+      },
+      {
+        "value": "alreadyHasInsurance",
+        "label": "The parent who gets child support already has health insurance for the child or children that costs 5% or less of their yearly gross income.",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9cb"
+      },
+      {
+        "value": "wantsToProvide",
+        "label": "The parent who gets child support already has private health insurance for the child or children that costs more than 5% of their yearly income, but the parent still wants to provide it.",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9cc"
+      },
+      {
+        "value": "obtainAtReasonableCost",
+        "label": "The parent who gets child support can get health insurance for the child or children, from work or another source, at a reasonable cost.",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9cd"
+      },
+      {
+        "value": "nonParent",
+        "label": "The person getting child support is not a parent and does not have to pay for the medical care of the child or children.",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9ce"
+      },
+      {
+        "value": "bothWantToProvide",
+        "label": "Both parents want to provide and already have health insurance for their child or children. ",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9cf"
+      }
+    ],
+    "qIcon": "house-icon",
+    "qIntro": "For CS Students: This should say the name of the parent they selected in 4.b, or if they selected 'both', then it should show 'both parents'",
+    "qText": "Which of these options best explains why you chose [Parent 1/Parent 2/Both parents] to provide health insurance for the child or children?",
+    "qTitle": "Explanation For Health Insurance Provider",
+    "section": "health-insurance-coverage",
+    "type": "multiple choice",
+    "updatedAt": "2026-09-09T16:02:20.645Z"
+  },
+  {
+    "_id": "6aa1830c30889dbc44057ec5",
+    "qKey": "health_insurance_main_coverage",
+    "__v": 0,
+    "createdAt": "2026-09-09T16:02:20.647Z",
+    "options": [
+      {
+        "value": "parent1You",
+        "label": "Parent 1 (you)",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9d1"
+      },
+      {
+        "value": "parent2CoParent",
+        "label": "Parent 2 (co-parent)",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9d2"
+      }
+    ],
+    "qIcon": "house-icon",
+    "qIntro": "",
+    "qText": "Which parent’s health insurance should be the main coverage for the child or children?",
+    "qTitle": "Main Health Insurance Provider",
+    "section": "health-insurance-coverage",
+    "type": "multiple choice",
+    "updatedAt": "2026-09-09T16:02:20.647Z"
+  },
+  {
+    "_id": "6aa1830c30889dbc44057ec7",
+    "qKey": "private_health_insurance_provider_other",
+    "__v": 0,
+    "createdAt": "2026-09-09T16:02:20.649Z",
+    "options": [
+      {
+        "value": "parent1You",
+        "label": "Parent 1 (you)",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9d4"
+      },
+      {
+        "value": "parent2CoParent",
+        "label": "Parent 2 (co-parent)",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9d5"
+      }
+    ],
+    "qIcon": "house-icon",
+    "qIntro": "",
+    "qText": "Who will provide private health insurance for your child or children?",
+    "qTitle": "Private Health Insurance Provider",
+    "section": "health-insurance-coverage",
+    "type": "multiple choice",
+    "updatedAt": "2026-09-09T16:02:20.649Z"
+  },
+  {
+    "_id": "6aa1830c30889dbc44057ec9",
+    "qKey": "health_care_reimbursement",
+    "__v": 0,
+    "createdAt": "2026-09-09T16:02:20.652Z",
+    "options": [
+      {
+        "value": "change",
+        "label": "This is to be changed to text entry",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9d7"
+      },
+      {
+        "value": "parent1You",
+        "label": "Parent 1 (you) --> Enter address: ",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9d8"
+      },
+      {
+        "value": "parent2CoParent",
+        "label": "Parent 2 (co-parent) --> Entrer address: ",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9d9"
+      }
+    ],
+    "qIcon": "house-icon",
+    "qIntro": "",
+    "qText": "Who will get reimbursed for health care expenses?",
+    "qTitle": "Health Care Expense Reimbursement",
+    "section": "health-insurance-coverage",
+    "type": "multiple choice",
+    "updatedAt": "2026-09-09T16:02:20.652Z"
+  },
+  {
+    "_id": "6aa1830c30889dbc44057ecb",
+    "qKey": "health_insurance_coverage_disclaimers",
+    "__v": 0,
+    "createdAt": "2026-09-09T16:02:20.655Z",
+    "options": [
+      {
+        "value": "understand",
+        "label": "I understand",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9db"
+      }
+    ],
+    "qIcon": "house-icon",
+    "qIntro": "",
+    "qText": "i.\tIf you are the parent who must provide health insurance for the child(ren), you have to give the other parent the following within 30 days after this support order is issued:\n\t1.\tInformation about the benefits, limitations, and exclusions of the health plan.\n\t2.\tCopies of forms needed to get money back for medical costs.\n\t3.\tPayments or other benefits of the insurance.\n\t4.\tProof of insurance that shows the child(ren) are covered.\nii.\tWithin thirty (30) days after the order is given, the person who is providing health care for the child(ren) must send proof of the of that healthcare to the Child Support Enforcement Agency.\niii.\tThe person who must provide healthcare to the child or children must list that child or children as dependent(s) on any healthcare plan they have.\niv.\tThe employer of the person providing healthcare to the child or children must give certain healthcare information to the other parent, anyone included in a court order, or the Child Support Enforcement Agency. This information may include the name and address of the health plan administrator and the policy or plan number.\n\tRelevant Ohio Statute can be found here: R.C. 3119.32(E), R.C. 3109.19 & R.C. 3119.31\n\nv.\tIf the person who must provide health care for the child or children gets a new job, the Child Support Enforcement Agency may send the new employer a notice telling them to enroll the child or children into the health care coverage offered at the new job if no other insurance is in place.\n\tRelevant Ohio Statute can be found here: R.C. 3119.32(G) & R.C.3119.34",
+    "qTitle": "Health Insurance Coverage Disclaimers",
+    "section": "health-insurance-coverage",
+    "type": "multiple choice",
+    "updatedAt": "2026-09-09T16:02:20.655Z"
+  },
+  {
+    "_id": "6aa1830c30889dbc44057ecd",
+    "qKey": "claim_children_tax_forms_intent",
+    "__v": 0,
+    "createdAt": "2026-09-09T16:02:20.660Z",
+    "options": [
+      {
+        "value": "yes",
+        "label": "Yes, I plan to claim my child[ren] for future tax years",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9dd"
+      },
+      {
+        "value": "no",
+        "label": "No, I don’t plan to claim my child[ren] for any tax years going forward",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9de"
+      },
+      {
+        "value": "needMoreInfo",
+        "label": "I need more information",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9df"
+      },
+      {
+        "value": "defaultToCoParent",
+        "label": "Default to my co-parent",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9e0"
+      }
+    ],
+    "qIcon": "house-icon",
+    "qIntro": "",
+    "qText": "Do you want to claim your children on any tax forms every year?",
+    "qTitle": "Claiming Children On Tax Forms",
+    "section": "tax-exemptions",
+    "type": "multiple choice",
+    "updatedAt": "2026-09-09T16:02:20.660Z"
+  },
+  {
+    "_id": "6aa1830c30889dbc44057ecf",
+    "qKey": "claim_children_tax_forms_select",
+    "__v": 0,
+    "createdAt": "2026-09-09T16:02:20.664Z",
+    "options": [
+      {
+        "value": "change",
+        "label": "This is to be changed to text entry or list entry (listing children names)",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9e2"
+      }
+    ],
+    "qIcon": "house-icon",
+    "qIntro": "",
+    "qText": "Which children do you plan to claim on tax forms in future years?",
+    "qTitle": "Which Children To Claim",
+    "section": "tax-exemptions",
+    "type": "multiple choice",
+    "updatedAt": "2026-09-09T16:02:20.664Z"
+  },
+  {
+    "_id": "6aa1830c30889dbc44057ed1",
+    "qKey": "claim_child_tax_years",
+    "__v": 0,
+    "createdAt": "2026-09-09T16:02:20.666Z",
+    "options": [
+      {
+        "value": "allTaxYears",
+        "label": "All future tax years",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9e4"
+      },
+      {
+        "value": "oddTaxYears",
+        "label": "Odd-numbered tax years",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9e5"
+      },
+      {
+        "value": "evenTaxYears",
+        "label": "Odd-numbered tax years",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9e6"
+      },
+      {
+        "value": "custom",
+        "label": "Custom (this will need to be changed to integar/text input): ",
+        "description": "number input - years (a list separated by commas)",
+        "_id": "69da6f44c864b493c00db9e7"
+      }
+    ],
+    "qIcon": "house-icon",
+    "qIntro": "This section should show for each child selected",
+    "qText": "For Child[x], which tax years do you want to claim them on?",
+    "qTitle": "Claiming Child Tax Years",
+    "section": "tax-exemptions",
+    "type": "multiple choice",
+    "updatedAt": "2026-09-09T16:02:20.666Z"
+  },
+  {
+    "_id": "6aa1830c30889dbc44057ed3",
+    "qKey": "defer_child_tax_years",
+    "__v": 0,
+    "createdAt": "2026-09-09T16:02:20.669Z",
+    "options": [
+      {
+        "value": "understand",
+        "label": "I understand",
+        "description": "",
+        "_id": "69da6f44c864b493c00db9e9"
+      }
+    ],
+    "qIcon": "house-icon",
+    "qIntro": "",
+    "qText": "You have decided to defer to your co-parent.\ni.\tIf you wrote down that you are the residential parent earlier in this form, you have a job to do. If your co-parent is the one who will list your child on their taxes this year, you must give them a specific form called IRS Form 8332. You need to make sure they get this form, along with other needed papers, by February 15th. You have this job each year that your co-parent lists your child on their taxes\nii.\tIf you wrote down that you are NOT the residential parent earlier on this form, your co-parent has a job to do. If you are listing your child on your taxes this year, they must give you a specific form called IRS form 8332. They have to give you this form, along with other needed papers, by February 15th.",
+    "qTitle": "Decided To Defer",
+    "section": "tax-exemptions",
+    "type": "multiple choice",
+    "updatedAt": "2026-09-09T16:02:20.669Z"
+  },
+  {
+    "_id": "6aa1830c30889dbc44057ed5",
+    "qKey": "individual_child_housing",
+    "__v": 0,
+    "createdAt": "2026-09-09T16:02:20.671Z",
+    "options": [
+      {
+        "value": "yes",
+        "label": "Yes",
+        "description": "",
+        "_id": "69da74c7b3ee85d32c582290"
+      },
+      {
+        "value": "no",
+        "label": "No",
+        "description": "",
+        "_id": "69da74c7b3ee85d32c582291"
+      },
+      {
+        "value": "needMoreInfo",
+        "label": "I need more information",
+        "description": "",
+        "_id": "69da74c7b3ee85d32c582292"
+      },
+      {
+        "value": "defaultToCoParent",
+        "label": "Default to my co-parent's choice",
+        "description": "",
+        "_id": "69da74c7b3ee85d32c582293"
+      }
+    ],
+    "qIcon": "house-icon",
+    "qIntro": "This question should iterate for each child the user has added to the plan",
+    "qText": "Do you want child [x] to live with you",
+    "qTitle": "Individual Child Housing",
+    "section": "parental-rights",
+    "type": "multiple choice",
+    "updatedAt": "2026-09-09T16:02:20.671Z"
+  }
+]

@@ -139,6 +139,7 @@ export default function Dashboard() {
             const plan = await response.json()
             setPlans(prev => [...prev, plan]);
             dispatch({ type: 'UPDATE_SECTION', section: 'plan', payload: plan });
+            dispatch({ type: 'UPDATE_SECTION', section: 'collaborationMode', payload: '' });
             if (plan.caseId) setActiveCaseId(plan.caseId);
           }
         });
@@ -343,6 +344,7 @@ export default function Dashboard() {
                           className="plan-card__open-btn"
                           onClick={() => {
                             dispatch({ type: 'UPDATE_SECTION', section: "plan", payload: plan });
+                            dispatch({ type: 'UPDATE_SECTION', section: "collaborationMode", payload: plan.collaborationMode ?? '' });
                             dispatch({ type: 'UPDATE_SECTION', section: "parents", payload: {firstName: plan.parentFName, lastName: plan.parentLName, phone: plan.phone, address: plan.address} });
                             dispatch({ type: 'UPDATE_SECTION', section: "parentingGuideInfo", payload: {} });
                             if (plan.caseId) setActiveCaseId(plan.caseId);
@@ -377,6 +379,7 @@ export default function Dashboard() {
                           onClick={() => {
                             // Replace plan in context with the selected plan
                             dispatch({ type: 'UPDATE_SECTION', section: "plan", payload: plan });
+                            dispatch({ type: 'UPDATE_SECTION', section: "collaborationMode", payload: plan.collaborationMode ?? '' });
                             // Clear stale question state from a previous session so the new plan starts fresh
                             dispatch({ type: 'UPDATE_SECTION', section: "question", payload: {} });
                             dispatch({ type: 'UPDATE_SECTION', section: "parentingGuideInfo", payload: {} });

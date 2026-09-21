@@ -1,0 +1,438 @@
+[
+  {
+    "_id": "69da6f4fc864b493c00db9ec",
+    "qKey": "allocation_parental_rights",
+    "nextQuestions": [
+      {
+        "operator": "eq",
+        "value": "no",
+        "goTo": "individual_child_housing",
+        "_id": "69da6f4fc864b493c00db9ed"
+      },
+      {
+        "operator": "neq",
+        "value": "no",
+        "goTo": "living_arrangements",
+        "_id": "69da6f4fc864b493c00db9ee"
+      }
+    ],
+    "isDefault": false,
+    "__v": 0
+  },
+  {
+    "_id": "69da6f4fc864b493c00db9ef",
+    "qKey": "individual_child_housing",
+    "nextQuestions": [],
+    "isDefault": true,
+    "goToDefault": "living_arrangements",
+    "__v": 0
+  },
+  {
+    "_id": "69da6f4fc864b493c00db9f0",
+    "qKey": "living_arrangements",
+    "nextQuestions": [],
+    "isDefault": true,
+    "goToDefault": "legal_decisions",
+    "__v": 0
+  },
+  {
+    "_id": "69da6f4fc864b493c00db9f1",
+    "qKey": "legal_decisions",
+    "nextQuestions": [],
+    "isDefault": true,
+    "goToDefault": "rights_acknowledgement",
+    "__v": 0
+  },
+  {
+    "_id": "69da6f4fc864b493c00db9f2",
+    "qKey": "rights_acknowledgement",
+    "nextQuestions": [],
+    "isDefault": true,
+    "goToDefault": "schedule_understanding",
+    "__v": 0
+  },
+  {
+    "_id": "69da6f4fc864b493c00db9f3",
+    "qKey": "schedule_understanding",
+    "nextQuestions": [],
+    "isDefault": true,
+    "goToDefault": "school_address_parent",
+    "__v": 0
+  },
+  {
+    "_id": "69da6f4fc864b493c00db9f4",
+    "qKey": "school_address_parent",
+    "nextQuestions": [],
+    "isDefault": true,
+    "goToDefault": "activity_notice",
+    "__v": 0
+  },
+  {
+    "_id": "69da6f4fc864b493c00db9f5",
+    "qKey": "activity_notice",
+    "nextQuestions": [],
+    "isDefault": true,
+    "goToDefault": "elementary_activities",
+    "__v": 0
+  },
+  {
+    "_id": "69da6f4fc864b493c00db9f6",
+    "qKey": "elementary_activities",
+    "nextQuestions": [],
+    "isDefault": true,
+    "goToDefault": "middle_activities",
+    "__v": 0
+  },
+  {
+    "_id": "69da6f4fc864b493c00db9f7",
+    "qKey": "middle_activities",
+    "nextQuestions": [],
+    "isDefault": true,
+    "goToDefault": "high_activities",
+    "__v": 0
+  },
+  {
+    "_id": "69da6f4fc864b493c00db9f8",
+    "qKey": "high_activities",
+    "nextQuestions": [],
+    "isDefault": true,
+    "goToDefault": "expense_notif",
+    "__v": 0
+  },
+  {
+    "_id": "69da6f4fc864b493c00db9f9",
+    "qKey": "expense_notif",
+    "nextQuestions": [],
+    "isDefault": true,
+    "goToDefault": "expense_split",
+    "__v": 0
+  },
+  {
+    "_id": "69da6f4fc864b493c00db9fa",
+    "qKey": "expense_split",
+    "nextQuestions": [],
+    "isDefault": true,
+    "goToDefault": "expense_reimbursement",
+    "__v": 0
+  },
+  {
+    "_id": "69da6f4fc864b493c00db9fb",
+    "qKey": "expense_reimbursement",
+    "nextQuestions": [],
+    "isDefault": true,
+    "goToDefault": "restrict_records",
+    "__v": 0
+  },
+  {
+    "_id": "69da6f4fc864b493c00db9fc",
+    "qKey": "restrict_records",
+    "nextQuestions": [],
+    "isDefault": true,
+    "goToDefault": "medical_emergency_notice",
+    "__v": 0
+  },
+  {
+    "_id": "69da6f4fc864b493c00db9fd",
+    "qKey": "medical_emergency_notice",
+    "nextQuestions": [],
+    "isDefault": true,
+    "goToDefault": "relocation_notice",
+    "__v": 0
+  },
+  {
+    "_id": "69da6f4fc864b493c00db9fe",
+    "qKey": "relocation_notice",
+    "nextQuestions": [],
+    "isDefault": true,
+    "goToDefault": "record_access_notice",
+    "__v": 0
+  },
+  {
+    "_id": "69da6f4fc864b493c00db9ff",
+    "qKey": "record_access_notice",
+    "nextQuestions": [],
+    "isDefault": true,
+    "goToDefault": "day_care_access_notice",
+    "__v": 0
+  },
+  {
+    "_id": "69da6f4fc864b493c00dba00",
+    "qKey": "day_care_access_notice",
+    "nextQuestions": [],
+    "isDefault": true,
+    "goToDefault": "school_access_access_notice",
+    "__v": 0
+  },
+  {
+    "_id": "69da6f4fc864b493c00dba01",
+    "qKey": "school_access_access_notice",
+    "nextQuestions": [],
+    "isDefault": true,
+    "goToDefault": "your_private_health_insurance",
+    "__v": 0
+  },
+  {
+    "_id": "69da6f4fc864b493c00dba02",
+    "qKey": "your_private_health_insurance",
+    "nextQuestions": [
+      {
+        "operator": "eq",
+        "value": "yes",
+        "goTo": "private_health_insurance_provider",
+        "_id": "69da6f4fc864b493c00dba03"
+      },
+      {
+        "operator": "eq",
+        "value": "no",
+        "goTo": "co_parent_private_health_insurance",
+        "_id": "69da6f4fc864b493c00dba04"
+      }
+    ],
+    "isDefault": false,
+    "__v": 0
+  },
+  {
+    "_id": "69da6f4fc864b493c00dba05",
+    "qKey": "co_parent_private_health_insurance",
+    "nextQuestions": [
+      {
+        "operator": "eq",
+        "value": "yes",
+        "goTo": "private_health_insurance_provider",
+        "_id": "69da6f4fc864b493c00dba06"
+      },
+      {
+        "operator": "neq",
+        "value": "yes",
+        "goTo": "private_health_insurance_provider_other",
+        "_id": "69da6f4fc864b493c00dba07"
+      }
+    ],
+    "isDefault": false,
+    "__v": 0
+  },
+  {
+    "_id": "69da6f4fc864b493c00dba08",
+    "qKey": "private_health_insurance_provider",
+    "nextQuestions": [
+      {
+        "operator": "neq",
+        "value": "defaultToCoParent",
+        "goTo": "health_care_access",
+        "_id": "69da6f4fc864b493c00dba09"
+      },
+      {
+        "operator": "eq",
+        "value": "defaultToCoParent",
+        "goTo": "your_health_insurance_spending",
+        "_id": "69da6f4fc864b493c00dba0a"
+      }
+    ],
+    "isDefault": false,
+    "__v": 0
+  },
+  {
+    "_id": "69da6f4fc864b493c00dba0b",
+    "qKey": "health_care_access",
+    "nextQuestions": [],
+    "isDefault": true,
+    "goToDefault": "your_health_insurance_spending",
+    "__v": 0
+  },
+  {
+    "_id": "69da6f4fc864b493c00dba0c",
+    "qKey": "your_health_insurance_spending",
+    "nextQuestions": [
+      {
+        "operator": "eq",
+        "value": "yes",
+        "goTo": "health_insurance_provider_explanation",
+        "_id": "69da6f4fc864b493c00dba0d"
+      },
+      {
+        "operator": "eq",
+        "value": "no",
+        "goTo": "co_parent_health_insurance_spending",
+        "_id": "69da6f4fc864b493c00dba0e"
+      }
+    ],
+    "isDefault": false,
+    "__v": 0
+  },
+  {
+    "_id": "69da6f4fc864b493c00dba0f",
+    "qKey": "co_parent_health_insurance_spending",
+    "nextQuestions": [
+      {
+        "operator": "neq",
+        "value": "no",
+        "goTo": "health_insurance_provider_explanation",
+        "_id": "69da6f4fc864b493c00dba10"
+      },
+      {
+        "operator": "eq",
+        "value": "no",
+        "goTo": "health_insurance_provider_agreement",
+        "_id": "69da6f4fc864b493c00dba11"
+      }
+    ],
+    "isDefault": false,
+    "__v": 0
+  },
+  {
+    "_id": "69da6f4fc864b493c00dba12",
+    "qKey": "health_insurance_provider_agreement",
+    "nextQuestions": [
+      {
+        "operator": "eq",
+        "value": "none",
+        "goTo": "ask_for_private_health_insurance",
+        "_id": "69da6f4fc864b493c00dba13"
+      },
+      {
+        "operator": "neq",
+        "value": "none",
+        "goTo": "health_insurance_provider_agreement",
+        "_id": "69da6f4fc864b493c00dba14"
+      }
+    ],
+    "isDefault": false,
+    "__v": 0
+  },
+  {
+    "_id": "69da6f4fc864b493c00dba15",
+    "qKey": "ask_for_private_health_insurance",
+    "nextQuestions": [
+      {
+        "operator": "eq",
+        "value": "none",
+        "goTo": "best_private_insurance_option",
+        "_id": "69da6f4fc864b493c00dba16"
+      },
+      {
+        "operator": "neq",
+        "value": "none",
+        "goTo": "health_insurance_provider_explanation",
+        "_id": "69da6f4fc864b493c00dba17"
+      }
+    ],
+    "isDefault": false,
+    "__v": 0
+  },
+  {
+    "_id": "69da6f4fc864b493c00dba18",
+    "qKey": "best_private_insurance_option",
+    "nextQuestions": [],
+    "isDefault": true,
+    "goToDefault": "health_insurance_plan_cost_ok",
+    "__v": 0
+  },
+  {
+    "_id": "69da6f4fc864b493c00dba19",
+    "qKey": "health_insurance_plan_cost_ok",
+    "nextQuestions": [],
+    "isDefault": true,
+    "goToDefault": "health_insurance_provider_explanation",
+    "__v": 0
+  },
+  {
+    "_id": "69da6f4fc864b493c00dba1a",
+    "qKey": "health_insurance_provider_explanation",
+    "nextQuestions": [
+      {
+        "operator": "eq",
+        "value": "bothWantToProvide",
+        "goTo": "health_insurance_main_coverage",
+        "_id": "69da6f4fc864b493c00dba1b"
+      },
+      {
+        "operator": "neq",
+        "value": "bothWantToProvide",
+        "goTo": "health_care_reimbursement",
+        "_id": "69da6f4fc864b493c00dba1c"
+      }
+    ],
+    "isDefault": false,
+    "__v": 0
+  },
+  {
+    "_id": "69da6f4fc864b493c00dba1d",
+    "qKey": "health_insurance_main_coverage",
+    "nextQuestions": [],
+    "isDefault": true,
+    "goToDefault": "health_care_reimbursement",
+    "__v": 0
+  },
+  {
+    "_id": "69da6f4fc864b493c00dba1e",
+    "qKey": "private_health_insurance_provider_other",
+    "nextQuestions": [],
+    "isDefault": true,
+    "goToDefault": "health_care_reimbursement",
+    "__v": 0
+  },
+  {
+    "_id": "69da6f4fc864b493c00dba1f",
+    "qKey": "health_care_reimbursement",
+    "nextQuestions": [],
+    "isDefault": true,
+    "goToDefault": "health_insurance_coverage_disclaimers",
+    "__v": 0
+  },
+  {
+    "_id": "69da71ac99104bb6866452bc",
+    "qKey": "health_insurance_coverage_disclaimers",
+    "nextQuestions": [],
+    "isDefault": true,
+    "goToDefault": "claim_children_tax_forms_intent",
+    "__v": 0
+  },
+  {
+    "_id": "69da71ac99104bb6866452bd",
+    "qKey": "claim_children_tax_forms_intent",
+    "nextQuestions": [
+      {
+        "operator": "eq",
+        "value": "yes",
+        "goTo": "claim_children_tax_forms_select",
+        "_id": "69da71ac99104bb6866452be"
+      },
+      {
+        "operator": "eq",
+        "value": "no",
+        "goTo": "",
+        "_id": "69da71ac99104bb6866452bf"
+      },
+      {
+        "operator": "eq",
+        "value": "needMoreInfo",
+        "goTo": "",
+        "_id": "69da71ac99104bb6866452c0"
+      },
+      {
+        "operator": "eq",
+        "value": "defaultToCoParent",
+        "goTo": "defer_child_tax_years",
+        "_id": "69da71ac99104bb6866452c1"
+      }
+    ],
+    "isDefault": false,
+    "__v": 0
+  },
+  {
+    "_id": "69da71ac99104bb6866452c2",
+    "qKey": "claim_children_tax_forms_select",
+    "nextQuestions": [],
+    "isDefault": true,
+    "goToDefault": "claim_child_tax_years",
+    "__v": 0
+  },
+  {
+    "_id": "69da71ac99104bb6866452c3",
+    "qKey": "claim_child_tax_years",
+    "nextQuestions": [],
+    "isDefault": true,
+    "goToDefault": "",
+    "__v": 0
+  }
+]

@@ -58,10 +58,10 @@ router.get('/questions/:section', async (req, res) => {
   }
 });
 
-// GET /api/logic-engine/question/:qID - Get the questions with the specified qID
-router.get('/question/:qID', async (req, res) => {
+// GET /api/logic-engine/question/:qkey - Get the questions with the specified qkey
+router.get('/question/:qkey', async (req, res) => {
   try {
-    const questions = await Question.findById(req.params.qID.toString());
+    const questions = await Question.findOne({qKey: req.params.qkey});
     res.json(questions);
   } catch (error) {
     res.status(500).json({ error: error.message });

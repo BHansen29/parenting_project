@@ -1,0 +1,35 @@
+.help-menu {
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.help-menu__content {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 10px 12px;
+  border-left: 3px solid #14abdd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  transition: background 0.15s ease, color 0.15s ease;
+
+  /* Light mode default: slightly darker box against a light page */
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.help-menu__content svg {
+  flex-shrink: 0;
+  color: #14abdd;
+  margin-top: 1px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .help-menu__content {
+    /* Dark mode: lighter box against a dark page */
+    background: #374151;
+    color: #e5e7eb;
+  }
+}

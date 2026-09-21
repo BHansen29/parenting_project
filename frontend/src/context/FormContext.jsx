@@ -26,6 +26,11 @@ const initialState = {
     responses: [],
     errors: {}
   },
+  taxExemptions: {
+    planID: '',
+    responses: [],
+    errors: {}
+  },
   timeAndCommunication: {
     agreeToTransportationPolicy: false,
     transportationArrangementDescription: '',

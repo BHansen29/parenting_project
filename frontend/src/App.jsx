@@ -15,6 +15,9 @@ import ContactSupport from './pages/ContactSupport';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import InviteAccept from './pages/InviteAccept';
 import Comparison from './pages/Comparison';
+import WaitingScreen from './pages/WaitingScreen';
+import ResolutionReview from './pages/ResolutionReview';
+import FinalResolution from './pages/FinalResolution';
 import { FormProvider } from './context/FormContext';
 import { NavigationProvider } from './context/NavigationContext';
 import './App.css';
@@ -74,6 +77,9 @@ function App() {
 
             <Route path="/invite/:token" element={<InviteAccept />} />
             <Route path="/comparison/:caseId" element={<Comparison />} />
+            <Route path="/waiting/:caseId" element={<WaitingScreen />} />
+            <Route path="/resolution-review/:caseId" element={<ResolutionReview />} />
+            <Route path="/resolution/:caseId" element={<FinalResolution />} />
 
             {/* Catch all - redirect unknown routes to home */}
             <Route path="*" element={<Navigate to="/" replace />} />

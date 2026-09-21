@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Scale, House } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/card';
 import { useForm } from '../hooks/useForm';
 import { useNavigation } from '../context/NavigationContext';
@@ -182,6 +183,23 @@ function ChildTaxBlock({ childName, childIndex, childData = {}, parentRole, onUp
   );
 }
 
+// ─── ChildTaxBlock wrapper for use in TaxExemptions ─────────────────────────────
+function ChildTaxBlockWrapper({ name, idx, childData, parentRole, updateChildAnswer }) {
+  const flag = useSectionFlag(`taxChild-${name}`);
+  return (
+    <ChildTaxBlock
+      childName={name}
+      childIndex={idx}
+      childData={childData}
+      parentRole={parentRole}
+      onUpdate={(_, payload) => updateChildAnswer(name, payload)}
+      errors={childData?.errors ?? {}}
+      isFlagged={flag.isFlagged}
+      onToggleFlag={flag.toggle}
+    />
+  );
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const isValidYearList = (value) => {
@@ -197,19 +215,20 @@ export default function TaxExemptions() {
   const { state, dispatch } = useForm();
   const { setOnNext, setOnBack } = useNavigation();
 
-  const children         = state.children ?? [];
+  const children         = state.plan?.children ?? [];
   const formData         = state.taxExemptions ?? {};
   const errors           = formData.errors ?? {};
   const parentRole       = formData.parentRole ?? '';
   const claimingChildren = formData.claimingChildren ?? [];
   const childAnswers     = formData.childAnswers ?? {};
 
+
   // ── Flag hooks ────────────────────────────────────────────────────────────
   const parentalRoleFlag     = useSectionFlag('taxParentalRole');
   const claimingChildrenFlag = useSectionFlag('taxClaimingChildren');
 
-  const allChildNames = children.map(c =>
-    `${c.firstName} ${c.lastName}`.trim() || `Child ${c.id}`
+  const allChildNames = children.map((c, i) =>
+    `${c.fName ?? c.firstName ?? ''} ${c.lName ?? c.lastName ?? ''}`.trim() || `Child ${i + 1}`
   );
 
   // ── Sync: remove deleted children from claimingChildren and childAnswers ──
@@ -337,6 +356,8 @@ export default function TaxExemptions() {
 
   // ── Render ────────────────────────────────────────────────────────────────
 
+  // ── Render ────────────────────────────────────────────────────────────────
+
   return (
     <div className="page-container">
       <div className="page-content">
@@ -349,121 +370,77 @@ export default function TaxExemptions() {
           </CardHeader>
 
           <CardContent>
-
-            <div className="info-banner">
-              <InfoIcon />
-              <div>
-                <p className="info-banner__title">Tax Exemptions</p>
-                <p className="info-banner__body">
-                  It's important to decide who will claim your child(ren) as dependent(s)
-                  on tax forms. This can have significant financial implications for both parents.
-                </p>
-              </div>
-            </div>
-
             <hr className="section-divider" />
 
-            {/* ── Parental Role ──
-                SectionHeader replaces the hand-rolled icon + title + description div.
-                RadioQuestion replaces the hand-rolled Card + FlagButton + RadioButton loop.
-                onChange receives a plain string value — RadioQuestion unwraps the event internally. */}
-            <SectionHeader
-              icon={<FileTextIcon />}
-              iconClassName="file-icon"
-              title="Your Parental Role"
-              intro="This determines which tax forms and deadlines apply to you."
-            />
-            <RadioQuestion
-              question="Are you the residential or non-residential parent?"
-              name="parentRole"
-              value={parentRole}
-              onChange={(value) => { update({ parentRole: value }); clearError('parentRole'); }}
-              flag={parentalRoleFlag}
-              error={errors.parentRole}
-              options={PARENT_ROLE_OPTIONS}
-              disclaimer="Legal Disclaimer: This tool does not give instructions or legal advice about your rights or choices. If you have questions, please consult with a lawyer."
-              disclaimerVariant="info"
-            />
-
-            <hr className="section-divider" />
-
-            {/* ── Children to Claim ──
-                SectionHeader replaces the hand-rolled icon + title + description div.
-                The flag is passed to SectionHeader directly via its flag prop.
-                The checkbox list doesn't map to a shared component so it stays as-is. */}
-            <SectionHeader
-              icon={<FileTextIcon />}
-              iconClassName="file-icon"
-              title="Children You Plan to Claim"
-              intro="Select all children you plan to claim on your taxes at any point — even if only in certain years."
-              flag={claimingChildrenFlag}
-            />
             <Card>
-              <CardHeader>
+              <CardHeader className="card-header-with-flag">
                 <CardDescription className="card-heading-question-bold">
-                  Which children do you plan to claim on your tax forms (now or in the future)?
+                  What is your parental role?
                 </CardDescription>
+                <FlagButton
+                  isFlagged={parentalRoleFlag.isFlagged}
+                  onClick={parentalRoleFlag.toggle}
+                />
               </CardHeader>
               <CardContent>
-                {allChildNames.length === 0 ? (
-                  <p className="text-input__error-message">
-                    No children found. Please go back and add children first.
-                  </p>
-                ) : (
-                  <div className="tax-child-list">
-                    {allChildNames.map(name => (
-                      <Checkbox
-                        key={name}
-                        id={`claim-child-${name}`}
-                        name="claimingChildren"
-                        value={name}
-                        label={name}
-                        checked={claimingChildren.includes(name)}
-                        onChange={() => toggleChild(name)}
-                        variant="card"
-                      />
-                    ))}
-                  </div>
-                )}
-                {errors.claimingChildren && (
-                  <p className="text-input__error-message">{errors.claimingChildren}</p>
-                )}
-                {allChildNames.length > 0 && claimingChildren.length === 0 && (
-                  <p className="tax-none-note">
-                    If you do not plan to claim any children, leave all boxes unchecked and proceed to the next step.
-                  </p>
+                <div className="radio-group">
+                  {PARENT_ROLE_OPTIONS.map(({ value, label }) => (
+                    <RadioButton
+                      key={value}
+                      name="parentRole"
+                      value={value}
+                      checked={parentRole === value}
+                      onChange={() => { update({ parentRole: value }); clearError('parentRole'); }}
+                      label={label}
+                    />
+                  ))}
+                </div>
+                {errors.parentRole && (
+                  <p className="text-input__error-message">{errors.parentRole}</p>
                 )}
               </CardContent>
             </Card>
 
-            {/* ── Per-child details ──
-                ChildTaxBlock has conditional sub-questions and disclaimers that don't
-                map cleanly to the shared components, so it keeps its own structure. */}
-            {claimingChildren.length > 0 && (
-              <>
-                <hr className="section-divider" />
-                <SectionHeader
-                  icon={<FileTextIcon />}
-                  iconClassName="file-icon"
-                  title="Tax Claiming Details"
-                  intro="For each child you selected, indicate how you will claim them."
+            <Card>
+              <CardHeader className="card-header-with-flag">
+                <CardDescription className="card-heading-question-bold">
+                  Which children will you claim as tax exemptions?
+                </CardDescription>
+                <FlagButton
+                  isFlagged={claimingChildrenFlag.isFlagged}
+                  onClick={claimingChildrenFlag.toggle}
                 />
-                {claimingChildren.map((name) => (
-                  <ChildTaxBlock
-                    key={name}
-                    childName={name}
-                    childIndex={name}
-                    childData={childAnswers[name] ?? {}}
-                    parentRole={parentRole}
-                    onUpdate={(_, payload) => updateChildAnswer(name, payload)}
-                    errors={(childAnswers[name] ?? {}).errors ?? {}}
-                    isFlagged={childAnswers[name]?.flagged ?? false}
-                    onToggleFlag={() => updateChildAnswer(name, { flagged: !childAnswers[name]?.flagged })}
-                  />
-                ))}
-              </>
-            )}
+              </CardHeader>
+              <CardContent>
+                <div className="checkbox-group">
+                  {allChildNames.map((name) => (
+                    <Checkbox
+                      key={name}
+                      label={name}
+                      checked={claimingChildren.includes(name)}
+                      onChange={() => toggleChild(name)}
+                    />
+                  ))}
+                </div>
+                {errors.claimingChildren && (
+                  <p className="text-input__error-message">{errors.claimingChildren}</p>
+                )}
+              </CardContent>
+            </Card>
 
+                        {claimingChildren.map((name) => {
+              const idx = allChildNames.indexOf(name);
+              return (
+                <ChildTaxBlockWrapper
+                  key={name}
+                  name={name}
+                  idx={idx}
+                  childData={childAnswers[name]}
+                  parentRole={parentRole}
+                  updateChildAnswer={updateChildAnswer}
+                />
+              );
+            })}
           </CardContent>
         </Card>
       </div>
