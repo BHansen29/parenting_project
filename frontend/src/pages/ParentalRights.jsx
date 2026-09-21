@@ -100,7 +100,6 @@ export default function ParentalRights() {
                                 iconClassName={question.qIcon}
                                 icon={<Scale size={25} />}
                                 title={question.qTitle}
-                                intro={question.qIntro}
                             />
                         </section>
                         {(() => {

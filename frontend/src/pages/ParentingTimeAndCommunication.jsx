@@ -183,7 +183,7 @@ export default function ParentingTimeAndCommunication() {
                                 iconClassName="car-icon"
                                 icon={<Car size={25} />}
                                 title="Transportation Agreement"
-                                intro="Standard transportation arrangements"
+                                help="Standard transportation arrangements"
                                 flag={transportationAgreementFlag}
                             />
                         </section>
@@ -216,7 +216,7 @@ export default function ParentingTimeAndCommunication() {
                                 iconClassName="car-icon"
                                 icon={<Calendar size={25} />}
                                 title="Activities & Scheduling"
-                                intro="Supporting your children's activities"
+                                help="Supporting your children's activities"
                                 flag={activitiesAndSchedulingFlag}
                             />
                         </section>
@@ -253,7 +253,7 @@ export default function ParentingTimeAndCommunication() {
                                 iconClassName="car-icon"
                                 icon={<Calendar size={25} />}
                                 title="Parenting Schedule"
-                                intro="Create your monthly parenting schedule"
+                                help="Create your monthly parenting schedule"
                                 flag={parentingScheduleFlag}
                             />
                         </section>
@@ -283,7 +283,7 @@ export default function ParentingTimeAndCommunication() {
                                 iconClassName="car-icon"
                                 icon={<Info size={25} />}
                                 title="Communication with Co-Parent"
-                                intro="Phone and communication access"
+                                help="Phone and communication access"
                             />
                         </section>
                         <RadioQuestion
