@@ -10,6 +10,7 @@ import { useNavigation } from '../context/NavigationContext';
 import './Page.css';
 import SectionHeader from '../components/forms/SectionHeader';
 import RadioQuestion from '../components/forms/RadioQuestion';
+import Checkbox from '../components/forms/Checkbox';
 import Disclaimer from '../components/forms/Disclaimer';
 import SafetyPrivacyQuestion from '../components/forms/SafetyPrivacyQuestion';
 
@@ -35,11 +36,11 @@ export default function GettingStarted() {
     let startKey = 1
     return state.plan.children?.length > 0
       ? state.plan.children.map(child => {
-        const newKid = {...child, isEmancipatedAdult: child.isEmancipatedAdult ? "emancipated" : "minor", key: startKey}
+        const newKid = { ...child, age: child.age ?? '', classifications: Array.isArray(child.classifications) ? child.classifications : child.isEmancipatedAdult ? ['emancipated-adult'] : [], key: startKey};
         startKey += 1
         return newKid
       })
-      : [{ key: startKey, fName: '', lName: '', birthday: '', isEmancipatedAdult: '', errors: {} }];
+      : [{ key: startKey, fName: '', lName: '', age: '', birthday: '', classifications: [], errors: {} }];
   });
 
   useEffect(() => {
@@ -50,9 +51,9 @@ export default function GettingStarted() {
   }, []);
 
   useEffect(() => {
-    const fixedChildren = children.map(child => ({...child, isEmancipatedAdult: child.isEmancipatedAdult === "emancipated"})) 
-    dispatch({ type: 'UPDATE_SECTION', section: "plan", payload: {children: fixedChildren} });
-  }, [children]);
+    const savedChildren = children.map(({ key, errors, ...child }) => ({ ...child, age: child.age === '' ? null : Number(child.age)}));
+    dispatch({ type: 'UPDATE_SECTION', section: 'plan', payload: { children: savedChildren }});
+  }, [children, dispatch]);
 
   const handleCollaborationModeChange = (mode) => {
     dispatch({ type: 'UPDATE_SECTION', section: 'collaborationMode', payload: mode });
@@ -85,8 +86,9 @@ export default function GettingStarted() {
       key: newKey,
       fName: '',
       lName: '',
+      age: '',
       birthday: '',
-      isEmancipatedAdult: '',
+      classifications: [],
       errors: {}
     }]);
   };
@@ -129,7 +131,7 @@ export default function GettingStarted() {
                 iconClassName="shield-icon"
                 icon={<Shield size={25} />}
                 title="Safety & Privacy"
-                intro="Your safety is our priority."
+                help="Your safety is our priority."
               />
               <SafetyPrivacyQuestion
                 collaborationMode={collaborationMode}
@@ -144,7 +146,7 @@ export default function GettingStarted() {
                 iconClassName="user-icon"
                 icon={<UserCheck size={25} />}
                 title="Your Information"
-                intro="Please provide your contact details."
+                help="Please provide your contact details."
               />
               <Card>
                 <CardContent>
@@ -167,21 +169,75 @@ export default function GettingStarted() {
                     />
                   </div>
                   <TextInput
-                    id="firstParentPhone" type="text"
+                    id="firstParentAge"
+                    type="number"
+                    value={formData.age ?? ''}
+                    onChange={handleFormChange('parents', 'age')}
+                    error={errors.age}
+                    placeholder="Enter your age"
+                    label="Age"
+                    required
+                  />
+                  <TextInput
+                    id="firstParentPhone"
+                    type="tel"
                     value={formData.phone ?? ''}
                     onChange={handleFormChange('parents', 'phone')}
                     error={errors.phone}
                     placeholder="Enter your phone number"
-                    label="Phone Number" autoComplete="tel" required
+                    label="Phone Number"
+                    autoComplete="tel"
+                    required
                   />
                   <TextInput
-                    className="text-input-long-text"
-                    id="firstParentAddress" type="text"
-                    value={formData.address ?? ''}
-                    onChange={handleFormChange('parents', 'address')}
-                    error={errors.address}
-                    placeholder="Enter your full address (this will help identify the relevant county)"
-                    label="Address" autoComplete="street-address" required
+                    id="firstParentStreetAddress"
+                    type="text"
+                    value={formData.streetAddress ?? ''}
+                    onChange={handleFormChange('parents', 'streetAddress')}
+                    error={errors.streetAddress}
+                    placeholder="Street address"
+                    label="Street Address"
+                    autoComplete="address-line1"
+                    required
+                  />
+                  <TextInput
+                    id="firstParentAddressLine2"
+                    type="text"
+                    value={formData.addressLine2 ?? ''}
+                    onChange={handleFormChange('parents', 'addressLine2')}
+                    placeholder="Suite, apartment, or PO Box"
+                    label="Suite/Apt/PO Box"
+                    autoComplete="address-line2"
+                  />
+                  <TextInput
+                    id="firstParentCity"
+                    type="text"
+                    value={formData.city ?? ''}
+                    onChange={handleFormChange('parents', 'city')}
+                    error={errors.city}
+                    label="City"
+                    autoComplete="address-level2"
+                    required
+                  />
+                  <TextInput
+                    id="firstParentState"
+                    type="text"
+                    value={formData.state ?? ''}
+                    onChange={handleFormChange('parents', 'state')}
+                    error={errors.state}
+                    label="State"
+                    autoComplete="address-level1"
+                    required
+                  />
+                  <TextInput
+                    id="firstParentZipCode"
+                    type="text"
+                    value={formData.zipCode ?? ''}
+                    onChange={handleFormChange('parents', 'zipCode')}
+                    error={errors.zipCode}
+                    label="Zip Code"
+                    autoComplete="postal-code"
+                    required
                   />
                 </CardContent>
               </Card>
@@ -193,7 +249,7 @@ export default function GettingStarted() {
                 iconClassName="info-icon"
                 icon={<Info size={25} />}
                 title="Case Filing Status"
-                intro="Help us understand your legal situation."
+                help="Help us understand your legal situation."
               />
               <RadioQuestion
                 question="Did you file the divorce, separation, or child custody case that led to this parenting plan?"
@@ -220,7 +276,7 @@ export default function GettingStarted() {
                 iconClassName="users-icon"
                 icon={<Users size={25} />}
                 title="Your Children"
-                intro="Please list the children you are including in this shared parenting plan."
+                help="Please list the children you are including in this shared parenting plan."
               />
                 {children.map((child, index) => (
                   <Card key={child.key}>
@@ -266,6 +322,18 @@ export default function GettingStarted() {
                             autoComplete="family-name"
                             error={submitAttempted ? child.errors?.lName : ''}
                           />
+                          <TextInput
+                            id={`child-${child.key}-age`}
+                            label="Age"
+                            type="number"
+                            value={child.age}
+                            onChange={handleChildChange(child.key, 'age')}
+                            required
+                            min="0"
+                            max="120"
+                            placeholder="Age"
+                            error={submitAttempted ? child.errors?.age : ''}
+                          />
                         </div>
 
                         <DatePicker
@@ -279,39 +347,44 @@ export default function GettingStarted() {
                         />
 
                         <div className="child-classification">
-                          <label className="classification-label">Child Classification</label>
-                          <div className="radio-group">
-                            <label className="radio-option">
-                              <input
-                                type="radio"
-                                name={`child-${child.key}-classification`}
-                                value="minor"
-                                checked={child.isEmancipatedAdult === 'minor'}
-                                onChange={(e) => handleChildChange(child.key, 'isEmancipatedAdult')(e.target.value)}
+                          <label className="classification-label"> Child Classification <span>(select all that apply)</span></label>
+                            <div className="checkbox-group">
+                              <Checkbox
+                                id={`child-${child.key}-under-18`}
+                                label="My child is under 18."
+                                checked={child.classifications.includes('under-18')}
+                                onChange={(checked) => {
+                                  const classifications = checked ? [...new Set([...child.classifications, 'under-18'])] : child.classifications.filter(value => value !== 'under-18');
+                                  handleChildChange(child.key, 'classifications')(classifications);
+                                }}
+                              />  
+                              <Checkbox
+                                id={`child-${child.key}-disabled`}
+                                label="My child is mentally or physically disabled in such a way that they are not able to support or maintain themselves."
+                                checked={child.classifications.includes('disabled')}
+                                onChange={(checked) => {
+                                  const classifications = checked ? [...new Set([...child.classifications, 'disabled'])] : child.classifications.filter(value => value !== 'disabled');
+                                  handleChildChange(child.key, 'classifications')(classifications);
+                                }}
                               />
-                              <span>
-                                The child is a minor and/or mentally or physically disabled
-                                incapable of supporting or maintaining themselves
-                              </span>
-                            </label>
-
-                            <label className="radio-option">
-                              <input
-                                type="radio"
-                                name={`child-${child.key}-classification`}
-                                value="emancipated"
-                                checked={child.isEmancipatedAdult === 'emancipated'}
-                                onChange={(e) => handleChildChange(child.key, 'isEmancipatedAdult')(e.target.value)}
+                              <Checkbox
+                                id={`child-${child.key}-emancipated-adult`}
+                                label="My child is an emancipated adult."
+                                checked={child.classifications.includes('emancipated-adult')}
+                                onChange={(checked) => {
+                                  const classifications = checked ? [...new Set([...child.classifications, 'emancipated-adult'])] : child.classifications.filter(value => value !== 'emancipated-adult');
+                                  handleChildChange(child.key, 'classifications')(classifications);
+                                }}
                               />
-                              <span>The child is an emancipated adult</span>
-                            </label>
+                              {(
+                                <Disclaimer variant="info"> An “emancipated adult” is a child who received a court order that legally freed them from parental control and gave them the rights of an adult.
+                                </Disclaimer>
+                              )}
+                            </div>
+                            {child.errors?.classification && (
+                              <p className="child-classification-error">{child.errors.classification}</p>
+                            )}
                           </div>
-                        </div>
-                        {child.errors?.classification && (
-                          <p className="child-classification-error">
-                            {child.errors.classification}
-                          </p>
-                        )}
                       </form>
                     </CardContent>
                   </Card>
@@ -332,7 +405,7 @@ export default function GettingStarted() {
                 iconClassName="users-icon"
                 icon={<Users size={25} />}
                 title="Residential Parent"
-                intro="This means your child spends most of their time with you"
+                help="This means your child spends most of their time with you"
               />
               <RadioQuestion
                 question="Are you the residential parent?"
@@ -352,10 +425,10 @@ export default function GettingStarted() {
                 iconClassName="info-icon"
                 icon={<Info size={25} />}
                 title="More Information"
-                intro="Link to Ohio Supreme Court Parenting Guide: https://www.supremecourt.ohio.gov/docs/Publications/JCS/parentingGuide.pdf"
+                help="Link to Ohio Supreme Court Parenting Guide: https://www.supremecourt.ohio.gov/docs/Publications/JCS/parentingGuide.pdf"
               />
               <RadioQuestion
-                question="If you are unsure about what parts of this parenting plan mean or how to answer questions, you can find more information about parenting plans in Ohio linked above. Please remember that the Ohio Supreme Court’s guide nor this form are not legal advice nor substitutes for talking to an attorney. Please talk to an attorney if you need more information."
+                question="If you are unsure about any part of this parenting plan or how to answer specific questions, review the Ohio parenting plan resources linked above. Please note that neither the Ohio Supreme Court’s guide nor this form serves to give instructions or legal advice about your rights or options available to you. If you have questions, please speak with a lawyer."
                 name="parentingGuideInfo"
                 value={parentingGuideInfo}
                 onChange={handleRadioChange('parentingGuideInfo')}
