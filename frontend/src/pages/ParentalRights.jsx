@@ -7,6 +7,7 @@ import './Page.css';
 import SectionHeader from '../components/forms/SectionHeader';
 import RadioQuestion from '../components/forms/RadioQuestion';
 import { buildApiUrl } from '../lib/apiClient';
+import Disclaimer from '../components/forms/Disclaimer';
 
 export default function ParentalRights() {
 
@@ -108,7 +109,9 @@ export default function ParentalRights() {
                         <CardTitle>Parental Rights</CardTitle>
                         <CardDescription>Define where your children live and who will make legal decisions. </CardDescription>
                     </CardHeader>
-
+                    <Disclaimer variant="warning">
+                        Legal Disclaimer: This tool is strictly informative and does not purport to give legal advice about your rights or options available to you. If you have questions, please talk with a lawyer.
+                    </Disclaimer>
                     <CardContent>
                         <hr className="section-divider" />
                         <section className={question.qKey + "-section"}>
@@ -130,10 +133,6 @@ export default function ParentalRights() {
                                         flag={childrenApplicationFlag}
                                         error={errors.currAnswer}
                                         options={question.options}
-                                        disclaimers={[
-                                            { disclaimer: "Legal Disclaimer: This tool does not give instructions or legal advice about your rights or choices. If you have questions, please consult with a lawyer.", disclaimerVariant: "info" },
-                                            ...(question?.disclaimers || [])
-                                        ]}
                                     />
                                 );
                             }

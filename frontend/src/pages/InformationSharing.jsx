@@ -76,7 +76,7 @@ const INFO_SECTIONS = [
     description: 'Who can communicate with the school?',
     icon: <GraduationCapIcon />,
     iconClassName: 'graduation-icon',
-    question: "Who should be able to call your child's school? This parent may also get copies of your child's academic records, like report cards, attendance, and teacher's comments.",
+    question: "Who can call your child's school? This parent may also get copies of your child's academic records, like report cards, attendance, and teacher's comments.",
   },
   {
     key: 'schoolReports',
@@ -84,7 +84,7 @@ const INFO_SECTIONS = [
     description: 'Who receives school communications?',
     icon: <FileTextIcon />,
     iconClassName: 'file-icon',
-    question: "Who should get copies of your child's school reports, calendars of school events, notices of parent-teacher conferences, and school programs?",
+    question: "Who can get copies of your child's school reports, calendars of school events, notices of parent-teacher conferences, and school programs?",
   },
   {
     key: 'schoolActivities',
@@ -92,7 +92,7 @@ const INFO_SECTIONS = [
     description: 'Who may attend school events?',
     icon: <CalendarIcon />,
     iconClassName: 'calendar-icon',
-    question: 'Who has the right to attend and participate in parent-teacher conferences, school trips, school programs, and other school activities that parents get invited to?',
+    question: 'Who can attend and participate in parent-teacher conferences, school trips, school programs, and other school activities that parents get invited to?',
   },
   {
     key: 'extracurricularActivities',
@@ -100,7 +100,7 @@ const INFO_SECTIONS = [
     description: 'Who may attend activities outside school?',
     icon: <TrophyIcon />,
     iconClassName: 'trophy-icon',
-    question: 'Who has the right to attend and participate with the child(ren) in athletic programs and other extracurricular activities?',
+    question: 'Who can attend and participate with the child(ren) in athletic programs and other extracurricular activities?',
   },
 ];
 
