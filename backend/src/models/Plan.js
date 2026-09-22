@@ -24,25 +24,41 @@ const questionResponseSchema = new mongoose.Schema(
 });
 
 const childSchema = new mongoose.Schema(
-{
-  fName: { 
-    type: String, 
-    required: true 
+  {
+    fName: {
+      type: String,
+      required: true
+    },
+    lName: {
+      type: String,
+      required: true
+    },
+    age: {
+      type: Number,
+      min: 0,
+      max: 120
+    },
+    birthday: {
+      type: String,
+      required: true
+    },
+    classifications: {
+      type: [String],
+      enum: [
+        'under-18',
+        'disabled',
+        'emancipated-adult'
+      ],
+      required: true,
+      default: []
+    },
+    timestamp: {
+      type: Date,
+      default: Date.now
+    }
   },
-  lName: { 
-    type: String, 
-    required: true 
-  },
-  birthday: {
-    type: String,
-    required: true,
-  },
-  isEmancipatedAdult: {
-    type: Boolean,
-    required: true,
-  },
-  timestamp: { type: Date, default: Date.now }
-});
+  { _id: true }
+);
 
 const planSchema = new mongoose.Schema(
 {
