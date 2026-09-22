@@ -108,7 +108,7 @@ export default function ParentalRights() {
                         <CardTitle>Parental Rights</CardTitle>
                         <CardDescription>Define where your children live and who will make legal decisions. </CardDescription>
                     </CardHeader>
-
+                    <SectionHeader help="Legal Disclaimer: This tool does not give instructions or legal advice about your rights or choices. If you have questions, please consult with a lawyer." />
                     <CardContent>
                         <hr className="section-divider" />
                         <section className={question.qKey + "-section"}>
@@ -134,10 +134,6 @@ export default function ParentalRights() {
                                         flag={childrenApplicationFlag}
                                         error={errors.currAnswer}
                                         options={question.options}
-                                        disclaimers={[
-                                            { disclaimer: "Legal Disclaimer: This tool does not give instructions or legal advice about your rights or choices. If you have questions, please consult with a lawyer.", disclaimerVariant: "info" },
-                                            ...(question?.disclaimers || [])
-                                        ]}
                                     />
                                 );
                             }
