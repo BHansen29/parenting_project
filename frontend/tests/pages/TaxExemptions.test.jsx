@@ -20,13 +20,14 @@ window.HTMLElement.prototype.scrollIntoView = vi.fn()
 // Helper: seed localStorage with children then render TaxExemptions
 const renderWithChildren = (children = [{ id: 1, firstName: 'Alice', lastName: 'Smith' }]) => {
   localStorage.setItem('sharedCareForm', JSON.stringify({
-    children,
+    plan: { children },
     taxExemptions: { errors: {} },
   }))
   return renderWithRouter(<TaxExemptions />)
 }
 
 const CHILD_NAME = 'Alice Smith'
+const CHILD_INDEX = 0
 
 describe('TaxExemptions', () => {
   beforeEach(() => {
@@ -52,43 +53,21 @@ describe('TaxExemptions', () => {
     ).toBeInTheDocument()
   })
 
-  it('displays the info banner body text', () => {
-    renderWithRouter(<TaxExemptions />)
-    expect(
-      screen.getByText(/It's important to decide who will claim your child\(ren\) as dependent\(s\)/i)
-    ).toBeInTheDocument()
-  })
-
   // ─── Section Rendering ────────────────────────────────────────────────────
-
-  it('displays the Your Parental Role section title', () => {
-    renderWithRouter(<TaxExemptions />)
-    expect(screen.getByText('Your Parental Role')).toBeInTheDocument()
-    expect(
-      screen.getByText(/This determines which tax forms and deadlines apply to you/i)
-    ).toBeInTheDocument()
-  })
-
-  it('displays the Children You Plan to Claim section title', () => {
-    renderWithRouter(<TaxExemptions />)
-    expect(screen.getByText('Children You Plan to Claim')).toBeInTheDocument()
-    expect(
-      screen.getByText(/Select all children you plan to claim on your taxes at any point/i)
-    ).toBeInTheDocument()
-  })
 
   it('displays the parental role question', () => {
     renderWithRouter(<TaxExemptions />)
-    expect(
-      screen.getByText(/Are you the residential or non-residential parent\?/i)
-    ).toBeInTheDocument()
+    expect(screen.getByText('What is your parental role?')).toBeInTheDocument()
+  })
+
+  it('displays the claiming children question', () => {
+    renderWithRouter(<TaxExemptions />)
+    expect(screen.getByText('Which children will you claim as tax exemptions?')).toBeInTheDocument()
   })
 
   it('displays the claiming children question when children exist', () => {
     renderWithChildren()
-    expect(
-      screen.getByText(/Which children do you plan to claim on your tax forms/i)
-    ).toBeInTheDocument()
+    expect(screen.getByText('Which children will you claim as tax exemptions?')).toBeInTheDocument()
   })
 
   // ─── Parental Role ────────────────────────────────────────────────────────
@@ -137,11 +116,9 @@ describe('TaxExemptions', () => {
 
   // ─── Children List ────────────────────────────────────────────────────────
 
-  it('shows "No children found" message when no children exist in state', () => {
+  it('shows no child options when no children exist in state', () => {
     renderWithRouter(<TaxExemptions />)
-    expect(
-      screen.getByText(/No children found\. Please go back and add children first\./i)
-    ).toBeInTheDocument()
+    expect(screen.queryAllByRole('checkbox')).toHaveLength(0)
   })
 
   it('shows a checkbox for each child when children exist', () => {
@@ -155,11 +132,9 @@ describe('TaxExemptions', () => {
     screen.getAllByRole('checkbox').forEach(cb => expect(cb).not.toBeChecked())
   })
 
-  it('shows "none" note when children exist but none are selected', () => {
+  it('does not show a none-selected note on the static page', () => {
     renderWithChildren()
-    expect(
-      screen.getByText(/If you do not plan to claim any children, leave all boxes unchecked/i)
-    ).toBeInTheDocument()
+    expect(screen.queryByText(/If you do not plan to claim any children/i)).not.toBeInTheDocument()
   })
 
   it('renders multiple children when provided', () => {
@@ -192,16 +167,16 @@ describe('TaxExemptions', () => {
   it('checking a child reveals the Tax Claiming Details section', async () => {
     renderWithChildren()
     await userEvent.click(screen.getAllByRole('checkbox')[0])
-    expect(screen.getByText('Tax Claiming Details')).toBeInTheDocument()
+    expect(screen.getByText(`How will you claim ${CHILD_NAME} on tax forms?`)).toBeInTheDocument()
   })
 
   it('unchecking a child hides its ChildTaxBlock', async () => {
     renderWithChildren()
     const checkbox = screen.getAllByRole('checkbox')[0]
     await userEvent.click(checkbox)
-    expect(screen.getByText('Tax Claiming Details')).toBeInTheDocument()
+    expect(screen.getByText(`How will you claim ${CHILD_NAME} on tax forms?`)).toBeInTheDocument()
     await userEvent.click(checkbox)
-    expect(screen.queryByText('Tax Claiming Details')).not.toBeInTheDocument()
+    expect(screen.queryByText(`How will you claim ${CHILD_NAME} on tax forms?`)).not.toBeInTheDocument()
   })
 
   it('hides the "none" note once at least one child is checked', async () => {
@@ -252,7 +227,7 @@ describe('TaxExemptions', () => {
   it('can select "every year" intent for the child', async () => {
     renderWithChildren()
     await userEvent.click(screen.getAllByRole('checkbox')[0])
-    const radio = document.querySelector(`input[name="intent-${CHILD_NAME}"][value="everyYear"]`)
+    const radio = document.querySelector(`input[name="intent-${CHILD_INDEX}"][value="everyYear"]`)
     await userEvent.click(radio)
     expect(radio).toBeChecked()
   })
@@ -260,7 +235,7 @@ describe('TaxExemptions', () => {
   it('can select "some years" intent for the child', async () => {
     renderWithChildren()
     await userEvent.click(screen.getAllByRole('checkbox')[0])
-    const radio = document.querySelector(`input[name="intent-${CHILD_NAME}"][value="someYears"]`)
+    const radio = document.querySelector(`input[name="intent-${CHILD_INDEX}"][value="someYears"]`)
     await userEvent.click(radio)
     expect(radio).toBeChecked()
   })
@@ -268,7 +243,7 @@ describe('TaxExemptions', () => {
   it('can select "defer" intent for the child', async () => {
     renderWithChildren()
     await userEvent.click(screen.getAllByRole('checkbox')[0])
-    const radio = document.querySelector(`input[name="intent-${CHILD_NAME}"][value="defer"]`)
+    const radio = document.querySelector(`input[name="intent-${CHILD_INDEX}"][value="defer"]`)
     await userEvent.click(radio)
     expect(radio).toBeChecked()
   })
@@ -276,8 +251,8 @@ describe('TaxExemptions', () => {
   it('selecting a new intent deselects the previous one', async () => {
     renderWithChildren()
     await userEvent.click(screen.getAllByRole('checkbox')[0])
-    const everyYear = document.querySelector(`input[name="intent-${CHILD_NAME}"][value="everyYear"]`)
-    const defer = document.querySelector(`input[name="intent-${CHILD_NAME}"][value="defer"]`)
+    const everyYear = document.querySelector(`input[name="intent-${CHILD_INDEX}"][value="everyYear"]`)
+    const defer = document.querySelector(`input[name="intent-${CHILD_INDEX}"][value="defer"]`)
     await userEvent.click(everyYear)
     await userEvent.click(defer)
     expect(defer).toBeChecked()
@@ -287,7 +262,7 @@ describe('TaxExemptions', () => {
   it('shows the tax year sub-question when "some years" is selected', async () => {
     renderWithChildren()
     await userEvent.click(screen.getAllByRole('checkbox')[0])
-    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_NAME}"][value="someYears"]`))
+    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_INDEX}"][value="someYears"]`))
     expect(
       screen.getByText(`Which tax years will you claim ${CHILD_NAME}?`)
     ).toBeInTheDocument()
@@ -296,7 +271,7 @@ describe('TaxExemptions', () => {
   it('shows all 3 tax year options when "some years" is selected', async () => {
     renderWithChildren()
     await userEvent.click(screen.getAllByRole('checkbox')[0])
-    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_NAME}"][value="someYears"]`))
+    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_INDEX}"][value="someYears"]`))
     expect(screen.getByText(/Odd-numbered tax years/i)).toBeInTheDocument()
     expect(screen.getByText(/Even-numbered tax years/i)).toBeInTheDocument()
     expect(screen.getByText(/Custom — I will specify the years/i)).toBeInTheDocument()
@@ -305,7 +280,7 @@ describe('TaxExemptions', () => {
   it('does not show the tax year sub-question when "every year" is selected', async () => {
     renderWithChildren()
     await userEvent.click(screen.getAllByRole('checkbox')[0])
-    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_NAME}"][value="everyYear"]`))
+    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_INDEX}"][value="everyYear"]`))
     expect(
       screen.queryByText(`Which tax years will you claim ${CHILD_NAME}?`)
     ).not.toBeInTheDocument()
@@ -314,17 +289,17 @@ describe('TaxExemptions', () => {
   it('shows the custom year text input when "Custom" tax year is selected', async () => {
     renderWithChildren()
     await userEvent.click(screen.getAllByRole('checkbox')[0])
-    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_NAME}"][value="someYears"]`))
-    await userEvent.click(document.querySelector(`input[name="taxYears-${CHILD_NAME}"][value="custom"]`))
+    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_INDEX}"][value="someYears"]`))
+    await userEvent.click(document.querySelector(`input[name="taxYears-${CHILD_INDEX}"][value="custom"]`))
     expect(screen.getByLabelText(/Enter the tax years you will claim/i)).toBeInTheDocument()
   })
 
   it('can type custom years into the text input', async () => {
     renderWithChildren()
     await userEvent.click(screen.getAllByRole('checkbox')[0])
-    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_NAME}"][value="someYears"]`))
-    await userEvent.click(document.querySelector(`input[name="taxYears-${CHILD_NAME}"][value="custom"]`))
-    const input = screen.getByLabelText(/Enter the tax years you will claim/i)
+    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_INDEX}"][value="someYears"]`))
+    await userEvent.click(document.querySelector(`input[name="taxYears-${CHILD_INDEX}"][value="custom"]`))
+    const input = document.querySelector('#customYears-0')
     await userEvent.type(input, '2025, 2027, 2029')
     expect(input).toHaveValue('2025, 2027, 2029')
   })
@@ -332,8 +307,8 @@ describe('TaxExemptions', () => {
   it('does not show the custom year input when "odd" tax year is selected', async () => {
     renderWithChildren()
     await userEvent.click(screen.getAllByRole('checkbox')[0])
-    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_NAME}"][value="someYears"]`))
-    await userEvent.click(document.querySelector(`input[name="taxYears-${CHILD_NAME}"][value="odd"]`))
+    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_INDEX}"][value="someYears"]`))
+    await userEvent.click(document.querySelector(`input[name="taxYears-${CHILD_INDEX}"][value="odd"]`))
     expect(
       screen.queryByLabelText(/Enter the tax years you will claim/i)
     ).not.toBeInTheDocument()
@@ -345,7 +320,7 @@ describe('TaxExemptions', () => {
     renderWithChildren()
     await userEvent.click(document.querySelector('input[name="parentRole"][value="residential"]'))
     await userEvent.click(screen.getAllByRole('checkbox')[0])
-    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_NAME}"][value="everyYear"]`))
+    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_INDEX}"][value="everyYear"]`))
     expect(
       screen.getByText(/you must be current on any child support/i)
     ).toBeInTheDocument()
@@ -355,7 +330,7 @@ describe('TaxExemptions', () => {
     renderWithChildren()
     await userEvent.click(document.querySelector('input[name="parentRole"][value="residential"]'))
     await userEvent.click(screen.getAllByRole('checkbox')[0])
-    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_NAME}"][value="everyYear"]`))
+    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_INDEX}"][value="everyYear"]`))
     expect(
       screen.getByText(/As the residential parent, you will receive the necessary tax forms/i)
     ).toBeInTheDocument()
@@ -365,7 +340,7 @@ describe('TaxExemptions', () => {
     renderWithChildren()
     await userEvent.click(document.querySelector('input[name="parentRole"][value="nonresidential"]'))
     await userEvent.click(screen.getAllByRole('checkbox')[0])
-    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_NAME}"][value="everyYear"]`))
+    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_INDEX}"][value="everyYear"]`))
     expect(
       screen.getByText(/the residential parent is required to deliver IRS Form 8332/i)
     ).toBeInTheDocument()
@@ -375,7 +350,7 @@ describe('TaxExemptions', () => {
     renderWithChildren()
     await userEvent.click(document.querySelector('input[name="parentRole"][value="residential"]'))
     await userEvent.click(screen.getAllByRole('checkbox')[0])
-    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_NAME}"][value="defer"]`))
+    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_INDEX}"][value="defer"]`))
     expect(
       screen.getByText(/As the residential parent, you are required to deliver IRS Form 8332/i)
     ).toBeInTheDocument()
@@ -385,7 +360,7 @@ describe('TaxExemptions', () => {
     renderWithChildren()
     await userEvent.click(document.querySelector('input[name="parentRole"][value="nonresidential"]'))
     await userEvent.click(screen.getAllByRole('checkbox')[0])
-    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_NAME}"][value="defer"]`))
+    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_INDEX}"][value="defer"]`))
     expect(
       screen.getByText(/As the non-residential parent, your co-parent is required to deliver IRS Form 8332/i)
     ).toBeInTheDocument()
@@ -395,8 +370,8 @@ describe('TaxExemptions', () => {
     renderWithChildren()
     await userEvent.click(document.querySelector('input[name="parentRole"][value="residential"]'))
     await userEvent.click(screen.getAllByRole('checkbox')[0])
-    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_NAME}"][value="someYears"]`))
-    await userEvent.click(document.querySelector(`input[name="taxYears-${CHILD_NAME}"][value="odd"]`))
+    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_INDEX}"][value="someYears"]`))
+    await userEvent.click(document.querySelector(`input[name="taxYears-${CHILD_INDEX}"][value="odd"]`))
     expect(
       screen.getByText(/to the non-residential parent for even-numbered tax years/i)
     ).toBeInTheDocument()
@@ -406,8 +381,8 @@ describe('TaxExemptions', () => {
     renderWithChildren()
     await userEvent.click(document.querySelector('input[name="parentRole"][value="residential"]'))
     await userEvent.click(screen.getAllByRole('checkbox')[0])
-    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_NAME}"][value="someYears"]`))
-    await userEvent.click(document.querySelector(`input[name="taxYears-${CHILD_NAME}"][value="even"]`))
+    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_INDEX}"][value="someYears"]`))
+    await userEvent.click(document.querySelector(`input[name="taxYears-${CHILD_INDEX}"][value="even"]`))
     expect(
       screen.getByText(/to the non-residential parent for odd-numbered tax years/i)
     ).toBeInTheDocument()
@@ -417,8 +392,8 @@ describe('TaxExemptions', () => {
     renderWithChildren()
     await userEvent.click(document.querySelector('input[name="parentRole"][value="residential"]'))
     await userEvent.click(screen.getAllByRole('checkbox')[0])
-    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_NAME}"][value="someYears"]`))
-    await userEvent.click(document.querySelector(`input[name="taxYears-${CHILD_NAME}"][value="custom"]`))
+    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_INDEX}"][value="someYears"]`))
+    await userEvent.click(document.querySelector(`input[name="taxYears-${CHILD_INDEX}"][value="custom"]`))
     expect(
       screen.getByText(/The residential parent is required to deliver IRS Form 8332/i)
     ).toBeInTheDocument()
@@ -427,7 +402,7 @@ describe('TaxExemptions', () => {
   it('does not show everyYear disclaimers before parentRole is selected', async () => {
     renderWithChildren()
     await userEvent.click(screen.getAllByRole('checkbox')[0])
-    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_NAME}"][value="everyYear"]`))
+    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_INDEX}"][value="everyYear"]`))
     expect(
       screen.queryByText(/As the residential parent, you will receive the necessary tax forms/i)
     ).not.toBeInTheDocument()
@@ -476,7 +451,7 @@ describe('TaxExemptions', () => {
     renderWithChildren()
     await userEvent.click(document.querySelector('input[name="parentRole"][value="residential"]'))
     await userEvent.click(screen.getAllByRole('checkbox')[0])
-    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_NAME}"][value="someYears"]`))
+    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_INDEX}"][value="someYears"]`))
     fireEvent.click(screen.getByRole('button', { name: /next/i }))
     expect(
       await screen.findByText('Please select which tax years.')
@@ -487,8 +462,8 @@ describe('TaxExemptions', () => {
     renderWithChildren()
     await userEvent.click(document.querySelector('input[name="parentRole"][value="residential"]'))
     await userEvent.click(screen.getAllByRole('checkbox')[0])
-    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_NAME}"][value="someYears"]`))
-    await userEvent.click(document.querySelector(`input[name="taxYears-${CHILD_NAME}"][value="custom"]`))
+    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_INDEX}"][value="someYears"]`))
+    await userEvent.click(document.querySelector(`input[name="taxYears-${CHILD_INDEX}"][value="custom"]`))
     fireEvent.click(screen.getByRole('button', { name: /next/i }))
     expect(
       await screen.findByText('Please enter the specific tax years.')
@@ -499,9 +474,9 @@ describe('TaxExemptions', () => {
     renderWithChildren()
     await userEvent.click(document.querySelector('input[name="parentRole"][value="residential"]'))
     await userEvent.click(screen.getAllByRole('checkbox')[0])
-    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_NAME}"][value="someYears"]`))
-    await userEvent.click(document.querySelector(`input[name="taxYears-${CHILD_NAME}"][value="custom"]`))
-    await userEvent.type(screen.getByLabelText(/Enter the tax years you will claim/i), 'bad input')
+    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_INDEX}"][value="someYears"]`))
+    await userEvent.click(document.querySelector(`input[name="taxYears-${CHILD_INDEX}"][value="custom"]`))
+    await userEvent.type(document.querySelector('#customYears-0'), 'bad input')
     fireEvent.click(screen.getByRole('button', { name: /next/i }))
     expect(
       await screen.findByText(/Please enter years as comma-separated 4-digit years/i)
@@ -556,7 +531,7 @@ describe('TaxExemptions', () => {
     renderWithChildren()
     await userEvent.click(document.querySelector('input[name="parentRole"][value="residential"]'))
     await userEvent.click(screen.getAllByRole('checkbox')[0])
-    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_NAME}"][value="everyYear"]`))
+    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_INDEX}"][value="everyYear"]`))
     fireEvent.click(screen.getByRole('button', { name: /next/i }))
     expect(mockNavigate).toHaveBeenCalledWith('/review')
   })
@@ -565,8 +540,8 @@ describe('TaxExemptions', () => {
     renderWithChildren()
     await userEvent.click(document.querySelector('input[name="parentRole"][value="residential"]'))
     await userEvent.click(screen.getAllByRole('checkbox')[0])
-    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_NAME}"][value="someYears"]`))
-    await userEvent.click(document.querySelector(`input[name="taxYears-${CHILD_NAME}"][value="odd"]`))
+    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_INDEX}"][value="someYears"]`))
+    await userEvent.click(document.querySelector(`input[name="taxYears-${CHILD_INDEX}"][value="odd"]`))
     fireEvent.click(screen.getByRole('button', { name: /next/i }))
     expect(mockNavigate).toHaveBeenCalledWith('/review')
   })
@@ -575,7 +550,7 @@ describe('TaxExemptions', () => {
     renderWithChildren()
     await userEvent.click(document.querySelector('input[name="parentRole"][value="residential"]'))
     await userEvent.click(screen.getAllByRole('checkbox')[0])
-    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_NAME}"][value="defer"]`))
+    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_INDEX}"][value="defer"]`))
     fireEvent.click(screen.getByRole('button', { name: /next/i }))
     expect(mockNavigate).toHaveBeenCalledWith('/review')
   })
@@ -584,9 +559,9 @@ describe('TaxExemptions', () => {
     renderWithChildren()
     await userEvent.click(document.querySelector('input[name="parentRole"][value="residential"]'))
     await userEvent.click(screen.getAllByRole('checkbox')[0])
-    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_NAME}"][value="someYears"]`))
-    await userEvent.click(document.querySelector(`input[name="taxYears-${CHILD_NAME}"][value="custom"]`))
-    await userEvent.type(screen.getByLabelText(/Enter the tax years you will claim/i), '2025, 2027')
+    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_INDEX}"][value="someYears"]`))
+    await userEvent.click(document.querySelector(`input[name="taxYears-${CHILD_INDEX}"][value="custom"]`))
+    await userEvent.type(document.querySelector('#customYears-0'), '2025, 2027')
     fireEvent.click(screen.getByRole('button', { name: /next/i }))
     expect(mockNavigate).toHaveBeenCalledWith('/review')
   })
@@ -612,11 +587,11 @@ describe('TaxExemptions', () => {
   it('persists child intent selection when returning to the page', async () => {
     const { unmount } = renderWithChildren()
     await userEvent.click(screen.getAllByRole('checkbox')[0])
-    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_NAME}"][value="everyYear"]`))
+    await userEvent.click(document.querySelector(`input[name="intent-${CHILD_INDEX}"][value="everyYear"]`))
     unmount()
     renderWithRouter(<TaxExemptions />)
     expect(
-      document.querySelector(`input[name="intent-${CHILD_NAME}"][value="everyYear"]`)
+      document.querySelector(`input[name="intent-${CHILD_INDEX}"][value="everyYear"]`)
     ).toBeChecked()
   })
 })

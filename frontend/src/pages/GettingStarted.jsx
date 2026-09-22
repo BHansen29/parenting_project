@@ -131,7 +131,7 @@ export default function GettingStarted() {
                 iconClassName="shield-icon"
                 icon={<Shield size={25} />}
                 title="Safety & Privacy"
-                intro="Your safety is our priority."
+                help="Your safety is our priority."
               />
               <SafetyPrivacyQuestion
                 collaborationMode={collaborationMode}
@@ -146,7 +146,7 @@ export default function GettingStarted() {
                 iconClassName="user-icon"
                 icon={<UserCheck size={25} />}
                 title="Your Information"
-                intro="Please provide your contact details."
+                help="Please provide your contact details."
               />
               <Card>
                 <CardContent>
@@ -249,7 +249,7 @@ export default function GettingStarted() {
                 iconClassName="info-icon"
                 icon={<Info size={25} />}
                 title="Case Filing Status"
-                intro="Help us understand your legal situation."
+                help="Help us understand your legal situation."
               />
               <RadioQuestion
                 question="Did you file the divorce, separation, or child custody case that led to this parenting plan?"
@@ -276,7 +276,7 @@ export default function GettingStarted() {
                 iconClassName="users-icon"
                 icon={<Users size={25} />}
                 title="Your Children"
-                intro="Please list the children you are including in this shared parenting plan."
+                help="Please list the children you are including in this shared parenting plan."
               />
                 {children.map((child, index) => (
                   <Card key={child.key}>
@@ -405,7 +405,7 @@ export default function GettingStarted() {
                 iconClassName="users-icon"
                 icon={<Users size={25} />}
                 title="Residential Parent"
-                intro="This means your child spends most of their time with you"
+                help="This means your child spends most of their time with you"
               />
               <RadioQuestion
                 question="Are you the residential parent?"
@@ -425,7 +425,7 @@ export default function GettingStarted() {
                 iconClassName="info-icon"
                 icon={<Info size={25} />}
                 title="More Information"
-                intro="Link to Ohio Supreme Court Parenting Guide: https://www.supremecourt.ohio.gov/docs/Publications/JCS/parentingGuide.pdf"
+                help="Link to Ohio Supreme Court Parenting Guide: https://www.supremecourt.ohio.gov/docs/Publications/JCS/parentingGuide.pdf"
               />
               <RadioQuestion
                 question="If you are unsure about any part of this parenting plan or how to answer specific questions, review the Ohio parenting plan resources linked above. Please note that neither the Ohio Supreme Court’s guide nor this form serves to give instructions or legal advice about your rights or options available to you. If you have questions, please speak with a lawyer."

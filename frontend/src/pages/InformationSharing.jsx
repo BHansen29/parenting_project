@@ -211,7 +211,7 @@ export default function InformationSharing() {
                   icon={icon}
                   iconClassName={iconClassName}
                   title={title}
-                  intro={description}
+                  help={description}
                 />
 
                 {/* onChange receives a plain string value — RadioQuestion unwraps the event internally */}

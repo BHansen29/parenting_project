@@ -117,10 +117,6 @@ export default function ParentalRights() {
                                 icon={<Scale size={25} />}
                                 title={question.qTitle}
                             />
-                            <SectionHeader
-                                icon={<Info size={25} />}
-                                help={question.qIntro}
-                            />
                         </section>
                         {(() => {
                             if (question.type === "multiple choice") {
