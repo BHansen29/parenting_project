@@ -58,7 +58,28 @@ const planSchema = new mongoose.Schema(
     type: String,
     default: ''
   },
-  address: {
+  parentAge: {
+    type: Number,
+    min: 0,
+    max: 120
+  },
+  streetAddress: {
+    type: String,
+    default: ''
+  },
+  addressLine2: {
+    type: String,
+    default: ''
+  },
+  city: {
+    type: String,
+    default: ''
+  },
+  state: {
+    type: String,
+    default: ''
+  },
+  zipCode: {
     type: String,
     default: ''
   },

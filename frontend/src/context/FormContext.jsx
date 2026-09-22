@@ -12,7 +12,12 @@ const initialState = {
     secondParentFirstName: '',
     secondParentLastName: '',
     phone: '',
-    address: '',
+    age: '',
+    streetAddress: '',
+    addressLine2: '',
+    city: '',
+    state: '',
+    zipCode: '',
     errors: {}
   },
   parentingTime: { errors: {} },

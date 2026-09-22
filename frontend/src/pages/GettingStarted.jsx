@@ -167,21 +167,75 @@ export default function GettingStarted() {
                     />
                   </div>
                   <TextInput
-                    id="firstParentPhone" type="text"
+                    id="firstParentAge"
+                    type="number"
+                    value={formData.age ?? ''}
+                    onChange={handleFormChange('parents', 'age')}
+                    error={errors.age}
+                    placeholder="Enter your age"
+                    label="Age"
+                    required
+                  />
+                  <TextInput
+                    id="firstParentPhone"
+                    type="tel"
                     value={formData.phone ?? ''}
                     onChange={handleFormChange('parents', 'phone')}
                     error={errors.phone}
                     placeholder="Enter your phone number"
-                    label="Phone Number" autoComplete="tel" required
+                    label="Phone Number"
+                    autoComplete="tel"
+                    required
                   />
                   <TextInput
-                    className="text-input-long-text"
-                    id="firstParentAddress" type="text"
-                    value={formData.address ?? ''}
-                    onChange={handleFormChange('parents', 'address')}
-                    error={errors.address}
-                    placeholder="Enter your full address (this will help identify the relevant county)"
-                    label="Address" autoComplete="street-address" required
+                    id="firstParentStreetAddress"
+                    type="text"
+                    value={formData.streetAddress ?? ''}
+                    onChange={handleFormChange('parents', 'streetAddress')}
+                    error={errors.streetAddress}
+                    placeholder="Street address"
+                    label="Street Address"
+                    autoComplete="address-line1"
+                    required
+                  />
+                  <TextInput
+                    id="firstParentAddressLine2"
+                    type="text"
+                    value={formData.addressLine2 ?? ''}
+                    onChange={handleFormChange('parents', 'addressLine2')}
+                    placeholder="Suite, apartment, or PO Box"
+                    label="Suite/Apt/PO Box"
+                    autoComplete="address-line2"
+                  />
+                  <TextInput
+                    id="firstParentCity"
+                    type="text"
+                    value={formData.city ?? ''}
+                    onChange={handleFormChange('parents', 'city')}
+                    error={errors.city}
+                    label="City"
+                    autoComplete="address-level2"
+                    required
+                  />
+                  <TextInput
+                    id="firstParentState"
+                    type="text"
+                    value={formData.state ?? ''}
+                    onChange={handleFormChange('parents', 'state')}
+                    error={errors.state}
+                    label="State"
+                    autoComplete="address-level1"
+                    required
+                  />
+                  <TextInput
+                    id="firstParentZipCode"
+                    type="text"
+                    value={formData.zipCode ?? ''}
+                    onChange={handleFormChange('parents', 'zipCode')}
+                    error={errors.zipCode}
+                    label="Zip Code"
+                    autoComplete="postal-code"
+                    required
                   />
                 </CardContent>
               </Card>

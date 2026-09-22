@@ -237,13 +237,18 @@ router.post('/:planId/information', verifyToken, async (req, res) => {
     if (!plan || plan.userID !== req.user.uid) {
       return res.status(403).json({ error: 'Forbidden' });
     }
-    const { parentFName, parentLName, phone, address, userRole, residentialParent } = req.body
-    plan.parentFName = parentFName
-    plan.parentLName = parentLName
-    plan.phoneNumber = phone
-    plan.address = address
-    plan.userRole = userRole
-    plan.residentialParent = residentialParent
+    const { parentFName, parentLName, parentAge, phone, streetAddress, addressLine2, city, state, zipCode, userRole, residentialParent} = req.body;
+    plan.parentFName = parentFName;
+    plan.parentLName = parentLName;
+    plan.parentAge = parentAge;
+    plan.phoneNumber = phone;
+    plan.streetAddress = streetAddress;
+    plan.addressLine2 = addressLine2;
+    plan.city = city;
+    plan.state = state;
+    plan.zipCode = zipCode;
+    plan.userRole = userRole;
+    plan.residentialParent = residentialParent;
     //Save the plan and write back to DB
     await plan.save();
     res.status(201).json(plan);

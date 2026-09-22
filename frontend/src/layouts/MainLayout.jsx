@@ -146,7 +146,19 @@ export default function Layout({ children }) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${idToken}`,
         },
-        body: JSON.stringify({parentFName: parents.firstName , parentLName: parents.lastName, phone: parents.phone, address: parents.address, userRole: plan.userRole, residentialParent: plan.residentialParent })
+        body: JSON.stringify({
+          parentFName: parents.firstName,
+          parentLName: parents.lastName,
+          parentAge: Number(parents.age),
+          phone: parents.phone,
+          streetAddress: parents.streetAddress,
+          addressLine2: parents.addressLine2,
+          city: parents.city,
+          state: parents.state,
+          zipCode: parents.zipCode,
+          userRole: plan.userRole,
+          residentialParent: plan.residentialParent
+      })
       })
       .then( async (response) => {
         if (!response.ok) {
