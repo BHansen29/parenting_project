@@ -125,6 +125,7 @@ export default function ParentalRights() {
                         {(() => {
                             if (question.type === "multiple choice") {
                                 return (
+                                  <>
                                     <RadioQuestion
                                         question={question.qText}
                                         help={question.qIntro}
@@ -135,6 +136,12 @@ export default function ParentalRights() {
                                         error={errors.currAnswer}
                                         options={question.options}
                                     />
+                                    {question.qDisclaimer && (
+                                        <Disclaimer variant="warning">
+                                            {question.qDisclaimer}
+                                        </Disclaimer>
+                                    )}
+                                  </>
                                 );
                             }
                             if (question.type === "text input") {
