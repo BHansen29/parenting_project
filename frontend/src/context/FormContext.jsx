@@ -41,6 +41,8 @@ const initialState = {
     transportationArrangementDescription: '',
     agreeToActivityPolicy: false,
     activityPolicyDescription: '',
+    parentingSchedule: {},
+    holidaySchedule: {},
     communicationWithCoParentOnPhone: '',
     communicationWithCoParentOnPhoneDescription: '',
     notifyCoParentOfChildRelatedEvents: '',

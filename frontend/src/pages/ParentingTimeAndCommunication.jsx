@@ -1,15 +1,16 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Car, Info, Calendar, Check, Radio, Flag } from 'lucide-react';
+import { Calendar, Car, Info } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/common/card';
+import HolidaySchedule from '../components/forms/HolidaySchedule';
+import PolicyAgreementQuestion from '../components/forms/PolicyAgreementQuestion';
+import RadioQuestion from '../components/forms/RadioQuestion';
+import ScheduleBuilder from '../components/forms/ScheduleBuilder';
+import SectionHeader from '../components/forms/SectionHeader';
+import { useNavigation } from '../context/NavigationContext';
 import { useForm } from '../hooks/useForm';
 import { useSectionFlag } from '../hooks/useSectionFlag';
-import { useNavigation } from '../context/NavigationContext';
 import './Page.css';
-import SectionHeader from '../components/forms/SectionHeader';
-import RadioQuestion from '../components/forms/RadioQuestion';
-import PolicyAgreementQuestion from '../components/forms/PolicyAgreementQuestion';
-import ScheduleBuilder from '../components/forms/ScheduleBuilder';
 
 export default function ParentingTimeAndCommunication() {
     const navigate = useNavigate();
@@ -28,6 +29,7 @@ export default function ParentingTimeAndCommunication() {
         agreeToActivityPolicy: false,
         activityPolicyDescription: '',
         parentingSchedule: {},
+        holidaySchedule: {},
         communicationWithCoParentOnPhone: '',
         communicationWithCoParentOnPhoneDescription: '',
         notifyCoParentOfChildRelatedEvents: '',
@@ -96,6 +98,14 @@ export default function ParentingTimeAndCommunication() {
         }
     }, [dispatch, errors.parentingSchedule]);
 
+    const handleHolidayScheduleChange = useCallback((holidaySchedule) => {
+        dispatch({
+            type: 'UPDATE_SECTION',
+            section: 'timeAndCommunication',
+            payload: { holidaySchedule }
+        });
+    }, [dispatch]);
+
     const validateForm = () => {
         let isValid = true;
         const formErrors = {};
@@ -110,6 +120,17 @@ export default function ParentingTimeAndCommunication() {
         if (!formData.agreeToActivityPolicy && !formData.activityPolicyDescription?.trim()) {
             formErrors.activityPolicyDescription = 'Please agree to the standard policy or describe your preferred arrangement';
             isValid = false;
+        }
+
+        const holidayErrors = {};
+        Object.entries(formData.holidaySchedule || {}).forEach(([holiday, selection]) => {
+            if (selection.year !== 'na' && !selection.time?.trim()) {
+                holidayErrors[holiday] = 'Add a time for this holiday';
+                isValid = false;
+            }
+        });
+        if (Object.keys(holidayErrors).length > 0) {
+            formErrors.holidaySchedule = holidayErrors;
         }
 
         // Communication with co-parent on phone (radio required)
@@ -271,6 +292,21 @@ export default function ParentingTimeAndCommunication() {
                                     parent2Label="Co-Parent"
                                     helpText="Click on a day to add time slots. You can specify exact time frames or mark whole days."
                                     error={errors.parentingSchedule}
+                                />
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <CardDescription>
+                                    Holiday Schedule
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <HolidaySchedule
+                                    value={formData.holidaySchedule}
+                                    onChange={handleHolidayScheduleChange}
+                                    errors={errors.holidaySchedule}
                                 />
                             </CardContent>
                         </Card>
