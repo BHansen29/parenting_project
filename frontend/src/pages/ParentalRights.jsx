@@ -6,6 +6,7 @@ import { useSectionFlag } from '../hooks/useSectionFlag';
 import './Page.css';
 import SectionHeader from '../components/forms/SectionHeader';
 import RadioQuestion from '../components/forms/RadioQuestion';
+import TextQuestion from '../components/forms/TextQuestion';
 import { buildApiUrl } from '../lib/apiClient';
 import Disclaimer from '../components/forms/Disclaimer';
 
@@ -133,6 +134,19 @@ export default function ParentalRights() {
                                         flag={childrenApplicationFlag}
                                         error={errors.currAnswer}
                                         options={question.options}
+                                    />
+                                );
+                            }
+                            if (question.type === "text input") {
+                               return (
+                                    <TextQuestion
+                                        question={question.qText}
+                                        id={question.qKey}
+                                        value={currAnswer}
+                                        onChange={handleFormChange("parental_rights", "responses")}
+                                        flag={childrenApplicationFlag}
+                                        error={errors.currAnswer}
+                                        required
                                     />
                                 );
                             }

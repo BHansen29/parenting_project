@@ -218,7 +218,7 @@ export default function Layout({ children }) {
   const handleSave = () => {
     if (!user) return;
     const isGettingStarted = location.pathname === '/getting-started';
-    const hasValidAnswer = isGettingStarted || (q?.options && q.options.findIndex(qAnswer => qAnswer.value === answer) >= 0);
+    const hasValidAnswer = isGettingStarted || (q?.type === 'text input' ? String(answer ?? '').trim().length > 0 : q?.options && q.options.findIndex(qAnswer => qAnswer.value === answer) >= 0);
     if (!hasValidAnswer) return;
     user.getIdToken().then((idToken) => {
       if (isGettingStarted) {
@@ -240,17 +240,17 @@ export default function Layout({ children }) {
 
   const handleNext = async () => {
     if (pageOnNext) {
-    pageOnNext();
-    return;
-  }
-
+      pageOnNext();
+      return;
+    }
     // prevent user from clicking next if answer is not selected
-    if ((pageOrder[currentPageIndex] !== '/getting-started') && (!q?.options || q.options.findIndex(qAnswer => qAnswer.value === answer) < 0)) {
-      return
+    const hasValidQuestionAnswer = q?.type === 'text input' ? String(answer ?? '').trim().length > 0 : q?.options && q.options.findIndex(qAnswer => qAnswer.value === answer) >= 0;
+    if (pageOrder[currentPageIndex] !== '/getting-started' && !hasValidQuestionAnswer) {
+      return;
     }
     const apiURL = pageOrder[currentPageIndex] === '/getting-started'
       ? '/api/logic-engine/question/allocation_parental_rights' // default starting question (probably change to const or something)
-      : '/api/logic-engine/nextQuestion/' + q.qKey + '/' + answer
+: '/api/logic-engine/nextQuestion/' + encodeURIComponent(q.qKey) + '/' + encodeURIComponent(answer)
     try {
       // get the next 'question' object
       const response = await fetch(buildApiUrl(apiURL));
