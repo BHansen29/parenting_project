@@ -425,7 +425,12 @@ export default function GettingStarted() {
                 iconClassName="info-icon"
                 icon={<Info size={25} />}
                 title="More Information"
-                help="Link to Ohio Supreme Court Parenting Guide: https://www.supremecourt.ohio.gov/docs/Publications/JCS/parentingGuide.pdf"
+                help={
+                  <>
+                    Link to the{' '}
+                    <a href="https://www.supremecourt.ohio.gov/docs/Publications/JCS/parentingGuide.pdf" target="_blank" rel="noopener noreferrer">Ohio Supreme Court Parenting Guide</a>
+                  </>
+                }              
               />
               <RadioQuestion
                 question="If you are unsure about any part of this parenting plan or how to answer specific questions, review the Ohio parenting plan resources linked above. Please note that neither the Ohio Supreme Court’s guide nor this form serves to give instructions or legal advice about your rights or options available to you. If you have questions, please speak with a lawyer."

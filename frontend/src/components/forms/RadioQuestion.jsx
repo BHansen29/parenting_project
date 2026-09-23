@@ -36,7 +36,7 @@ export default function RadioQuestion({
     <Card>
       <CardHeader className={flag ? 'card-header-with-flag' : undefined}>
         <CardDescription className="card-heading-question-bold">
-          {question}
+          {question.replace(/\\n/g, '\n')}
           <HelpMenu text={help} />
         </CardDescription>
         {flag && (

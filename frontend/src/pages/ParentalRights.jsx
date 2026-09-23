@@ -6,7 +6,9 @@ import { useSectionFlag } from '../hooks/useSectionFlag';
 import './Page.css';
 import SectionHeader from '../components/forms/SectionHeader';
 import RadioQuestion from '../components/forms/RadioQuestion';
+import TextQuestion from '../components/forms/TextQuestion';
 import { buildApiUrl } from '../lib/apiClient';
+import Disclaimer from '../components/forms/Disclaimer';
 
 export default function ParentalRights() {
 
@@ -108,7 +110,9 @@ export default function ParentalRights() {
                         <CardTitle>Parental Rights</CardTitle>
                         <CardDescription>Define where your children live and who will make legal decisions. </CardDescription>
                     </CardHeader>
-                    <SectionHeader help="Legal Disclaimer: This tool does not give instructions or legal advice about your rights or choices. If you have questions, please consult with a lawyer." />
+                    <Disclaimer variant="warning">
+                        Legal Disclaimer: This tool is strictly informative and does not purport to give legal advice about your rights or options available to you. If you have questions, please talk with a lawyer.
+                    </Disclaimer>
                     <CardContent>
                         <hr className="section-divider" />
                         <section className={question.qKey + "-section"}>
@@ -121,6 +125,7 @@ export default function ParentalRights() {
                         {(() => {
                             if (question.type === "multiple choice") {
                                 return (
+                                  <>
                                     <RadioQuestion
                                         question={question.qText}
                                         help={question.qIntro}
@@ -131,6 +136,37 @@ export default function ParentalRights() {
                                         error={errors.currAnswer}
                                         options={question.options}
                                     />
+                                    {question.qDisclaimer && (
+                                        <Disclaimer variant="warning">
+                                            {question.qDisclaimer}
+                                        </Disclaimer>
+                                    )}
+                                  </>
+                                );
+                            }
+                            if (question.type === "text input") {
+                                return (
+                                  <>
+                                    <TextQuestion
+                                        question={question.qText}
+                                        id={question.qKey}
+                                        value={currAnswer}
+                                        onChange={handleFormChange("parental_rights", "responses")}
+                                        flag={childrenApplicationFlag}
+                                        error={errors.currAnswer}
+                                        required
+                                    />
+                                    {question.qIntro && (
+                                        <Disclaimer variant="info">
+                                            {question.qIntro}
+                                        </Disclaimer>
+                                    )}
+                                    {question.qDisclaimer && (
+                                        <Disclaimer variant="warning">
+                                            {question.qDisclaimer}
+                                        </Disclaimer>
+                                    )}
+                                  </>
                                 );
                             }
                         })()}

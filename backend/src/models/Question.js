@@ -37,6 +37,10 @@ const questionSchema = new mongoose.Schema({
     type: String,
     default: "blank"
   },
+  qDisclaimer: {
+    type: String,
+    default: ''
+  },
   qIcon: {
     type: String,
     required: true,
