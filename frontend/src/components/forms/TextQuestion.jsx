@@ -1,4 +1,5 @@
 import { Card, CardHeader, CardDescription, CardContent } from '../common/card';
+import HelpMenu from '../common/HelpMenu';
 import TextInput from './TextInput';
 import FlagButton from './FlagButton';
 
@@ -20,6 +21,7 @@ import FlagButton from './FlagButton';
  */
 export default function TextQuestion({
   question,
+  help,
   id,
   type = 'text',
   value,
@@ -36,6 +38,7 @@ export default function TextQuestion({
       <CardHeader className={flag ? 'card-header-with-flag' : undefined}>
         <CardDescription className="card-heading-question-bold">
           {question}
+          <HelpMenu text={help} />
         </CardDescription>
         {flag && (
           <FlagButton isFlagged={flag.isFlagged} onClick={flag.toggleFlag} />

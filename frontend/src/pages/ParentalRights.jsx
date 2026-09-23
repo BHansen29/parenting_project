@@ -138,7 +138,8 @@ export default function ParentalRights() {
                                 );
                             }
                             if (question.type === "text input") {
-                               return (
+                                return (
+                                  <>
                                     <TextQuestion
                                         question={question.qText}
                                         id={question.qKey}
@@ -148,6 +149,17 @@ export default function ParentalRights() {
                                         error={errors.currAnswer}
                                         required
                                     />
+                                    {question.qIntro && (
+                                        <Disclaimer variant="info">
+                                            {question.qIntro}
+                                        </Disclaimer>
+                                    )}
+                                    {question.qDisclaimer && (
+                                        <Disclaimer variant="warning">
+                                            {question.qDisclaimer}
+                                        </Disclaimer>
+                                    )}
+                                  </>
                                 );
                             }
                         })()}
