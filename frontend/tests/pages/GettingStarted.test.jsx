@@ -38,7 +38,7 @@ const fillValidForm = async () => {
   await userEvent.type(document.querySelector('#child-1-firstName'), 'Alex')
   await userEvent.type(document.querySelector('#child-1-lastName'), 'Doe')
   fireEvent.change(document.querySelector('#child-1-dateOfBirth'), { target: { value: '2015-06-15' } })
-  await userEvent.click(document.querySelector('input[name="child-1-classification"][value="minor"]'))
+  await userEvent.click(document.querySelector('#child-1-under-18'))
 }
 
 describe('GettingStarted', () => {
@@ -327,10 +327,11 @@ describe('GettingStarted', () => {
     expect(screen.getByLabelText(/Date of Birth/i)).toBeInTheDocument()
   })
 
-  it('renders child classification radio buttons', () => {
+  it('renders child classification checkboxes', () => {
     renderWithRouter(<GettingStarted />)
-    expect(document.querySelector('input[name="child-1-classification"][value="minor"]')).toBeInTheDocument()
-    expect(document.querySelector('input[name="child-1-classification"][value="emancipated"]')).toBeInTheDocument()
+    expect(document.querySelector('#child-1-under-18')).toBeInTheDocument()
+    expect(document.querySelector('#child-1-disabled')).toBeInTheDocument()
+    expect(document.querySelector('#child-1-emancipated-adult')).toBeInTheDocument()
   })
 
   it('displays the child classification label text', () => {
@@ -338,34 +339,35 @@ describe('GettingStarted', () => {
     expect(screen.getByText('Child Classification')).toBeInTheDocument()
   })
 
-  it('displays the minor classification description', () => {
+  it('displays the under-18 classification label', () => {
     renderWithRouter(<GettingStarted />)
-    expect(screen.getByText(/The child is a minor and\/or mentally or physically disabled/i)).toBeInTheDocument()
+    expect(screen.getByText(/My child is under 18\./i)).toBeInTheDocument()
   })
 
-  it('displays the emancipated classification description', () => {
+  it('displays the emancipated classification label', () => {
     renderWithRouter(<GettingStarted />)
-    expect(screen.getByText('The child is an emancipated adult')).toBeInTheDocument()
+    expect(screen.getByText(/My child is an emancipated adult\./i)).toBeInTheDocument()
   })
 
   it('no child classification is checked by default', () => {
     renderWithRouter(<GettingStarted />)
-    expect(document.querySelector('input[name="child-1-classification"][value="minor"]')).not.toBeChecked()
-    expect(document.querySelector('input[name="child-1-classification"][value="emancipated"]')).not.toBeChecked()
+    expect(document.querySelector('#child-1-under-18')).not.toBeChecked()
+    expect(document.querySelector('#child-1-disabled')).not.toBeChecked()
+    expect(document.querySelector('#child-1-emancipated-adult')).not.toBeChecked()
   })
 
-  it('can select "minor" classification for child 1', async () => {
+  it('can select "under 18" classification for child 1', async () => {
     renderWithRouter(<GettingStarted />)
-    const radio = document.querySelector('input[name="child-1-classification"][value="minor"]')
-    await userEvent.click(radio)
-    expect(radio).toBeChecked()
+    const checkbox = document.querySelector('#child-1-under-18')
+    await userEvent.click(checkbox)
+    expect(checkbox).toBeChecked()
   })
 
-  it('can select "emancipated" classification for child 1', async () => {
+  it('can select "emancipated adult" classification for child 1', async () => {
     renderWithRouter(<GettingStarted />)
-    const radio = document.querySelector('input[name="child-1-classification"][value="emancipated"]')
-    await userEvent.click(radio)
-    expect(radio).toBeChecked()
+    const checkbox = document.querySelector('#child-1-emancipated-adult')
+    await userEvent.click(checkbox)
+    expect(checkbox).toBeChecked()
   })
 
   it('updates child date of birth', () => {
@@ -421,11 +423,12 @@ describe('GettingStarted', () => {
     expect(firstNameInputs[1]).toHaveAttribute('id', 'child-2-firstName')
   })
 
-  it('renders classification radios for a newly added child', async () => {
+  it('renders classification checkboxes for a newly added child', async () => {
     renderWithRouter(<GettingStarted />)
     await userEvent.click(screen.getByRole('button', { name: /add another child/i }))
-    expect(document.querySelector('input[name="child-2-classification"][value="minor"]')).toBeInTheDocument()
-    expect(document.querySelector('input[name="child-2-classification"][value="emancipated"]')).toBeInTheDocument()
+    expect(document.querySelector('#child-2-under-18')).toBeInTheDocument()
+    expect(document.querySelector('#child-2-disabled')).toBeInTheDocument()
+    expect(document.querySelector('#child-2-emancipated-adult')).toBeInTheDocument()
   })
 
   it('each child has independent input fields', async () => {
