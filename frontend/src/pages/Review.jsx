@@ -15,31 +15,40 @@ import './Review.css';
 // Maps backend section enum values to UI label and frontend route for editing
 // TODO: Update keys to match exact enum values - currently only have 1 created
 const SECTION_META = {
-  getting_started: { label: 'Getting Started', route: '/getting-started' },
-  allocation_of_parental_rights_and_responsibilities: { label: 'Parental Rights', route: '/parental-rights' },
-  parenting_time_communication: { label: 'Parenting Time & Communication', route: '/parenting-time-communication' },
-  information_sharing: { label: 'Information Sharing', route: '/informationsharing' },
-  tax_exemptions: { label: 'Tax Exemptions', route: '/tax-exemptions' },
+  'getting-started': { label: 'Getting Started', route: '/getting-started' },
+  'parental-rights': { label: 'Parental Rights', route: '/parental-rights' },
+  'parenting-time-communication': { label: 'Parenting Time & Communication', route: '/parenting-time-communication' },
+  'health-insurance-coverage': { label: 'Health Insurance Coverage', route: '/parental-rights' },
+  'information-sharing': { label: 'Information Sharing', route: '/informationsharing' },
+  'tax-exemptions': { label: 'Tax Exemptions', route: '/tax-exemptions' },
 };
 
-// Formats an answer value for display
-function formatAnswer(answer) {
-  if (!answer || answer === '') return <span className="review__empty">Not answered</span>;
-  if (Array.isArray(answer)) return answer.join(', ');
-  return String(answer);
+// Formats stored answer values using the question's human-readable option labels.
+function formatAnswer(answer, question) {
+  if (answer === null || answer === undefined || answer === '') {
+    return <span className="review__empty">Not answered</span>;
+  }
+
+  const formatValue = (value) => {
+    const option = question?.options?.find((item) => item.value === value);
+    if (value && typeof value === 'object') return JSON.stringify(value);
+    return option?.label || String(value);
+  };
+
+  if (Array.isArray(answer)) return answer.map(formatValue).join(', ');
+  return formatValue(answer);
 }
 
 // Groups the state.plan.children array by question section
 // Plan model representation of the array: plan.children = [{ questionID, answer, isFlagged, isDeferred }, ...]
 // Question model includes "section" and "qKey" fields
-// TODO: Populate questionID to look like: questionID: { _id, qKey, section, qText, ... }, answer, isFlagged }
-function groupResponsesBySection(children = []) {
+// Groups saved plan answers by the section of their question definition.
+function groupResponsesBySection(answers = [], questionsByKey = {}) {
   const grouped = {};
 
-  children.forEach((response) => {
-    const question = response.questionID;
-    const isPopulated = question && typeof question === 'object';
-    const sectionKey = isPopulated ? question.section : null;
+  answers.forEach((response) => {
+    const question = questionsByKey[response.qKey];
+    const sectionKey = question?.section;
 
     if (!sectionKey) return;
 
@@ -48,13 +57,151 @@ function groupResponsesBySection(children = []) {
     }
 
     grouped[sectionKey].push({
-      qKey: question.qKey,
+      qKey: response.qKey,
+      label: question.qTitle || question.qText || response.qKey,
       answer: response.answer,
+      question,
       isFlagged: response.isFlagged,
       isDeferred: response.isDeferred,
     });
   });
   return grouped;
+}
+
+/* Parenting time & Information Sharing question text */
+const CUSTOM_SECTION_FIELDS = {
+  parentingTimeAndCommunication: {
+    section: 'parenting-time-communication',
+    fields: {
+      agreeToTransportationPolicy: 'Agree to the standard transportation policy',
+      transportationArrangementDescription: 'Preferred transportation arrangement',
+      agreeToActivityPolicy: 'Agree to the standard activity policy',
+      activityPolicyDescription: 'Preferred activity policy',
+      communicationWithCoParentOnPhone: 'Phone communication with co-parent',
+      communicationWithCoParentOnPhoneDescription: 'Phone communication circumstances',
+      notifyCoParentOfChildRelatedEvents: 'Notify co-parent about illness or injury',
+      notifyCoParentOfChildRelatedEventsDescription: 'Illness or injury notification circumstances',
+    },
+  },
+  informationSharing: {
+    section: 'information-sharing',
+    fields: {
+      medicalRecords: 'Medical information access',
+      schoolContact: 'School contact rights',
+      schoolReports: 'School reports and notices',
+      schoolActivities: 'School activity participation',
+      extracurricularActivities: 'Extracurricular activity participation',
+    },
+  },
+};
+
+const INFORMATION_SHARING_OPTIONS = [
+  { value: 'parent1', label: 'Just me' },
+  { value: 'parent2', label: 'Just my co-parent' },
+  { value: 'both', label: 'Both me and my co-parent' },
+  { value: 'needInfo', label: 'I need more information' },
+  { value: 'defer', label: "Default to my co-parent's choice" },
+];
+
+/* Parenting time & Information Sharing question options, translates stored values to human-readable labels for display in the review page */
+const CUSTOM_FIELD_OPTIONS = {
+  communicationWithCoParentOnPhone: [
+    { value: 'yes', label: 'Yes' },
+    { value: 'no', label: 'No' },
+    { value: 'sometimes', label: 'Sometimes (please describe)' },
+    { value: 'needMoreInfo', label: 'I need more information' },
+    { value: 'defaultToCoParentChoice', label: "Default to my co-parent's choice" },
+  ],
+  notifyCoParentOfChildRelatedEvents: [
+    { value: 'yes', label: 'Yes' },
+    { value: 'no', label: 'No' },
+    { value: 'sometimes', label: 'Sometimes (please describe)' },
+    { value: 'needMoreInfo', label: 'I need more information' },
+    { value: 'defaultToCoParentChoice', label: "Default to my co-parent's choice" },
+  ],
+  medicalRecords: INFORMATION_SHARING_OPTIONS,
+  schoolContact: INFORMATION_SHARING_OPTIONS,
+  schoolReports: INFORMATION_SHARING_OPTIONS,
+  schoolActivities: INFORMATION_SHARING_OPTIONS,
+  extracurricularActivities: INFORMATION_SHARING_OPTIONS,
+};
+
+const STATE_FIELD_OPTIONS = {
+  parentRole: [
+    { value: 'residential', label: 'I am the residential parent' },
+    { value: 'nonresidential', label: 'I am the non-residential parent' },
+  ],
+};
+
+/* Adds parenting time and information sharing responses to the grouped responses object for display in the review page. */
+function addCustomSectionResponses(grouped, plan) {
+  Object.entries(CUSTOM_SECTION_FIELDS).forEach(([planField, sectionConfig]) => {
+    const sectionResponses = Object.entries(plan?.[planField] ?? {})
+      .filter(([field, value]) => field !== 'errors' && value !== '' && value !== null && value !== undefined)
+      .map(([field, answer]) => ({
+        qKey: `${planField}.${field}`,
+        label: sectionConfig.fields[field] || field,
+        answer,
+        question: { options: CUSTOM_FIELD_OPTIONS[field] ?? [] },
+      }));
+
+    if (sectionResponses.length > 0) {
+      grouped[sectionConfig.section] = [
+        ...(grouped[sectionConfig.section] ?? []),
+        ...sectionResponses,
+      ];
+    }
+  });
+}
+
+/* Displays children's names */
+function addStateSectionResponses(grouped, state) {
+  const childNames = (state.plan?.children ?? []).map((child, index) => {
+    const name = [child.fName ?? child.firstName, child.lName ?? child.lastName]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+    return name || child.name || `Child ${index + 1}`;
+  });
+
+  /* Adds gettings started and tax exemption responses to the grouped responses object for display in the review page. */
+  const gettingStarted = [
+    ['firstName', 'Your first name', state.parents?.firstName],
+    ['lastName', 'Your last name', state.parents?.lastName],
+    ['age', 'Your age', state.parents?.age],
+    ['phone', 'Your phone number', state.parents?.phone],
+    ['streetAddress', 'Street address', state.parents?.streetAddress],
+    ['addressLine2', 'Address line 2', state.parents?.addressLine2],
+    ['city', 'City', state.parents?.city],
+    ['state', 'State', state.parents?.state],
+    ['zipCode', 'ZIP code', state.parents?.zipCode],
+    ['collaborationMode', 'Plan collaboration mode', state.plan?.collaborationMode],
+    ['userRole', 'Case filing status', state.plan?.userRole],
+    ['residentialParent', 'Residential parent', state.plan?.residentialParent],
+    ['children', 'Children', childNames],
+  ];
+  const taxExemptions = [
+    ['parentRole', 'Parental role', state.taxExemptions?.parentRole],
+    ['claimingChildren', 'Children claimed for tax exemptions', state.taxExemptions?.claimingChildren],
+  ];
+
+  [
+    ['getting-started', gettingStarted],
+    ['tax-exemptions', taxExemptions],
+  ].forEach(([section, fields]) => {
+    const responses = fields
+      .filter(([, , answer]) => answer !== '' && answer !== null && answer !== undefined)
+      .map(([key, label, answer]) => ({
+        qKey: `${section}.${key}`,
+        label,
+        answer,
+        question: { options: STATE_FIELD_OPTIONS[key] ?? [] },
+      }));
+
+    if (responses.length > 0) {
+      grouped[section] = [...(grouped[section] ?? []), ...responses];
+    }
+  });
 }
 
 
@@ -96,8 +243,8 @@ function SectionBlock({ sectionKey, responses, onEdit, isOpen, onToggle }) {
             <ul className="review__answer-list">
               {responses.map((r, i) => (
                 <li key={r.qKey || i} className="review__answer-item">
-                  <span className="review__answer-key">{r.qKey}</span>
-                  <span className="review__answer-value">{formatAnswer(r.answer)}</span>
+                  <span className="review__answer-key">{r.label}</span>
+                  <span className="review__answer-value">{formatAnswer(r.answer, r.question)}</span>
                 </li>
               ))}
             </ul>
@@ -122,7 +269,10 @@ export default function Review() {
   //   ''                  — not yet set; treat same as individual (no invite)
   const collaborationMode = state.collaborationMode ?? '';
 
-  const groupedResponses = groupResponsesBySection(state.plan?.children ?? []);
+  const [questionsByKey, setQuestionsByKey] = useState({});
+  const groupedResponses = groupResponsesBySection(state.plan?.answers || [], questionsByKey);
+  addCustomSectionResponses(groupedResponses, state.plan);
+  addStateSectionResponses(groupedResponses, state);
   const knownSectionKeys = Object.keys(SECTION_META);
 
   const [openSections, setOpenSections] = useState(() =>
@@ -147,6 +297,22 @@ export default function Review() {
      .then((data) => { if (data?.status) setCaseStatus(data.status); })
      .catch(() => {});
   }, [caseId]);
+
+  useEffect(() => {
+    fetch(buildApiUrl('/api/logic-engine/questions'))
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to load question definitions');
+        return res.json();
+      })
+      .then((questions) => {
+        const questionMap = {};
+        questions.forEach((question) => {
+          if (question.qKey) questionMap[question.qKey] = question;
+        });
+        setQuestionsByKey(questionMap);
+      })
+      .catch((error) => console.error(error.message));
+  }, []);
 
   const toggleSection = (key) =>
     setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));

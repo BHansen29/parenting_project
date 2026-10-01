@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Car, Info, Calendar, Check, Radio, Flag } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { auth } from '../lib/firebase';
+import { buildApiUrl } from '../lib/apiClient';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/card';
 import { useForm } from '../hooks/useForm';
 import { useSectionFlag } from '../hooks/useSectionFlag';
@@ -146,11 +148,38 @@ export default function ParentingTimeAndCommunication() {
         return isValid;
     };
 
-    const handleNext = () => {
-        if (validateForm()) {
-            navigate('/informationsharing');
-        } else {
+    const saveAnswers = async () => {
+        const user = auth.currentUser;
+        if (!user || !state.plan?._id) return;
+
+        const idToken = await user.getIdToken();
+        const response = await fetch(buildApiUrl(`api/plan/${state.plan._id}/sections`), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${idToken}`,
+            },
+            body: JSON.stringify({
+                section: 'parentingTimeAndCommunication',
+                answers: formData,
+            }),
+        });
+
+        if (!response.ok) throw new Error('Failed to save parenting time answers');
+        dispatch({ type: 'UPDATE_SECTION', section: 'plan', payload: await response.json() });
+    };
+
+    const handleNext = async () => {
+        if (!validateForm()) {
             setSubmitAttempted(true);
+            return;
+        }
+
+        try {
+            await saveAnswers();
+            navigate('/informationsharing');
+        } catch (error) {
+            console.error(error.message);
         }
     };
 

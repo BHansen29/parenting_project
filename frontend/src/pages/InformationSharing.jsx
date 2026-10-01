@@ -1,6 +1,8 @@
 import { useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/card';
+import { auth } from '../lib/firebase';
+import { buildApiUrl } from '../lib/apiClient';
 import { useForm } from '../hooks/useForm';
 import { useNavigation } from '../context/NavigationContext';
 import { useSectionFlag } from '../hooks/useSectionFlag';
@@ -171,9 +173,37 @@ export default function InformationSharing() {
     return Object.keys(newErrors).length === 0;
   }, [state]);
 
-  const handleNext = useCallback(() => {
-    if (validateForm()) navigate('/tax-exemptions');
-  }, [validateForm, state]);
+  const handleNext = useCallback(async () => {
+    if (!validateForm()) return;
+
+    try {
+      const user = auth.currentUser;
+      if (!user || !state.plan?._id) {
+        navigate('/tax-exemptions');
+        return;
+      }
+
+      const idToken = await user.getIdToken();
+      const response = await fetch(buildApiUrl(`api/plan/${state.plan._id}/sections`), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          section: 'informationSharing',
+          answers: state.informationSharing,
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to save information sharing answers');
+      const plan = await response.json();
+      dispatch({ type: 'UPDATE_SECTION', section: 'plan', payload: plan });
+      navigate('/tax-exemptions');
+    } catch (error) {
+      console.error(error.message);
+    }
+  }, [dispatch, navigate, state, validateForm]);
 
   const handleBack = useCallback(() => {
     dispatch({
