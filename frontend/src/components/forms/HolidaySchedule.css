@@ -1,0 +1,245 @@
+.holiday-schedule {
+  --holiday-text: #374151;
+  --holiday-muted: #6b7280;
+  --holiday-row: #f8fafc;
+  --holiday-row-hover: #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.holiday-schedule__intro {
+  margin: 0 0 0.5rem;
+  color: var(--holiday-muted);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.holiday-schedule__header,
+.holiday-schedule__row {
+  display: grid;
+  grid-template-columns: minmax(12rem, 1.5fr) minmax(8rem, 1fr) minmax(8rem, 1fr) minmax(9rem, 1fr) minmax(12rem, 1.5fr);
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.holiday-schedule__header {
+  padding: 0 0.75rem 0.25rem;
+  color: var(--holiday-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.holiday-schedule__row {
+  padding: 0.75rem;
+  border: 1.5px solid var(--input-border);
+  border-radius: var(--input-border-radius);
+  background: var(--holiday-row);
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.holiday-schedule__row:hover {
+  border-color: var(--input-border-focus);
+  background: var(--holiday-row-hover);
+}
+
+.holiday-schedule__name {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-weight: 600;
+  color: var(--holiday-text);
+  line-height: 1.3;
+}
+
+.holiday-schedule__description {
+  color: var(--holiday-muted);
+  font-size: 0.78rem;
+  font-weight: 400;
+  line-height: 1.35;
+}
+
+.holiday-schedule__field {
+  min-width: 0;
+}
+
+.holiday-schedule__field:has(.holiday-schedule__error) {
+  align-self: start;
+}
+
+.holiday-schedule__field-label {
+  display: none;
+}
+
+.holiday-schedule select,
+.holiday-schedule input,
+.holiday-schedule textarea,
+.holiday-schedule__not-applicable {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 2.5rem;
+  padding: var(--input-padding);
+  border: 1.5px solid var(--input-border);
+  border-radius: var(--input-border-radius);
+  background: var(--input-background);
+  color: inherit;
+  font: inherit;
+  resize: vertical;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.holiday-schedule__not-applicable {
+  display: flex;
+  align-items: center;
+  color: var(--holiday-muted);
+}
+
+.holiday-schedule select:focus,
+.holiday-schedule input:focus,
+.holiday-schedule textarea:focus {
+  outline: none;
+  border-color: var(--input-border-focus);
+  box-shadow: 0 0 0 3px rgba(20, 171, 221, 0.1);
+}
+
+.holiday-schedule select:disabled,
+.holiday-schedule input:disabled,
+.holiday-schedule textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.holiday-schedule__checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2.5rem;
+  color: var(--holiday-text);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.holiday-schedule__checkbox-label input {
+  width: 1.1rem;
+  height: 1.1rem;
+  min-height: 1.1rem;
+  accent-color: #14abdd;
+}
+
+.holiday-schedule__error {
+  display: block;
+  margin-top: 0.35rem;
+  color: #dc2626;
+  font-size: 0.8125rem;
+  line-height: 1.25;
+}
+
+.holiday-schedule__add-button {
+  align-self: flex-start;
+  margin-top: 0.25rem;
+  padding: 0.65rem 1rem;
+  border: 1.5px dashed var(--input-border-focus);
+  border-radius: var(--input-border-radius);
+  background: transparent;
+  color: var(--input-border-focus);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.holiday-schedule__add-button:hover {
+  background: rgba(20, 171, 221, 0.08);
+}
+
+.holiday-schedule__add-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.9rem;
+  border: 1.5px solid var(--input-border);
+  border-radius: var(--input-border-radius);
+  background: var(--holiday-row);
+}
+
+.holiday-schedule__add-form label {
+  color: var(--holiday-text);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.holiday-schedule__add-controls {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.holiday-schedule__add-controls input {
+  flex: 1;
+}
+
+.holiday-schedule__save-button,
+.holiday-schedule__cancel-button {
+  padding: 0.55rem 0.85rem;
+  border: 1px solid var(--input-border);
+  border-radius: var(--input-border-radius);
+  font: inherit;
+  cursor: pointer;
+}
+
+.holiday-schedule__save-button {
+  border-color: var(--input-border-focus);
+  background: var(--input-border-focus);
+  color: #fff;
+}
+
+.holiday-schedule__cancel-button {
+  background: var(--input-background);
+  color: var(--holiday-text);
+}
+
+.holiday-schedule__add-error {
+  color: #dc2626;
+  font-size: 0.8125rem;
+}
+
+@media (max-width: 700px) {
+  .holiday-schedule__header {
+    display: none;
+  }
+
+  .holiday-schedule__row {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.6rem;
+  }
+
+  .holiday-schedule__name {
+    grid-column: 1 / -1;
+  }
+
+  .holiday-schedule__field--check {
+    grid-column: 1 / -1;
+  }
+
+  .holiday-schedule__field-label {
+    display: block;
+    margin-bottom: 0.25rem;
+    color: var(--holiday-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .holiday-schedule__add-controls {
+    flex-direction: column;
+  }
+
+}
+
+@media (prefers-color-scheme: dark) {
+  .holiday-schedule {
+    --holiday-text: #d1d5db;
+    --holiday-muted: #9ca3af;
+    --holiday-row: #1f2937;
+    --holiday-row-hover: #253449;
+  }
+}

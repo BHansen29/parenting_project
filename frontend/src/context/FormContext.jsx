@@ -1,4 +1,4 @@
-import { createContext, useReducer, useEffect } from "react";
+import { createContext, useEffect, useReducer } from "react";
 
 export const FormContext = createContext(null);
 
@@ -41,6 +41,9 @@ const initialState = {
     transportationArrangementDescription: '',
     agreeToActivityPolicy: false,
     activityPolicyDescription: '',
+    parentingSchedule: {},
+    holidaySchedule: {},
+    schoolSchedule: {},
     communicationWithCoParentOnPhone: '',
     communicationWithCoParentOnPhoneDescription: '',
     notifyCoParentOfChildRelatedEvents: '',

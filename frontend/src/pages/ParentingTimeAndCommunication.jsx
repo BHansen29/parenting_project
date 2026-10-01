@@ -1,15 +1,17 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Car, Info, Calendar, Check, Radio, Flag } from 'lucide-react';
+import { Calendar, Car, Info } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/common/card';
+import HolidaySchedule, { getHolidayNames } from '../components/forms/HolidaySchedule';
+import PolicyAgreementQuestion from '../components/forms/PolicyAgreementQuestion';
+import RadioQuestion from '../components/forms/RadioQuestion';
+import ScheduleBuilder from '../components/forms/ScheduleBuilder';
+import SchoolSchedule, { SCHOOL_BREAKS, SCHOOL_DAY_OPTIONS } from '../components/forms/SchoolSchedule';
+import SectionHeader from '../components/forms/SectionHeader';
+import { useNavigation } from '../context/NavigationContext';
 import { useForm } from '../hooks/useForm';
 import { useSectionFlag } from '../hooks/useSectionFlag';
-import { useNavigation } from '../context/NavigationContext';
 import './Page.css';
-import SectionHeader from '../components/forms/SectionHeader';
-import RadioQuestion from '../components/forms/RadioQuestion';
-import PolicyAgreementQuestion from '../components/forms/PolicyAgreementQuestion';
-import ScheduleBuilder from '../components/forms/ScheduleBuilder';
 
 export default function ParentingTimeAndCommunication() {
     const navigate = useNavigate();
@@ -28,6 +30,8 @@ export default function ParentingTimeAndCommunication() {
         agreeToActivityPolicy: false,
         activityPolicyDescription: '',
         parentingSchedule: {},
+        holidaySchedule: {},
+        schoolSchedule: {},
         communicationWithCoParentOnPhone: '',
         communicationWithCoParentOnPhoneDescription: '',
         notifyCoParentOfChildRelatedEvents: '',
@@ -52,7 +56,7 @@ export default function ParentingTimeAndCommunication() {
     useEffect(() => {
         if (submitAttempted) {
             const firstError = document.querySelector(
-                '.text-input__error-message, .date-picker__error-message, .radio-group-error'
+                '.text-input__error-message, .date-picker__error-message, .radio-group-error, .holiday-schedule__error'
             );
             if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
             setSubmitAttempted(false);
@@ -96,6 +100,22 @@ export default function ParentingTimeAndCommunication() {
         }
     }, [dispatch, errors.parentingSchedule]);
 
+    const handleHolidayScheduleChange = useCallback((holidaySchedule) => {
+        dispatch({
+            type: 'UPDATE_SECTION',
+            section: 'timeAndCommunication',
+            payload: { holidaySchedule }
+        });
+    }, [dispatch]);
+
+    const handleSchoolScheduleChange = useCallback((schoolSchedule) => {
+        dispatch({
+            type: 'UPDATE_SECTION',
+            section: 'timeAndCommunication',
+            payload: { schoolSchedule }
+        });
+    }, [dispatch]);
+
     const validateForm = () => {
         let isValid = true;
         const formErrors = {};
@@ -110,6 +130,53 @@ export default function ParentingTimeAndCommunication() {
         if (!formData.agreeToActivityPolicy && !formData.activityPolicyDescription?.trim()) {
             formErrors.activityPolicyDescription = 'Please agree to the standard policy or describe your preferred arrangement';
             isValid = false;
+        }
+
+        const holidayErrors = {};
+        getHolidayNames(formData.holidaySchedule).forEach((holiday) => {
+            const selection = formData.holidaySchedule?.[holiday] || {
+                doesNotApply: false,
+                year: '',
+                time: '',
+            };
+            if (!selection.doesNotApply && !selection.year) {
+                holidayErrors[holiday] = { year: 'Select odd, even, or every year' };
+                isValid = false;
+            } else if (
+                !selection.doesNotApply &&
+                selection.year === 'every' &&
+                !/^(0?[1-9]|1[0-2]):[0-5]\d ?(AM|PM)$/i.test(selection.time?.trim() || '')
+            ) {
+                holidayErrors[holiday] = { time: 'Enter a time like 6:00 PM' };
+                isValid = false;
+            }
+        });
+        if (Object.keys(holidayErrors).length > 0) {
+            formErrors.holidaySchedule = holidayErrors;
+        }
+
+        const schoolErrors = {};
+        getHolidayNames(formData.schoolSchedule, SCHOOL_BREAKS).forEach((schoolBreak) => {
+            const selection = formData.schoolSchedule?.[schoolBreak] || { doesNotApply: false, year: '', time: '' };
+            if (!selection.doesNotApply && !selection.year) {
+                schoolErrors[schoolBreak] = {
+                    year: SCHOOL_DAY_OPTIONS[schoolBreak]
+                        ? 'Select each day, alternate days, or whichever parent has the child that day'
+                        : 'Select odd, even, or every year'
+                };
+                isValid = false;
+            } else if (
+                !selection.doesNotApply &&
+                !SCHOOL_DAY_OPTIONS[schoolBreak] &&
+                selection.year === 'every' &&
+                !/^(0?[1-9]|1[0-2]):[0-5]\d ?(AM|PM)$/i.test(selection.time?.trim() || '')
+            ) {
+                schoolErrors[schoolBreak] = { time: 'Enter a time like 6:00 PM' };
+                isValid = false;
+            }
+        });
+        if (Object.keys(schoolErrors).length > 0) {
+            formErrors.schoolSchedule = schoolErrors;
         }
 
         // Communication with co-parent on phone (radio required)
@@ -271,6 +338,36 @@ export default function ParentingTimeAndCommunication() {
                                     parent2Label="Co-Parent"
                                     helpText="Click on a day to add time slots. You can specify exact time frames or mark whole days."
                                     error={errors.parentingSchedule}
+                                />
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <CardDescription>
+                                    Holiday Schedule
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <HolidaySchedule
+                                    value={formData.holidaySchedule}
+                                    onChange={handleHolidayScheduleChange}
+                                    errors={errors.holidaySchedule}
+                                />
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <CardDescription>
+                                    School Schedule
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <SchoolSchedule
+                                    value={formData.schoolSchedule}
+                                    onChange={handleSchoolScheduleChange}
+                                    errors={errors.schoolSchedule}
                                 />
                             </CardContent>
                         </Card>
