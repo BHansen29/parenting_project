@@ -1,4 +1,4 @@
-import { screen, fireEvent } from '@testing-library/react'
+import { screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { vi } from 'vitest'
 import ParentingTimeAndCommunication from '../../src/pages/ParentingTimeAndCommunication'
@@ -17,12 +17,21 @@ vi.mock('react-router-dom', async () => {
 // Mock scrollIntoView — not implemented in jsdom
 window.HTMLElement.prototype.scrollIntoView = vi.fn()
 
+// Schedule rows are required when submitting this section. These tests focus
+// on policy and communication navigation, so mark every built-in row as N/A.
+const fillValidSchedule = async () => {
+  for (const checkbox of document.querySelectorAll('input[aria-label$="does not apply"]')) {
+    await userEvent.click(checkbox)
+  }
+}
+
 // Helper: fill in the minimum valid form to allow navigation
 const fillValidForm = async () => {
   await userEvent.click(document.querySelector('#agreeToTransportationPolicy'))
   await userEvent.click(document.querySelector('#agreeToActivityPolicy'))
   await userEvent.click(document.querySelector('input[name="communicationWithCoParentOnPhone"][value="yes"]'))
   await userEvent.click(document.querySelector('input[name="notifyCoParentOfChildRelatedEvents"][value="yes"]'))
+  await fillValidSchedule()
 }
 
 describe('ParentingTimeAndCommunication', () => {
@@ -651,8 +660,8 @@ describe('ParentingTimeAndCommunication', () => {
     it('navigates to /informationsharing on valid form submission using checkboxes', async () => {
       renderWithRouter(<ParentingTimeAndCommunication />)
       await fillValidForm()
-      fireEvent.click(screen.getByRole('button', { name: /next/i }))
-      expect(mockNavigate).toHaveBeenCalledWith('/informationsharing')
+      await userEvent.click(screen.getByRole('button', { name: /next/i }))
+      await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/informationsharing'))
     })
 
     it('navigates to /informationsharing when descriptions are provided instead of checkboxes', async () => {
@@ -671,8 +680,9 @@ describe('ParentingTimeAndCommunication', () => {
       await userEvent.click(
         document.querySelector('input[name="notifyCoParentOfChildRelatedEvents"][value="no"]')
       )
-      fireEvent.click(screen.getByRole('button', { name: /next/i }))
-      expect(mockNavigate).toHaveBeenCalledWith('/informationsharing')
+      await fillValidSchedule()
+      await userEvent.click(screen.getByRole('button', { name: /next/i }))
+      await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/informationsharing'))
     })
 
     it('navigates to /informationsharing when "Sometimes" is selected with a description filled', async () => {
@@ -689,8 +699,9 @@ describe('ParentingTimeAndCommunication', () => {
       await userEvent.click(
         document.querySelector('input[name="notifyCoParentOfChildRelatedEvents"][value="yes"]')
       )
-      fireEvent.click(screen.getByRole('button', { name: /next/i }))
-      expect(mockNavigate).toHaveBeenCalledWith('/informationsharing')
+      await fillValidSchedule()
+      await userEvent.click(screen.getByRole('button', { name: /next/i }))
+      await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/informationsharing'))
     })
   })
 

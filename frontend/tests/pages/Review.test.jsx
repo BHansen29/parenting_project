@@ -1,4 +1,4 @@
-import { screen, fireEvent } from '@testing-library/react'
+import { screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { vi } from 'vitest'
 import Review from '../../src/pages/Review'
@@ -32,14 +32,20 @@ vi.mock('../../src/components/forms/Disclaimer', () => ({
 
 // useForm mock — state is controlled per test
 let mockCollaborationMode = ''
-let mockPlanChildren = []
+let mockPlanAnswers = []
+let mockQuestions = []
 const mockDispatch = vi.fn()
+
+vi.stubGlobal('fetch', vi.fn(() => Promise.resolve({
+  ok: true,
+  json: async () => mockQuestions,
+})))
 
 vi.mock('../../src/hooks/useForm', () => ({
   useForm: () => ({
     state: {
       collaborationMode: mockCollaborationMode,
-      plan: { children: mockPlanChildren },
+      plan: { answers: mockPlanAnswers, children: [] },
     },
     dispatch: mockDispatch,
   }),
@@ -61,7 +67,8 @@ describe('Review', () => {
     mockNavigate.mockReset()
     mockDispatch.mockReset()
     mockCollaborationMode = ''
-    mockPlanChildren = []
+    mockPlanAnswers = []
+    mockQuestions = []
   })
 
   // ─── Render ──────────────────────────────────────────────────────────────
@@ -124,18 +131,15 @@ describe('Review', () => {
 
   it('all sections are expanded by default', () => {
     renderReview()
-    // Each open section shows the empty state message
-    const emptyMessages = screen.getAllByText('No answers recorded for this section yet.')
-    expect(emptyMessages.length).toBe(5)
+    expect(screen.getAllByRole('button', { name: /getting started|parental rights|parenting time & communication|information sharing|tax exemptions/i })
+      .filter((section) => section.getAttribute('aria-expanded') === 'true')).toHaveLength(5)
   })
 
   it('clicking a section header collapses it', async () => {
     renderReview()
     const sectionHeaders = screen.getAllByRole('button', { name: /getting started/i })
     await userEvent.click(sectionHeaders[0])
-    // After collapse, empty message for that section should be gone
-    // (other sections still show theirs, so count drops from 5 to 4)
-    expect(screen.getAllByText('No answers recorded for this section yet.').length).toBe(4)
+    expect(sectionHeaders[0]).toHaveAttribute('aria-expanded', 'false')
   })
 
   it('clicking a collapsed section header expands it again', async () => {
@@ -143,7 +147,7 @@ describe('Review', () => {
     const sectionHeaders = screen.getAllByRole('button', { name: /getting started/i })
     await userEvent.click(sectionHeaders[0]) // collapse
     await userEvent.click(sectionHeaders[0]) // expand
-    expect(screen.getAllByText('No answers recorded for this section yet.').length).toBe(5)
+    expect(sectionHeaders[0]).toHaveAttribute('aria-expanded', 'true')
   })
 
   it('clicking Edit navigates to the correct route', async () => {
@@ -161,8 +165,10 @@ describe('Review', () => {
   it('clicking Edit does not toggle the section', async () => {
     renderReview()
     await userEvent.click(screen.getByRole('button', { name: /edit getting started/i }))
-    // All 5 sections should still be visible — Edit click should not collapse
-    expect(screen.getAllByText('No answers recorded for this section yet.').length).toBe(5)
+    const sectionHeader = screen.getAllByRole('button', { name: /getting started/i })
+      .find((button) => button.hasAttribute('aria-expanded'))
+    expect(sectionHeader)
+      .toHaveAttribute('aria-expanded', 'true')
   })
 
   // ─── Incomplete Warning ───────────────────────────────────────────────────
@@ -178,69 +184,64 @@ describe('Review', () => {
     expect(screen.getByTestId('disclaimer-warning')).toHaveTextContent(/may not be accepted by the court/i)
   })
 
-  it('does not show the warning disclaimer when all sections are complete', () => {
-    // Populate children with one response per known section so all are complete
-    mockPlanChildren = Object.keys({
-      getting_started: true,
-      allocation_of_parental_rights_and_responsibilities: true,
-      parenting_time_communication: true,
-      information_sharing: true,
-      tax_exemptions: true,
-    }).map((section) => ({
-      questionID: { section, qKey: 'q1', _id: section },
+  it('does not show the warning disclaimer when all sections are complete', async () => {
+    // Populate answers with one response per known section so all are complete
+    mockPlanAnswers = Object.keys({
+      'getting-started': true,
+      'parental-rights': true,
+      'parenting-time-communication': true,
+      'information-sharing': true,
+      'tax-exemptions': true,
+    }).map((section, index) => ({
+      qKey: `q${index}`,
       answer: 'yes',
       isFlagged: false,
       isDeferred: false,
     }))
+    mockQuestions = mockPlanAnswers.map(({ qKey }, index) => ({
+      qKey,
+      section: Object.keys({
+        'getting-started': true,
+        'parental-rights': true,
+        'parenting-time-communication': true,
+        'information-sharing': true,
+        'tax-exemptions': true,
+      })[index],
+      qTitle: `Question ${index + 1}`,
+    }))
     renderReview()
+    await waitFor(() => expect(screen.queryByTestId('disclaimer-warning')).not.toBeInTheDocument())
     expect(screen.queryByTestId('disclaimer-warning')).not.toBeInTheDocument()
   })
 
   // ─── Section Answers ──────────────────────────────────────────────────────
 
-  it('displays answer values when responses are populated', () => {
-    mockPlanChildren = [
-      {
-        questionID: { section: 'getting_started', qKey: 'parentName', _id: 'gs1' },
-        answer: 'Jane Doe',
-        isFlagged: false,
-        isDeferred: false,
-      },
-    ]
+  it('displays answer values when responses are populated', async () => {
+    mockPlanAnswers = [{ qKey: 'parentName', answer: 'Jane Doe' }]
+    mockQuestions = [{ qKey: 'parentName', section: 'getting-started' }]
     renderReview()
+    await waitFor(() => expect(screen.getByText('Jane Doe')).toBeInTheDocument())
     expect(screen.getByText('Jane Doe')).toBeInTheDocument()
   })
 
-  it('displays "Not answered" for empty answer values', () => {
-    mockPlanChildren = [
-      {
-        questionID: { section: 'getting_started', qKey: 'phone', _id: 'gs2' },
-        answer: '',
-        isFlagged: false,
-        isDeferred: false,
-      },
-    ]
+  it('displays "Not answered" for empty answer values', async () => {
+    mockPlanAnswers = [{ qKey: 'phone', answer: '' }]
+    mockQuestions = [{ qKey: 'phone', section: 'getting-started' }]
     renderReview()
+    await waitFor(() => expect(screen.getByText('Not answered')).toBeInTheDocument())
     expect(screen.getByText('Not answered')).toBeInTheDocument()
   })
 
-  it('displays the question key alongside the answer', () => {
-    mockPlanChildren = [
-      {
-        questionID: { section: 'getting_started', qKey: 'parentName', _id: 'gs3' },
-        answer: 'Jane Doe',
-        isFlagged: false,
-        isDeferred: false,
-      },
-    ]
+  it('displays the question key alongside the answer', async () => {
+    mockPlanAnswers = [{ qKey: 'parentName', answer: 'Jane Doe' }]
+    mockQuestions = [{ qKey: 'parentName', section: 'getting-started' }]
     renderReview()
+    await waitFor(() => expect(screen.getByText('parentName')).toBeInTheDocument())
     expect(screen.getByText('parentName')).toBeInTheDocument()
   })
 
-  it('skips responses with unpopulated questionID', () => {
-    mockPlanChildren = [
-      { questionID: 'unpopulated-string-id', answer: 'should not show', isFlagged: false },
-    ]
+  it('skips responses with an unknown question key', () => {
+    mockPlanAnswers = [{ qKey: 'unknown-question', answer: 'should not show' }]
     renderReview()
     expect(screen.queryByText('should not show')).not.toBeInTheDocument()
   })

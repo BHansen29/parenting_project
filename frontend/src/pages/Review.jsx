@@ -18,7 +18,6 @@ const SECTION_META = {
   'getting-started': { label: 'Getting Started', route: '/getting-started' },
   'parental-rights': { label: 'Parental Rights', route: '/parental-rights' },
   'parenting-time-communication': { label: 'Parenting Time & Communication', route: '/parenting-time-communication' },
-  'health-insurance-coverage': { label: 'Health Insurance Coverage', route: '/parental-rights' },
   'information-sharing': { label: 'Information Sharing', route: '/informationsharing' },
   'tax-exemptions': { label: 'Tax Exemptions', route: '/tax-exemptions' },
 };
@@ -137,7 +136,7 @@ const STATE_FIELD_OPTIONS = {
 function addCustomSectionResponses(grouped, plan) {
   Object.entries(CUSTOM_SECTION_FIELDS).forEach(([planField, sectionConfig]) => {
     const sectionResponses = Object.entries(plan?.[planField] ?? {})
-      .filter(([field, value]) => field !== 'errors' && value !== '' && value !== null && value !== undefined)
+      .filter(([field, value]) => field !== 'errors' && field !== 'parentingSchedule' && field !== 'holidaySchedule' && field !== 'schoolSchedule' && value !== '' && value !== null && value !== undefined)
       .map(([field, answer]) => ({
         qKey: `${planField}.${field}`,
         label: sectionConfig.fields[field] || field,
