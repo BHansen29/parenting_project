@@ -313,8 +313,8 @@ export default function GettingStarted() {
                 options={[
                   { value: 'parent1/petitioner1/plaintiff',     label: 'Yes, it was me',         description: 'You will be identified as Parent 1/Petitioner 1/Plaintiff in the parenting plan' },
                   { value: 'parent2/petitioner2/defendant',     label: 'No, my co-parent filed', description: 'You will be identified as Parent 2/Petitioner 2/Defendant in the parenting plan' },
-                  { value: 'flagged',                           label: 'I need more information' },
-                  { value: 'defer',                             label: 'Defer to co-parent' },
+                  { value: 'no_case',                           label: 'No case has been filed yet by either co-parent' },
+                  { value: 'flagged',                             label: 'I\'m not sure' },
                 ]}
               />
             </section>
@@ -374,12 +374,10 @@ export default function GettingStarted() {
                           <TextInput
                             id={`child-${child.key}-age`}
                             label="Age"
-                            type="number"
+                            type="text"
                             value={child.age}
                             onChange={handleChildChange(child.key, 'age')}
                             required
-                            min="0"
-                            max="120"
                             placeholder="Age"
                             error={submitAttempted ? child.errors?.age : ''}
                           />
