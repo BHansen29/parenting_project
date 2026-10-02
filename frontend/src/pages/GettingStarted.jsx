@@ -14,15 +14,51 @@ import Checkbox from '../components/forms/Checkbox';
 import Disclaimer from '../components/forms/Disclaimer';
 import SafetyPrivacyQuestion from '../components/forms/SafetyPrivacyQuestion';
 
+function AggregateCheckboxQuestion({ question, name, value, options, onChange }) {
+  const selectedValues = Array.isArray(value) ? value : [];
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardDescription className="card-heading-question-bold">
+          {question}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="checkbox-group">
+          {options.map((option) => (
+            <Checkbox
+              key={option.value}
+              id={`${name}-${option.value}`}
+              name={name}
+              value={option.value}
+              label={option.label}
+              checked={selectedValues.includes(option.value)}
+              onChange={(checked) => {
+                const nextValues = checked
+                  ? [...new Set([...selectedValues, option.value])]
+                  : selectedValues.filter((selectedValue) => selectedValue !== option.value);
+                onChange(nextValues);
+              }}
+            />
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function GettingStarted() {
   const navigate = useNavigate();
   const { state, dispatch } = useForm();
   const { setOnNext, setOnBack } = useNavigation();
 
   const formData = state.parents ?? { name: '', secondParentName: '', errors: {} };
-  const collaborationMode = state.plan.collaborationMode ?? '';
-  const caseFilingStatus = state.plan.userRole ?? '';
-  const residentialParent = state.plan.residentialParent ?? '';
+  const plan = state.plan ?? {};
+  const aggregateData = plan.aggregateData ?? {};
+  const collaborationMode = plan.collaborationMode ?? '';
+  const caseFilingStatus = plan.userRole ?? '';
+  const residentialParent = plan.residentialParent ?? '';
   const parentingGuideInfo = state?.parentingGuideInfo ?? '';
   const errors = formData.errors ?? {};
 
@@ -70,6 +106,19 @@ export default function GettingStarted() {
     if (errors[field]) {
       dispatch({ type: 'UPDATE_SECTION', section: section, payload: { errors: { ...errors, [field]: '' } } });
     }
+  };
+
+  const handleAggregateChange = (field) => (value) => {
+    dispatch({
+      type: 'UPDATE_SECTION',
+      section: 'plan',
+      payload: {
+        aggregateData: {
+          ...aggregateData,
+          [field]: value
+        }
+      }
+    });
   };
 
   const handleChildChange = (childKey, field) => (value) => {
@@ -417,6 +466,136 @@ export default function GettingStarted() {
                   { value: 'no',    label: 'No, I am not' }
                 ]}
               />
+            </section>
+            <hr className="section-divider" />
+
+            <section className="aggregate-data">
+              <SectionHeader
+                iconClassName="info-icon"
+                icon={<Info size={25} />}
+                title="Respondent Profile"
+                help="Help us understand your background."
+              />
+              <Disclaimer variant="info">
+                The Demographic Data Policy ensures the integrity of data collection by implementing standard demographic data areas for all Action for Children clients (adults and children). Collecting demographic data serves various purposes, including reporting to funders, program evaluation, and organizational planning.
+              </Disclaimer>
+              <RadioQuestion
+                question="What is your gender?"
+                name="gender"
+                value={aggregateData.gender ?? ''}
+                onChange={handleAggregateChange('gender')}
+                options={[
+                  { value: 'female/feminine', label: 'Female/Feminine' },
+                  { value: 'male/masculine', label: 'Male/Masculine' },
+                  { value: 'other', label: 'Other' },
+                  { value: 'prefer_not_to_answer', label: 'Prefer not to answer' }
+                ]}
+              />
+              <AggregateCheckboxQuestion
+                question="Common descent or cultural background? Select as many options as apply to how you identify."
+                name="background"
+                value={aggregateData.background}
+                onChange={handleAggregateChange('background')}
+                options={[
+                  { value: 'hispanic/latino', label: 'Hispanic/Latino' },
+                  { value: 'mena', label: 'MENA (Middle Eastern/North African)' },
+                  { value: 'other', label: 'Not Hispanic/Latino, not MENA' },
+                  { value: 'prefer_not_to_answer', label: 'Prefer not to answer/Unknown ethnicity' }
+                ]}
+              />   
+              <AggregateCheckboxQuestion
+                question="What is your race? Select as many options as apply to how you identify."
+                name="race"
+                value={aggregateData.race}
+                onChange={handleAggregateChange('race')}
+                options={[
+                  { value: 'african', label: 'African' },
+                  { value: 'black', label: 'Black or African American' },
+                  { value: 'american_indian', label: 'American Indian or Alaska Native' },
+                  { value: 'asian', label: 'Asian or Asian American' },                  
+                  { value: 'middle_eastern', label: 'Middle Eastern or North African' },
+                  { value: 'pacific_islander', label: 'Pacific Islander or Native Hawaiian' },
+                  { value: 'white', label: 'White or European American' },
+                  { value: 'bi-racial', label: 'Bi-racial' },
+                  { value: 'multi_racial', label: 'Multiple races/Multi-racial' },
+                  { value: 'other', label: 'Race not listed/Other' },
+                  { value: 'prefer_not_to_answer', label: 'Prefer not to answer' }
+                ]}
+              />  
+              <RadioQuestion
+                question="What is your household income?"
+                name="income"
+                value={aggregateData.income ?? ''}
+                onChange={handleAggregateChange('income')}
+                options={[
+                  { value: 'under_5k', label: 'Below $4,999' },
+                  { value: 'under_10k', label: '$5,000-$9,999' },
+                  { value: 'under_20k', label: '$10,000-$19,999' },
+                  { value: 'under_40k', label: '$20,000-$39,999' },                  
+                  { value: 'under_60k', label: '$40,000-$59,999' },
+                  { value: 'under_80k', label: '$60,000-$79,999' },
+                  { value: 'under_90k', label: '$80,000-$89,999' },
+                  { value: 'under_100k', label: '$90,000-$99,999' },
+                  { value: 'over_100k', label: 'Over $100,000' },
+                  { value: 'prefer_not_to_answer', label: 'Prefer not to answer' }
+                ]}
+              />     
+              <RadioQuestion
+                question="What is your household size?"
+                name="household"
+                value={aggregateData.household ?? ''}
+                onChange={handleAggregateChange('household')}
+                options={[
+                  { value: '1', label: '1 person' },
+                  { value: '2', label: '2 person' },
+                  { value: '3', label: '3 person' },
+                  { value: '4', label: '4 person' },                  
+                  { value: '5', label: '5 person' },
+                  { value: '6', label: '6 person' },
+                  { value: '7', label: '7 person' },
+                  { value: '8', label: '8 person' },
+                  { value: '9', label: '9 person' },
+                  { value: 'over_10', label: '10+ person' },
+                  { value: 'prefer_not_to_answer', label: 'Prefer not to answer' }
+                ]}
+              />
+              <AggregateCheckboxQuestion
+                question="What language is spoken at home? Select as many options as apply."
+                name="language"
+                value={aggregateData.language}
+                onChange={handleAggregateChange('language')}
+                options={[
+                  { value: 'amharic', label: 'Amharic' },
+                  { value: 'arabic', label: 'Arabic' },
+                  { value: 'asian', label: 'Asian and Pacific Islander languages' },
+                  { value: 'english', label: 'English' },                  
+                  { value: 'french', label: 'French' },
+                  { value: 'haitian', label: 'Haitian Creole' },
+                  { value: 'nepali', label: 'Nepali' },
+                  { value: 'somali', label: 'Somali' },
+                  { value: 'spanish', label: 'Spanish' },
+                  { value: 'pashto', label: 'Pashto' },
+                  { value: 'other', label: 'Other languages' },
+                  { value: 'prefer_not_to_answer', label: 'Prefer not to answer' }
+                ]}
+              />    
+              <RadioQuestion
+                question="What is your education"
+                name="education"
+                value={aggregateData.education ?? ''}
+                onChange={handleAggregateChange('education')}
+                options={[
+                  { value: 'none', label: 'No degree or diploma earned/Less than high school diploma' },
+                  { value: 'high_school', label: 'High school or General Education Development (GED)' },
+                  { value: 'trade', label: 'Trade/Vocational/Technical Certification/Child Development Associate (CDA)' },
+                  { value: 'some_college', label: 'Some college, no degree' },                  
+                  { value: 'associate', label: 'Associate\'s degree' },
+                  { value: 'bachelor', label: 'Bachelor\'s degree' },
+                  { value: 'master', label: 'Master\'s degree' },
+                  { value: 'phd', label: 'Doctorate or Professional degree' },
+                  { value: 'prefer_not_to_answer', label: 'Prefer not to answer' }
+                ]}
+              />                                                                                 
             </section>
             <hr className="section-divider" />
 
