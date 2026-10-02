@@ -82,22 +82,22 @@ describe('InformationSharing', () => {
 
   it('displays the school contact question text', () => {
     renderWithRouter(<InformationSharing />, { showFooter: true })
-    expect(screen.getByText(/Who should be able to call your child's school/i)).toBeInTheDocument()
+    expect(screen.getByText(/Who can call your child's school/i)).toBeInTheDocument()
   })
 
   it('displays the school reports question text', () => {
     renderWithRouter(<InformationSharing />, { showFooter: true })
-    expect(screen.getByText(/Who should get copies of your child's school reports/i)).toBeInTheDocument()
+    expect(screen.getByText(/Who can get copies of your child's school reports/i)).toBeInTheDocument()
   })
 
   it('displays the school activities question text', () => {
     renderWithRouter(<InformationSharing />, { showFooter: true })
-    expect(screen.getByText(/Who has the right to attend and participate in parent-teacher conferences/i)).toBeInTheDocument()
+    expect(screen.getByText(/Who can attend and participate in parent-teacher conferences/i)).toBeInTheDocument()
   })
 
   it('displays the extracurricular activities question text', () => {
     renderWithRouter(<InformationSharing />, { showFooter: true })
-    expect(screen.getByText(/Who has the right to attend and participate with the child/i)).toBeInTheDocument()
+    expect(screen.getByText(/Who can attend and participate with the child\(ren\)/i)).toBeInTheDocument()
   })
 
   // ─── Radio Options ────────────────────────────────────────────────────────
