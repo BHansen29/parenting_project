@@ -156,6 +156,7 @@ export default function Layout({ children }) {
           city: parents.city,
           state: parents.state,
           zipCode: parents.zipCode,
+          aggregateData: plan.aggregateData ?? {},
           userRole: plan.userRole,
           residentialParent: plan.residentialParent
       })

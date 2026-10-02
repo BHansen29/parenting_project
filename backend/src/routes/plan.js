@@ -260,7 +260,7 @@ router.post('/:planId/information', verifyToken, async (req, res) => {
     if (!plan || plan.userID !== req.user.uid) {
       return res.status(403).json({ error: 'Forbidden' });
     }
-    const { parentFName, parentLName, parentAge, phone, streetAddress, addressLine2, city, state, zipCode, userRole, residentialParent} = req.body;
+    const { parentFName, parentLName, parentAge, phone, streetAddress, addressLine2, city, state, zipCode, aggregateData, userRole, residentialParent} = req.body;
     plan.parentFName = parentFName;
     plan.parentLName = parentLName;
     plan.parentAge = parentAge;
@@ -270,6 +270,9 @@ router.post('/:planId/information', verifyToken, async (req, res) => {
     plan.city = city;
     plan.state = state;
     plan.zipCode = zipCode;
+    if (aggregateData !== undefined) {
+      plan.aggregateData = aggregateData;
+    }
     plan.userRole = userRole;
     plan.residentialParent = residentialParent;
     //Save the plan and write back to DB

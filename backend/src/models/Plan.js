@@ -99,6 +99,10 @@ const planSchema = new mongoose.Schema(
     type: String,
     default: ''
   },
+  aggregateData: {
+    type: mongoose.Schema.Types.Mixed,
+    default: () => ({})
+  },
   status: { 
     type: String, enum: ['in_progress', 'completed', 'ready_for_review', 'DRAFT'], 
     default: 'in_progress' 

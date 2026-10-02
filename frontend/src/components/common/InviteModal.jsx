@@ -64,10 +64,7 @@ export default function InviteModal({ isOpen, onClose, caseId, onInviteSent }) {
 
         <div className="invite-modal__info-box">
           <p>
-            <strong>How it works:</strong> Each parent fills out the parenting plan independently.
-            Once both complete it, we'll create a comparison summary showing areas that need
-            discussion. Each parent will have the opportunity to revise their responses after seeing the summary,
-            and we'll highlight any changes to make it easy to track compromises.
+            <strong>How it works:</strong> Each parent fills out the parenting plan independently. Once both complete it, a comparison summary will be generated showing areas that conflict or where further discussion is necessary. Each parent will have the opportunity to revise their responses after seeing the summary. All changes to original responses will be highlighted to make it easier to track compromises.
           </p>
         </div>
 
