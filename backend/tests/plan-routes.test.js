@@ -340,3 +340,45 @@ test('POST /api/plan/:planId/contact saves phone and address', async (t) => {
   assert.equal(json.phoneNumber, payload.phone);
   assert.equal(json.address, payload.address);
 });
+
+test('POST /api/plan/:planId/information saves aggregate demographic responses', async (t) => {
+  let saved = false;
+  const plan = {
+    _id: 'plan-1',
+    userID: 'user-1',
+    async save() {
+      saved = true;
+    },
+  };
+
+  const server = await createTestServer({
+    Plan: {
+      async findById(planId) {
+        assert.equal(planId, 'plan-1');
+        return plan;
+      },
+    },
+  });
+
+  t.after(() => server.close());
+
+  const aggregateData = {
+    gender: 'female/feminine',
+    background: ['hispanic/latino', 'mena'],
+    race: ['asian'],
+    income: 'under_40k',
+    household: '3',
+    language: ['english', 'spanish'],
+    education: 'bachelor',
+  };
+
+  const { response, json } = await requestJson(server.baseUrl, '/api/plan/plan-1/information', {
+    method: 'POST',
+    body: { aggregateData },
+  });
+
+  assert.equal(response.status, 201);
+  assert.equal(saved, true);
+  assert.deepEqual(plan.aggregateData, aggregateData);
+  assert.deepEqual(json.aggregateData, aggregateData);
+});

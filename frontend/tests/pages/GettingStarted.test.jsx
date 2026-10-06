@@ -270,28 +270,28 @@ describe('GettingStarted', () => {
     renderWithRouter(<GettingStarted />)
     expect(document.querySelector('input[name="caseFilingStatus"][value="parent1/petitioner1/plaintiff"]')).toBeInTheDocument()
     expect(document.querySelector('input[name="caseFilingStatus"][value="parent2/petitioner2/defendant"]')).toBeInTheDocument()
+    expect(document.querySelector('input[name="caseFilingStatus"][value="no_case"]')).toBeInTheDocument()
     expect(document.querySelector('input[name="caseFilingStatus"][value="flagged"]')).toBeInTheDocument()
-    expect(document.querySelector('input[name="caseFilingStatus"][value="defer"]')).toBeInTheDocument()
   })
 
   it('displays correct labels for case filing options', () => {
     renderWithRouter(<GettingStarted />)
     expect(screen.getByText('Yes, it was me')).toBeInTheDocument()
     expect(screen.getByText('No, my co-parent filed')).toBeInTheDocument()
-    expect(screen.getByText('I need more information')).toBeInTheDocument()
-    expect(screen.getByText('Defer to co-parent')).toBeInTheDocument()
+    expect(screen.getByText('No case has been filed yet by either co-parent')).toBeInTheDocument()
+    expect(screen.getByText("I'm not sure")).toBeInTheDocument()
   })
 
   it('no case filing status radio is checked by default', () => {
     renderWithRouter(<GettingStarted />)
-    ;['parent1/petitioner1/plaintiff', 'parent2/petitioner2/defendant', 'flagged', 'defer'].forEach(value => {
+    ;['parent1/petitioner1/plaintiff', 'parent2/petitioner2/defendant', 'no_case', 'flagged'].forEach(value => {
       expect(document.querySelector(`input[name="caseFilingStatus"][value="${value}"]`)).not.toBeChecked()
     })
   })
 
   it('can select each case filing status option', async () => {
     renderWithRouter(<GettingStarted />)
-    for (const value of ['parent1/petitioner1/plaintiff', 'parent2/petitioner2/defendant', 'flagged', 'defer']) {
+    for (const value of ['parent1/petitioner1/plaintiff', 'parent2/petitioner2/defendant', 'no_case', 'flagged']) {
       const radio = document.querySelector(`input[name="caseFilingStatus"][value="${value}"]`)
       await userEvent.click(radio)
       expect(radio).toBeChecked()
@@ -341,12 +341,13 @@ describe('GettingStarted', () => {
 
   it('displays the under-18 classification label', () => {
     renderWithRouter(<GettingStarted />)
-    expect(screen.getByText(/My child is under 18\./i)).toBeInTheDocument()
+    expect(screen.getByText('My child is under 18.')).toBeInTheDocument()
+    expect(screen.getByText(/My child is mentally or physically disabled/i)).toBeInTheDocument()
   })
 
   it('displays the emancipated classification label', () => {
     renderWithRouter(<GettingStarted />)
-    expect(screen.getByText(/My child is an emancipated adult\./i)).toBeInTheDocument()
+    expect(screen.getByText('My child is an emancipated adult.')).toBeInTheDocument()
   })
 
   it('no child classification is checked by default', () => {

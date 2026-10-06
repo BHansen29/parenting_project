@@ -111,7 +111,7 @@ export default function ParentalRights() {
                         <CardDescription>Define where your children live and who will make legal decisions. </CardDescription>
                     </CardHeader>
                     <Disclaimer variant="warning">
-                        Legal Disclaimer: This tool is strictly informative and does not purport to give legal advice about your rights or options available to you. If you have questions, please talk with a lawyer.
+                        Legal Disclaimer: This tool is strictly informative and does not purport to give legal advice about your rights or options available to you. This tool helps to provide considerations for co-parents to think through when creating a parenting plan. Neither this tool nor your responses on the form solidify any rights in either parent. If you have questions, please talk with a lawyer.
                     </Disclaimer>
                     <CardContent>
                         <hr className="section-divider" />

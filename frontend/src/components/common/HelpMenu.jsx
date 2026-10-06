@@ -11,7 +11,7 @@ export default function HelpMenu({ text }) {
         <div className="help-menu">
             <div className="help-menu__content">
                 <Info size={15} />
-                <span> <b> Additional Information: </b>    {text}</span>
+                <span> <b></b>    {text}</span>
             </div>
         </div>
     );

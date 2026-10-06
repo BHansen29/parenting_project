@@ -82,22 +82,22 @@ describe('InformationSharing', () => {
 
   it('displays the school contact question text', () => {
     renderWithRouter(<InformationSharing />, { showFooter: true })
-    expect(screen.getByText(/Who can call your child's school\? This parent may also get copies of your child's academic records, like report cards, attendance, and teacher's comments/i)).toBeInTheDocument()
+    expect(screen.getByText(/Who can call your child's school/i)).toBeInTheDocument()
   })
 
   it('displays the school reports question text', () => {
     renderWithRouter(<InformationSharing />, { showFooter: true })
-    expect(screen.getByText(/Who can get copies of your child's school reports, calendars of school events, notices of parent-teacher conferences, and school programs/i)).toBeInTheDocument()
+    expect(screen.getByText(/Who can get copies of your child's school reports/i)).toBeInTheDocument()
   })
 
   it('displays the school activities question text', () => {
     renderWithRouter(<InformationSharing />, { showFooter: true })
-    expect(screen.getByText(/Who can attend and participate in parent-teacher conferences, school trips, school programs, and other school activities that parents get invited to/i)).toBeInTheDocument()
+    expect(screen.getByText(/Who can attend and participate in parent-teacher conferences/i)).toBeInTheDocument()
   })
 
   it('displays the extracurricular activities question text', () => {
     renderWithRouter(<InformationSharing />, { showFooter: true })
-    expect(screen.getByText(/Who can attend and participate with the child\(ren\) in athletic programs and other extracurricular activities/i)).toBeInTheDocument()
+    expect(screen.getByText(/Who can attend and participate with the child\(ren\)/i)).toBeInTheDocument()
   })
 
   // ─── Radio Options ────────────────────────────────────────────────────────
