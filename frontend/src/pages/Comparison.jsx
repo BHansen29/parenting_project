@@ -124,9 +124,13 @@ export default function Comparison() {
   const agreed = diff.filter((d) => d.agreement);
   const disagreed = diff.filter((d) => !d.agreement);
 
-  const formatAnswer = (val) => {
+  const formatAnswer = (val, answerOwner) => {
     if (val === null || val === undefined) return 'Not answered';
-    if (Array.isArray(val)) return val.join(', ');
+    if (typeof val === 'string' && answerOwner) {
+      if (val === 'me') return answerOwner === 'parent1' ? 'Parent 1' : 'Parent 2';
+      if (val === 'coParent') return answerOwner === 'parent1' ? 'Parent 2' : 'Parent 1';
+    }
+    if (Array.isArray(val)) return val.map((value) => formatAnswer(value, answerOwner)).join(', ');
     return String(val);
   };
 
@@ -380,7 +384,7 @@ export default function Comparison() {
                   <div className="comparison__question">{questionMap[item.questionKey] || item.questionKey}</div>
                   <div className="comparison__answer-agreed">
                     <CheckCircle size={16} color="#22c55e" />
-                    {formatAnswer(item.parent1Answer)}
+                    {formatAnswer(item.parent1Answer, 'parent1')}
                   </div>
                 </div>
               ))
