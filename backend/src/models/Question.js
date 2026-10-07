@@ -72,6 +72,10 @@ const questionSchema = new mongoose.Schema({
       "review"],
     required: true
   },
+  includeInComparison: {
+    type: Boolean,
+    default: true
+  },
 
   // the followings field is dependant on the type of question
   // options will contain different multiple choice/checkbox options a user can select

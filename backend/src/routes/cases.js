@@ -2,12 +2,13 @@ const express = require('express');
 const router = express.Router();
 const Case = require('../models/Case');
 const Plan = require('../models/Plan');
+const Question = require('../models/Question');
 const User = require('../models/User');
 const QuestionnaireResponse = require('../models/QuestionnaireResponse');
 const Resolution = require('../models/Resolution');
 const ResolutionReview = require('../models/ResolutionReview');
 const verifyToken = require('../middleware/verifyToken');
-const { computeDiff } = require('../services/comparisonService');
+const { computeDiff, filterExcludedAnswers } = require('../services/comparisonService');
 const { getFirstName } = require('../utils/nameUtils');
 
 const COMPARABLE_SECTION_FIELDS = {
@@ -33,6 +34,11 @@ const COMPARABLE_SECTION_FIELDS = {
     'claimingChildren',
   ],
 };
+
+async function getExcludedComparisonQuestionKeys() {
+  const excludedKeys = await Question.find({ includeInComparison: false }).distinct('qKey');
+  return new Set(excludedKeys);
+}
 
 // Helper: verify the requesting user is a member of the case
 function isCaseMember(parentingCase, uid) {
@@ -158,7 +164,11 @@ router.get('/:caseId/comparison', verifyToken, async (req, res) => {
       QuestionnaireResponse.findOne({ caseId: req.params.caseId, parentUid: parentingCase.parent2Uid }),
     ]);
 
-    const diff = computeDiff(response1?.answers, response2?.answers);
+    const excludedQuestionKeys = await getExcludedComparisonQuestionKeys();
+    const diff = computeDiff(
+      filterExcludedAnswers(response1?.answers, excludedQuestionKeys),
+      filterExcludedAnswers(response2?.answers, excludedQuestionKeys)
+    );
 
     res.status(200).json({ caseId: parentingCase._id, status: parentingCase.status, diff });
   } catch (error) {
@@ -203,7 +213,11 @@ router.get('/:caseId/plan-comparison', verifyToken, async (req, res) => {
       return answers;
     };
 
-    const diff = computeDiff(toAnswerMap(plan1), toAnswerMap(plan2));
+    const excludedQuestionKeys = await getExcludedComparisonQuestionKeys();
+    const diff = computeDiff(
+      filterExcludedAnswers(toAnswerMap(plan1), excludedQuestionKeys),
+      filterExcludedAnswers(toAnswerMap(plan2), excludedQuestionKeys)
+    );
 
     res.status(200).json({ caseId: parentingCase._id, status: parentingCase.status, diff });
   } catch (error) {

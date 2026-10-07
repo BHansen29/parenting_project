@@ -41,4 +41,16 @@ function computeDiff(answers1, answers2) {
   });
 }
 
-module.exports = { computeDiff };
+function filterExcludedAnswers(answers, excludedQuestionKeys = new Set()) {
+  if (answers instanceof Map) {
+    return new Map(
+      [...answers].filter(([questionKey]) => !excludedQuestionKeys.has(questionKey))
+    );
+  }
+
+  return Object.fromEntries(
+    Object.entries(answers || {}).filter(([questionKey]) => !excludedQuestionKeys.has(questionKey))
+  );
+}
+
+module.exports = { computeDiff, filterExcludedAnswers };

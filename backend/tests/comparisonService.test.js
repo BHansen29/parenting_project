@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { computeDiff } = require('../src/services/comparisonService');
+const { computeDiff, filterExcludedAnswers } = require('../src/services/comparisonService');
 
 test('treats me and coParent as the same parent when answers are compared', () => {
   const [diff] = computeDiff(
@@ -28,4 +28,13 @@ test('does not treat unrelated answer values as equivalent', () => {
   );
 
   assert.equal(diff.agreement, false);
+});
+
+test('filters only questions excluded from comparison', () => {
+  const filtered = filterExcludedAnswers(
+    { living_arrangements: 'yes', legal_decisions: 'together' },
+    new Set(['living_arrangements'])
+  );
+
+  assert.deepEqual(filtered, { legal_decisions: 'together' });
 });
