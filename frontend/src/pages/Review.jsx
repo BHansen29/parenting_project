@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { onAuthStateChanged } from 'firebase/auth';
 import { CheckCircle, Download, UserPlus, Pencil, ChevronDown, ChevronUp } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/card';
 import Disclaimer from '../components/forms/Disclaimer';
@@ -126,9 +127,17 @@ const CUSTOM_FIELD_OPTIONS = {
 };
 
 const STATE_FIELD_OPTIONS = {
+  residentialParent: [
+    { value: 'yes', label: 'Yes, I am the residential parent' },
+    { value: 'no', label: 'No, I am not the residential parent' },
+  ],
   parentRole: [
     { value: 'residential', label: 'I am the residential parent' },
     { value: 'nonresidential', label: 'I am the non-residential parent' },
+  ],
+  collaborationMode: [
+    { value: 'individual', label: 'I wish to complete the form on my own'},
+    { value: 'collaborative', label: 'I wish to collaborate with my co-parent'},
   ],
 };
 
@@ -285,16 +294,27 @@ export default function Review() {
   const caseId = state.plan?.caseId;
 
   useEffect(() => {
-    if (!caseId) return;
-    const user = auth.currentUser;
-    if (!user) return;
-    user.getIdToken().then((idToken) =>
-      fetch(buildApiUrl(`api/v1/cases/${caseId}/status`), {
-        headers: { Authorization: `Bearer ${idToken}` },
-      })
-    ).then((res) => res.ok ? res.json() : null)
-     .then((data) => { if (data?.status) setCaseStatus(data.status); })
-     .catch(() => {});
+    if (!caseId) return undefined;
+
+    let isActive = true;
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) return;
+
+      user.getIdToken()
+        .then((idToken) => fetch(buildApiUrl(`api/v1/cases/${caseId}/status`), {
+          headers: { Authorization: `Bearer ${idToken}` },
+        }))
+        .then((res) => res.ok ? res.json() : null)
+        .then((data) => {
+          if (isActive && data?.status) setCaseStatus(data.status);
+        })
+        .catch(() => {});
+    });
+
+    return () => {
+      isActive = false;
+      unsubscribe();
+    };
   }, [caseId]);
 
   useEffect(() => {
@@ -346,7 +366,7 @@ export default function Review() {
     setInviteOpen(true);
   };
 
-  const showInviteUI = collaborationMode !== 'locked-individual';
+  const showInviteUI = collaborationMode !== 'locked-individual' && caseStatus !== 'pending_invite' && caseStatus !== 'accepted';
 
   return (
     <div className="page-container">
@@ -453,7 +473,12 @@ export default function Review() {
       </div>
 
       {/* caseId lets the modal send a real invite linked to this shared case */}
-      <InviteModal isOpen={inviteOpen} onClose={() => setInviteOpen(false)} caseId={caseId} onInviteSent={() => setCaseStatus('pending_invite')} />
+      <InviteModal
+        isOpen={inviteOpen}
+        onClose={() => setInviteOpen(false)}
+        caseId={caseId}
+        onInviteSent={() => setCaseStatus('pending_invite')}
+      />
     </div>
   );
 }

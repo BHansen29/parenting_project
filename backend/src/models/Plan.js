@@ -138,6 +138,10 @@ const planSchema = new mongoose.Schema(
     type: Boolean,
     default: false
   },
+  isParent2: {
+    type: Boolean,
+    default: false
+  },
   lastModified: {
     type: String,
     required: true,
@@ -153,6 +157,10 @@ const planSchema = new mongoose.Schema(
     default: {}
   },
   informationSharing: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
+  },
+  taxExemptions: {
     type: mongoose.Schema.Types.Mixed,
     default: {}
   },

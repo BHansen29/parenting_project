@@ -17,6 +17,8 @@ import FlagButton from '../components/forms/FlagButton';
 import { useSectionFlag } from '../hooks/useSectionFlag';
 import SectionHeader from '../components/forms/SectionHeader';
 import RadioQuestion from '../components/forms/RadioQuestion';
+import { auth } from '../lib/firebase';
+import { buildApiUrl } from '../lib/apiClient';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -328,13 +330,32 @@ export default function TaxExemptions() {
 
   const [submitAttempted, setSubmitAttempted] = useState(false);
 
-  const handleNext = useCallback(() => {
-    if (validateForm()) {
-      navigate('/review');
-    } else {
+  const handleNext = useCallback(async () => {
+    if (!validateForm()) {
       setSubmitAttempted(true);
+      return;
     }
-  }, [validateForm, state]);
+
+    const user = auth.currentUser;
+    if (!user || !state.plan?._id) {
+      navigate('/review');
+      return;
+    }
+
+    try {
+      const idToken = await user.getIdToken();
+      const response = await fetch(buildApiUrl(`api/plan/${state.plan._id}/sections`), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+        body: JSON.stringify({ section: 'taxExemptions', answers: state.taxExemptions }),
+      });
+      if (!response.ok) throw new Error('Failed to save tax exemption answers');
+      dispatch({ type: 'UPDATE_SECTION', section: 'plan', payload: await response.json() });
+      navigate('/review');
+    } catch (error) {
+      console.error(error.message);
+    }
+  }, [dispatch, navigate, state, validateForm]);
 
   const handleBack = useCallback(() => {
     update({ errors: {} });

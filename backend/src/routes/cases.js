@@ -10,6 +10,30 @@ const verifyToken = require('../middleware/verifyToken');
 const { computeDiff } = require('../services/comparisonService');
 const { getFirstName } = require('../utils/nameUtils');
 
+const COMPARABLE_SECTION_FIELDS = {
+  parentingTimeAndCommunication: [
+    'agreeToTransportationPolicy',
+    'transportationArrangementDescription',
+    'agreeToActivityPolicy',
+    'activityPolicyDescription',
+    'communicationWithCoParentOnPhone',
+    'communicationWithCoParentOnPhoneDescription',
+    'notifyCoParentOfChildRelatedEvents',
+    'notifyCoParentOfChildRelatedEventsDescription',
+  ],
+  informationSharing: [
+    'medicalRecords',
+    'schoolContact',
+    'schoolReports',
+    'schoolActivities',
+    'extracurricularActivities',
+  ],
+  taxExemptions: [
+    'parentRole',
+    'claimingChildren',
+  ],
+};
+
 // Helper: verify the requesting user is a member of the case
 function isCaseMember(parentingCase, uid) {
   return parentingCase.parent1Uid === uid || parentingCase.parent2Uid === uid;
@@ -162,7 +186,21 @@ router.get('/:caseId/plan-comparison', verifyToken, async (req, res) => {
 
     const toAnswerMap = (plan) => {
       if (!plan) return {};
-      return plan.answers.reduce((acc, a) => { acc[a.qKey] = a.answer; return acc; }, {});
+      const answers = plan.answers.reduce((acc, a) => {
+        acc[a.qKey] = a.answer;
+        return acc;
+      }, {});
+
+      for (const [section, fields] of Object.entries(COMPARABLE_SECTION_FIELDS)) {
+        for (const field of fields) {
+          const answer = plan[section]?.[field];
+          if (answer !== undefined && answer !== null && answer !== '') {
+            answers[`${section}.${field}`] = answer;
+          }
+        }
+      }
+
+      return answers;
     };
 
     const diff = computeDiff(toAnswerMap(plan1), toAnswerMap(plan2));
