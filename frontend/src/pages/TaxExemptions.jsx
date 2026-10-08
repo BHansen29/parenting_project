@@ -433,6 +433,9 @@ export default function TaxExemptions() {
                 />
               </CardHeader>
               <CardContent>
+                {allChildNames.length === 0 && (
+                  <p className="text-input__error-message">No children found in your plan. Please add children in the "Getting Started" section first.</p>
+                )}
                 <div className="checkbox-group">
                   {allChildNames.map((name) => (
                     <Checkbox

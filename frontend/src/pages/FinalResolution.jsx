@@ -94,7 +94,7 @@ export default function FinalResolution() {
   const setCustomText = (qKey, text) =>
     setSelections((prev) => ({ ...prev, [qKey]: { choice: 'custom', customText: text } }));
 
-  const allSelected = flaggedItems.length === 0 && flaggedItems.every((r) => {
+  const allSelected = flaggedItems.every((r) => {
     const sel = selections[r.qKey];
     if (!sel) return false;
     if (sel.choice === 'custom') return sel.customText.trim().length > 0;

@@ -290,6 +290,7 @@ export default function Review() {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [showSwitchPrompt, setShowSwitchPrompt] = useState(false);
   const [caseStatus, setCaseStatus] = useState(null);
+  
 
   const caseId = state.plan?.caseId;
 
@@ -366,7 +367,7 @@ export default function Review() {
     setInviteOpen(true);
   };
 
-  const showInviteUI = collaborationMode !== 'locked-individual' && caseStatus !== 'pending_invite' && caseStatus !== 'accepted';
+  const showInviteUI = collaborationMode !== 'locked-individual' && caseStatus == 'pending_invite';
 
   return (
     <div className="page-container">
