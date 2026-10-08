@@ -276,6 +276,7 @@ export default function Review() {
   //   'collaborative'     — user chose collaborative; invite button opens modal directly
   //   ''                  — not yet set; treat same as individual (no invite)
   const collaborationMode = state.collaborationMode ?? '';
+  const isSharedPlan = state.plan?.isShared === true;
 
   const [questionsByKey, setQuestionsByKey] = useState({});
   const groupedResponses = groupResponsesBySection(state.plan?.answers || [], questionsByKey);
@@ -367,7 +368,7 @@ export default function Review() {
     setInviteOpen(true);
   };
 
-  const showInviteUI = collaborationMode !== 'locked-individual' && caseStatus == 'pending_invite';
+  const showInviteUI = collaborationMode !== 'locked-individual' && !isSharedPlan;
 
   return (
     <div className="page-container">

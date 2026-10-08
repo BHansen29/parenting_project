@@ -298,6 +298,22 @@ describe('Dashboard', () => {
     expect(screen.queryByRole('button', { name: /invite parent/i })).not.toBeInTheDocument()
   })
 
+  it('hides the per-card invite button after the co-parent joins the plan', async () => {
+    global.fetch = vi.fn((url) => {
+      if (url.includes('/all')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve([{ ...DEFAULT_PLAN, isShared: true }]),
+        })
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({}) })
+    })
+    setMode('collaborative')
+    renderDashboard()
+    await screen.findByText('Untitled Plan')
+    expect(screen.queryByRole('button', { name: /invite parent/i })).not.toBeInTheDocument()
+  })
+
   // ─── Switch Prompt ────────────────────────────────────────────────────────
 
   it('shows the switch prompt description', async () => {

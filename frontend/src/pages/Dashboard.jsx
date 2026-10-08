@@ -403,7 +403,7 @@ export default function Dashboard() {
                 })()}
 
                 {/* Per-card invite button — hidden for locked-individual users */}
-                {showInviteUI && (
+                {showInviteUI && !plan.isShared && (
                   <button className="plan-card__invite-btn" onClick={() => { setActiveCaseId(plan.caseId || null); handleInviteClick(); }}>
                   <UserPlus size={14} />
                     {collaborationMode === 'individual' ? 'Switch & Invite' : 'Invite Parent'}
