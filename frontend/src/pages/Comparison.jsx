@@ -33,6 +33,9 @@ export default function Comparison() {
   // qKeys P2 flagged that P1 kept (still need discussion)
   const [needsDiscussionKeys, setNeedsDiscussionKeys] = useState(new Set());
 
+  const parent1Name = isParent1 ? 'Your' : "Co-parent's";
+  const parent2Name = isParent1 ? "Co-parent's" : 'Your';
+
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) { navigate('/signin'); return; }
@@ -76,7 +79,7 @@ export default function Comparison() {
           const questionsData = await questionsRes.json();
           const questions = Array.isArray(questionsData) ? questionsData : questionsData.questions || [];
           const map = {};
-          questions.forEach((q) => { if (q.qKey) map[q.qKey] = q.qText || q.qKey; });
+          questions.forEach((q) => { if (q.qKey) map[q.qKey] = q; });
           setQuestionMap(map);
         }
 
@@ -124,13 +127,16 @@ export default function Comparison() {
   const agreed = diff.filter((d) => d.agreement);
   const disagreed = diff.filter((d) => !d.agreement);
 
-  const formatAnswer = (val, answerOwner) => {
+  const formatAnswer = (val, answerOwner, questionKey) => {
     if (val === null || val === undefined) return 'Not answered';
     if (typeof val === 'string' && answerOwner) {
       if (val === 'me') return answerOwner === 'parent1' ? 'Parent 1' : 'Parent 2';
       if (val === 'coParent') return answerOwner === 'parent1' ? 'Parent 2' : 'Parent 1';
     }
-    if (Array.isArray(val)) return val.map((value) => formatAnswer(value, answerOwner)).join(', ');
+    if (Array.isArray(val)) return val.map((value) => formatAnswer(value, answerOwner, questionKey)).join(', ');
+    if (val && typeof val === 'object') return JSON.stringify(val);
+    const option = questionMap[questionKey]?.options?.find((item) => item.value === val);
+    if (option?.label) return option.label;
     return String(val);
   };
 
@@ -245,10 +251,10 @@ export default function Comparison() {
           <div className="comparison__content">
             {allItems.map((item) => (
               <div key={item.qKey} className="comparison__card comparison__agreed">
-                <div className="comparison__question">{questionMap[item.qKey] || item.qKey}</div>
+                <div className="comparison__question">{questionMap[item.qKey]?.qText || item.qKey}</div>
                 <div className="comparison__answer-agreed">
                   <CheckCircle size={16} color="#22c55e" />
-                  {formatAnswer(item.answer)}
+                  {formatAnswer(item.answer, undefined, item.qKey)}
                 </div>
               </div>
             ))}
@@ -278,16 +284,16 @@ export default function Comparison() {
           </div>
           {stillDisagreed.map((item) => (
             <div key={item.questionKey} className="comparison__card comparison__disagreed">
-              <div className="comparison__question">{questionMap[item.questionKey] || item.questionKey}</div>
+              <div className="comparison__question">{questionMap[item.questionKey]?.qText || item.questionKey}</div>
               <div className="comparison__answer-row">
                 <div className="comparison__answer-col">
                   <span className="comparison__parent-label">Proposed answer</span>
-                  <span className="comparison__answer-value">{formatAnswer(resolvedAnswers[item.questionKey] ?? item.parent1Answer)}</span>
+                  <span className="comparison__answer-value">{formatAnswer(resolvedAnswers[item.questionKey] ?? item.parent1Answer, undefined, item.questionKey)}</span>
                 </div>
                 <div className="comparison__answer-divider"><AlertTriangle size={16} color="#f97316" /></div>
                 <div className="comparison__answer-col">
                   <span className="comparison__parent-label">Parent 2's answer</span>
-                  <span className="comparison__answer-value">{formatAnswer(item.parent2Answer)}</span>
+                  <span className="comparison__answer-value">{formatAnswer(item.parent2Answer, undefined, item.questionKey)}</span>
                 </div>
               </div>
             </div>
@@ -326,10 +332,10 @@ export default function Comparison() {
         <div className="comparison__content">
           {allItems.map((item) => (
             <div key={item.qKey} className="comparison__card comparison__agreed">
-              <div className="comparison__question">{questionMap[item.qKey] || item.qKey}</div>
+              <div className="comparison__question">{questionMap[item.qKey]?.qText || item.qKey}</div>
               <div className="comparison__answer-agreed">
                 <CheckCircle size={16} color="#22c55e" />
-                {formatAnswer(item.answer)}
+                {formatAnswer(item.answer, undefined, item.qKey)}
               </div>
             </div>
           ))}
@@ -381,10 +387,10 @@ export default function Comparison() {
             ) : (
               agreed.map((item) => (
                 <div key={item.questionKey} className="comparison__card comparison__agreed">
-                  <div className="comparison__question">{questionMap[item.questionKey] || item.questionKey}</div>
+                  <div className="comparison__question">{questionMap[item.questionKey]?.qText || item.questionKey}</div>
                   <div className="comparison__answer-agreed">
                     <CheckCircle size={16} color="#22c55e" />
-                    {formatAnswer(item.parent1Answer, 'parent1')}
+                    {formatAnswer(item.parent1Answer, 'parent1', item.questionKey)}
                   </div>
                 </div>
               ))
@@ -410,16 +416,16 @@ export default function Comparison() {
                 const sel = selections[item.questionKey] ?? {};
                 return (
                   <div key={item.questionKey} className="comparison__card comparison__disagreed">
-                    <div className="comparison__question">{questionMap[item.questionKey] || item.questionKey}</div>
+                    <div className="comparison__question">{questionMap[item.questionKey]?.qText || item.questionKey}</div>
                     <div className="comparison__answer-row">
                       <div className="comparison__answer-col">
-                        <span className="comparison__parent-label">Parent 1's answer</span>
-                        <span className="comparison__answer-value">{formatAnswer(item.parent1Answer)}</span>
+                        <span className="comparison__parent-label">{parent1Name} answer</span>
+                        <span className="comparison__answer-value">{formatAnswer(item.parent1Answer, undefined, item.questionKey)}</span>
                       </div>
                       <div className="comparison__answer-divider"><AlertTriangle size={16} color="#f97316" /></div>
                       <div className="comparison__answer-col">
-                        <span className="comparison__parent-label">Parent 2's answer</span>
-                        <span className="comparison__answer-value">{formatAnswer(item.parent2Answer)}</span>
+                        <span className="comparison__parent-label">{parent2Name} answer</span>
+                        <span className="comparison__answer-value">{formatAnswer(item.parent2Answer, undefined, item.questionKey)}</span>
                       </div>
                     </div>
 

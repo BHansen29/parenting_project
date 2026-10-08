@@ -14,7 +14,7 @@ export default function ResolutionReview() {
   const [error, setError] = useState('');
   const [resolutions, setResolutions] = useState([]); // P1's proposed answers
   const [diffMap, setDiffMap] = useState({});          // { qKey: { parent2Answer } }
-  const [questionMap, setQuestionMap] = useState({});   // { qKey: qText }
+  const [questionMap, setQuestionMap] = useState({});   // { qKey: question }
   // { [qKey]: true (accepted) | false (flagged) }
   const [reviews, setReviews] = useState({});
   const [submitStatus, setSubmitStatus] = useState('idle'); // idle | saving | error
@@ -62,7 +62,7 @@ export default function ResolutionReview() {
           const questionsData = await questionsRes.json();
           const questions = Array.isArray(questionsData) ? questionsData : questionsData.questions || [];
           const map = {};
-          questions.forEach((q) => { if (q.qKey) map[q.qKey] = q.qText || q.qKey; });
+          questions.forEach((q) => { if (q.qKey) map[q.qKey] = q; });
           setQuestionMap(map);
         }
       } catch (e) {
@@ -73,9 +73,11 @@ export default function ResolutionReview() {
     return unsub;
   }, [caseId, navigate]);
 
-  const formatAnswer = (val) => {
+  const formatAnswer = (val, questionKey) => {
     if (val === null || val === undefined) return 'Not answered';
-    if (Array.isArray(val)) return val.join(', ');
+    if (Array.isArray(val)) return val.map((value) => formatAnswer(value, questionKey)).join(', ');
+    const option = questionMap[questionKey]?.options?.find((item) => item.value === val);
+    if (option?.label) return option.label;
     return String(val);
   };
 
@@ -156,16 +158,16 @@ export default function ResolutionReview() {
               key={r.qKey}
               className={`res-review__card ${accepted === true ? 'res-review__card--accepted' : accepted === false ? 'res-review__card--flagged' : ''}`}
             >
-              <div className="res-review__question">{questionMap[r.qKey] || r.qKey}</div>
+              <div className="res-review__question">{questionMap[r.qKey]?.qText || r.qKey}</div>
 
               <div className="res-review__answers">
                 <div className="res-review__answer-block res-review__answer-block--proposed">
                   <span className="res-review__answer-label">Co-parent's proposed answer</span>
-                  <span className="res-review__answer-value">{formatAnswer(r.proposedAnswer)}</span>
+                  <span className="res-review__answer-value">{formatAnswer(r.proposedAnswer, r.qKey)}</span>
                 </div>
                 <div className="res-review__answer-block">
                   <span className="res-review__answer-label">Your original answer</span>
-                  <span className="res-review__answer-value">{formatAnswer(diffMap[r.qKey]?.parent2Answer)}</span>
+                  <span className="res-review__answer-value">{formatAnswer(diffMap[r.qKey]?.parent2Answer, r.qKey)}</span>
                 </div>
               </div>
 
