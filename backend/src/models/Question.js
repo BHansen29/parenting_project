@@ -76,6 +76,10 @@ const questionSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  comparisonConflictValues: {
+    type: [String],
+    default: undefined
+  },
 
   // the followings field is dependant on the type of question
   // options will contain different multiple choice/checkbox options a user can select

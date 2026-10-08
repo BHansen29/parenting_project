@@ -23,7 +23,14 @@ function normalizeAnswer(answer, parentRole) {
   return answer;
 }
 
-function computeDiff(answers1, answers2) {
+function containsConfiguredConflictValue(answer, configuredValues) {
+  if (Array.isArray(answer)) {
+    return answer.some((value) => containsConfiguredConflictValue(value, configuredValues));
+  }
+  return configuredValues.includes(answer);
+}
+
+function computeDiff(answers1, answers2, conflictValuesByQuestion = {}) {
   const a1 = answers1 instanceof Map ? Object.fromEntries(answers1) : (answers1 || {});
   const a2 = answers2 instanceof Map ? Object.fromEntries(answers2) : (answers2 || {});
 
@@ -32,11 +39,19 @@ function computeDiff(answers1, answers2) {
   return Array.from(allKeys).map((key) => {
     const v1 = a1[key] ?? null;
     const v2 = a2[key] ?? null;
+    const configuredConflictValues = conflictValuesByQuestion[key];
+    const hasConfiguredConflictValues = Array.isArray(configuredConflictValues);
+    const hasConflictingValue = hasConfiguredConflictValues && [v1, v2].some((value) =>
+      containsConfiguredConflictValue(value, configuredConflictValues)
+    );
+
     return {
       questionKey: key,
       parent1Answer: v1,
       parent2Answer: v2,
-      agreement: JSON.stringify(normalizeAnswer(v1, 'parent1')) === JSON.stringify(normalizeAnswer(v2, 'parent2')),
+      agreement: hasConfiguredConflictValues
+        ? !hasConflictingValue
+        : JSON.stringify(normalizeAnswer(v1, 'parent1')) === JSON.stringify(normalizeAnswer(v2, 'parent2')),
     };
   });
 }

@@ -40,6 +40,16 @@ async function getExcludedComparisonQuestionKeys() {
   return new Set(excludedKeys);
 }
 
+async function getComparisonConflictValues() {
+  const questions = await Question.find({}, 'qKey comparisonConflictValues');
+  return questions.reduce((valuesByQuestion, question) => {
+    if (Array.isArray(question.comparisonConflictValues)) {
+      valuesByQuestion[question.qKey] = question.comparisonConflictValues;
+    }
+    return valuesByQuestion;
+  }, {});
+}
+
 // Helper: verify the requesting user is a member of the case
 function isCaseMember(parentingCase, uid) {
   return parentingCase.parent1Uid === uid || parentingCase.parent2Uid === uid;
@@ -164,10 +174,14 @@ router.get('/:caseId/comparison', verifyToken, async (req, res) => {
       QuestionnaireResponse.findOne({ caseId: req.params.caseId, parentUid: parentingCase.parent2Uid }),
     ]);
 
-    const excludedQuestionKeys = await getExcludedComparisonQuestionKeys();
+    const [excludedQuestionKeys, conflictValuesByQuestion] = await Promise.all([
+      getExcludedComparisonQuestionKeys(),
+      getComparisonConflictValues(),
+    ]);
     const diff = computeDiff(
       filterExcludedAnswers(response1?.answers, excludedQuestionKeys),
-      filterExcludedAnswers(response2?.answers, excludedQuestionKeys)
+      filterExcludedAnswers(response2?.answers, excludedQuestionKeys),
+      conflictValuesByQuestion
     );
 
     res.status(200).json({ caseId: parentingCase._id, status: parentingCase.status, diff });
@@ -213,10 +227,14 @@ router.get('/:caseId/plan-comparison', verifyToken, async (req, res) => {
       return answers;
     };
 
-    const excludedQuestionKeys = await getExcludedComparisonQuestionKeys();
+    const [excludedQuestionKeys, conflictValuesByQuestion] = await Promise.all([
+      getExcludedComparisonQuestionKeys(),
+      getComparisonConflictValues(),
+    ]);
     const diff = computeDiff(
       filterExcludedAnswers(toAnswerMap(plan1), excludedQuestionKeys),
-      filterExcludedAnswers(toAnswerMap(plan2), excludedQuestionKeys)
+      filterExcludedAnswers(toAnswerMap(plan2), excludedQuestionKeys),
+      conflictValuesByQuestion
     );
 
     res.status(200).json({ caseId: parentingCase._id, status: parentingCase.status, diff });
