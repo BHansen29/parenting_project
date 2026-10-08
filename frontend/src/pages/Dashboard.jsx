@@ -348,25 +348,35 @@ export default function Dashboard() {
                             dispatch({ type: 'UPDATE_SECTION', section: "parents", payload: {firstName: plan.parentFName, lastName: plan.parentLName, phone: plan.phone, address: plan.address} });
                             dispatch({ type: 'UPDATE_SECTION', section: "parentingGuideInfo", payload: {} });
                             if (plan.caseId) setActiveCaseId(plan.caseId);
-                            fetch(buildApiUrl("/api/logic-engine/question/" + plan.currentQuestion), {
-                              method: "GET",
-                              headers: {
-                                "Content-Type": "application/json",
-                              }
-                            })
+                            user.getIdToken().then((idToken) =>
+                              fetch(buildApiUrl(`/api/plan/${plan._id}/current`), {
+                                method: "GET",
+                                headers: {
+                                  "Content-Type": "application/json",
+                                  Authorization: `Bearer ${idToken}`,
+                                },
+                              })
+                            )
                             .then(res => {
                               if (!res.ok) {
-                                throw new Error("Failed to retrieve question");
+                                throw new Error("Failed to retrieve current question");
                               }
-                              res.json().then(q => {
-                                dispatch({ type: 'UPDATE_SECTION', section: "question", payload: q });
-                                if (q.section === "health-insurance-coverage") {
-                                  // this is temporary until there is frontend page for health-insurance-coverage
-                                  navigate("/parental-rights");
-                                  return
-                                }
-                                navigate('/' + q.section)})
+                              return res.json();
                             })
+                            .then(({ question }) => {
+                              if (!question) {
+                                navigate('/getting-started');
+                                return;
+                              }
+                              dispatch({ type: 'UPDATE_SECTION', section: "question", payload: question });
+                              if (question.section === "health-insurance-coverage") {
+                                // this is temporary until there is frontend page for health-insurance-coverage
+                                navigate("/parental-rights");
+                                return;
+                              }
+                              navigate('/' + question.section);
+                            })
+                            .catch(error => console.error(error.message));
                           }}
                         >
                           Resume Plan &rarr;

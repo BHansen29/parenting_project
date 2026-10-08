@@ -175,6 +175,29 @@ router.post('/:planId/answer', verifyToken, async (req, res) => {
   }
 });
 
+// Save answers from the custom parenting-plan sections.
+router.post('/:planId/sections', verifyToken, async (req, res) => {
+  try {
+    const plan = await Plan.findById(req.params.planId);
+    if (!plan || plan.userID !== req.user.uid) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const allowedSections = ['parentingTimeAndCommunication', 'informationSharing'];
+    const { section, answers } = req.body;
+    if (!allowedSections.includes(section) || !answers || typeof answers !== 'object' || Array.isArray(answers)) {
+      return res.status(400).json({ error: 'Invalid section answers' });
+    }
+
+    plan[section] = answers;
+    await plan.save();
+    res.status(200).json(plan);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // GET /api/plan/prevQuestion/:qkey/:planId - get prev question answered before current question
 // returns "none" if there is no previous question
 router.get('/prevQuestion/:qkey/:planId', verifyToken, async (req, res) => {

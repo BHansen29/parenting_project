@@ -282,7 +282,7 @@ export default function Comparison() {
                 </div>
                 <div className="comparison__answer-divider"><AlertTriangle size={16} color="#f97316" /></div>
                 <div className="comparison__answer-col">
-                  <span className="comparison__parent-label">Co-parent's answer</span>
+                  <span className="comparison__parent-label">Parent 2's answer</span>
                   <span className="comparison__answer-value">{formatAnswer(item.parent2Answer)}</span>
                 </div>
               </div>
@@ -409,12 +409,12 @@ export default function Comparison() {
                     <div className="comparison__question">{questionMap[item.questionKey] || item.questionKey}</div>
                     <div className="comparison__answer-row">
                       <div className="comparison__answer-col">
-                        <span className="comparison__parent-label">Your answer</span>
+                        <span className="comparison__parent-label">Parent 1's answer</span>
                         <span className="comparison__answer-value">{formatAnswer(item.parent1Answer)}</span>
                       </div>
                       <div className="comparison__answer-divider"><AlertTriangle size={16} color="#f97316" /></div>
                       <div className="comparison__answer-col">
-                        <span className="comparison__parent-label">Co-parent's answer</span>
+                        <span className="comparison__parent-label">Parent 2's answer</span>
                         <span className="comparison__answer-value">{formatAnswer(item.parent2Answer)}</span>
                       </div>
                     </div>

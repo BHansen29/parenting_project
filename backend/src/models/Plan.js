@@ -148,6 +148,14 @@ const planSchema = new mongoose.Schema(
     ref: 'Case',
     default: null
   },
+  parentingTimeAndCommunication: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
+  },
+  informationSharing: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
+  },
   answers: [questionResponseSchema],
   children: [childSchema]
 })
