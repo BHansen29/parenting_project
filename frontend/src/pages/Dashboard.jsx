@@ -15,6 +15,7 @@ export default function Dashboard() {
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [activeCaseId, setActiveCaseId] = useState(null);
   const [showSwitchPrompt, setShowSwitchPrompt] = useState(false);
+  const [inviteTargetPlanId, setInviteTargetPlanId] = useState(null);
 
   const { state, dispatch } = useForm();
 
@@ -165,22 +166,49 @@ export default function Dashboard() {
 
   // Called when user clicks any invite button.
   // Routes based on current collaborationMode.
-  const handleInviteClick = () => {
-    if (collaborationMode === 'collaborative') {
+  const handleInviteClick = (plan) => {
+    const planMode = plan.collaborationMode ?? '';
+
+    setInviteTargetPlanId(plan._id);
+    if (planMode === 'collaborative') {
       // Already in collaborative mode — open invite directly
       setIsInviteOpen(true);
-    } else if (collaborationMode === 'individual') {
-      // User chose individual mode — ask if they want to switch first
+    } else if (planMode === 'individual' || planMode === '') {
+      // Ask users who chose individual mode or have not selected a mode yet
+      // before switching to collaborative mode.
       setShowSwitchPrompt(true);
     }
     // 'locked-individual' — button is not rendered at all, so this is unreachable
   };
 
   // User confirmed they want to switch from individual to collaborative mode.
-  const handleConfirmSwitch = () => {
-    dispatch({ type: 'UPDATE_SECTION', section: 'collaborationMode', payload: 'collaborative' });
-    setShowSwitchPrompt(false);
-    setIsInviteOpen(true); //open after confirming switch
+  const handleConfirmSwitch = async () => {
+    if (!user || !inviteTargetPlanId) return;
+
+    try {
+      const idToken = await user.getIdToken();
+      const response = await fetch(buildApiUrl(`api/plan/setCollabMode/${inviteTargetPlanId}`), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ mode: 'collaborative' }),
+      });
+
+      if (!response.ok) throw new Error('Failed to set plan collaboration mode');
+
+      setPlans(prev => prev.map(plan => (
+        plan._id === inviteTargetPlanId
+          ? { ...plan, collaborationMode: 'collaborative' }
+          : plan
+      )));
+      dispatch({ type: 'UPDATE_SECTION', section: 'collaborationMode', payload: 'collaborative' });
+      setShowSwitchPrompt(false);
+      setIsInviteOpen(true);
+    } catch (error) {
+      console.error('Failed to switch plan to collaborative mode:', error.message);
+    }
   };
 
   // Whether to show any invite surface at all
@@ -289,8 +317,11 @@ export default function Dashboard() {
           </div>
 
           <div className="dashboard__plans-grid">
-            {plans.map((plan) => (
-              <div key={plan._id} className={`plan-card${plan.isShared ? ' plan-card--shared' : ''}`} onContextMenu={e => handleContextMenu(e, plan)}>
+            {plans.map((plan) => {
+              const planCollaborationMode = plan.collaborationMode ?? '';
+
+              return (
+                <div key={plan._id} className={`plan-card${plan.isShared ? ' plan-card--shared' : ''}`} onContextMenu={e => handleContextMenu(e, plan)}>
                 <div className="plan-card__top">
                   <div className="plan-card__icon">
                     <FileText size={24} color="#6b7280" />
@@ -403,15 +434,16 @@ export default function Dashboard() {
                 })()}
 
                 {/* Per-card invite button — hidden for locked-individual users */}
-                {showInviteUI && !plan.isShared && (
-                  <button className="plan-card__invite-btn" onClick={() => { setActiveCaseId(plan.caseId || null); handleInviteClick(); }}>
+                {planCollaborationMode !== 'locked-individual' && !plan.isShared && (
+                  <button className="plan-card__invite-btn" onClick={() => { setActiveCaseId(plan.caseId || null); handleInviteClick(plan); }}>
                   <UserPlus size={14} />
-                    {collaborationMode === 'individual' ? 'Switch & Invite' : 'Invite Parent'}
+                    {planCollaborationMode === 'individual' || planCollaborationMode === '' ? 'Switch & Invite' : 'Invite Parent'}
                   </button>
                 )}
 
-              </div>
-            ))}
+                </div>
+              );
+            })}
           </div>
         </section>
       </main>

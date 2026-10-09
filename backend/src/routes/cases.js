@@ -25,9 +25,7 @@ const COMPARABLE_SECTION_FIELDS = {
   informationSharing: [
     'medicalRecords',
     'schoolContact',
-    'schoolReports',
     'schoolActivities',
-    'extracurricularActivities',
   ],
   taxExemptions: [
     'parentRole',

@@ -88,9 +88,7 @@ const CUSTOM_SECTION_FIELDS = {
     fields: {
       medicalRecords: 'Medical information access',
       schoolContact: 'School contact rights',
-      schoolReports: 'School reports and notices',
       schoolActivities: 'School activity participation',
-      extracurricularActivities: 'Extracurricular activity participation',
     },
   },
 };
@@ -121,9 +119,7 @@ const CUSTOM_FIELD_OPTIONS = {
   ],
   medicalRecords: INFORMATION_SHARING_OPTIONS,
   schoolContact: INFORMATION_SHARING_OPTIONS,
-  schoolReports: INFORMATION_SHARING_OPTIONS,
   schoolActivities: INFORMATION_SHARING_OPTIONS,
-  extracurricularActivities: INFORMATION_SHARING_OPTIONS,
 };
 
 const STATE_FIELD_OPTIONS = {
