@@ -49,23 +49,12 @@ export const CUSTOM_COMPARISON_QUESTIONS = {
     qText: 'Please describe the circumstances under which you would notify your co-parent if your child gets sick or injured:',
   },
   'informationSharing.medicalRecords': {
-    qText: "Who should get copies of any doctor's visits that your children may have? This parent can also contact the doctor and ask questions.",
-    options: informationSharingOptions,
+    qText: "Do you agree to these default rights? If not, provide what rights you would like or not like your co-parent to have."
   },
   'informationSharing.schoolContact': {
-    qText: "Who can call your child's school? This parent may also get copies of your child's academic records, like report cards, attendance, and teacher's comments.",
-    options: informationSharingOptions,
-  },
-  'informationSharing.schoolReports': {
-    qText: "Who can get copies of your child's school reports, calendars of school events, notices of parent-teacher conferences, and school programs?",
-    options: informationSharingOptions,
+    qText: "Do you agree to these default rights? If not, provide what rights you would like or not like your co-parent to have."
   },
   'informationSharing.schoolActivities': {
-    qText: 'Who can attend and participate in parent-teacher conferences, school trips, school programs, and other school activities that parents get invited to?',
-    options: informationSharingOptions,
-  },
-  'informationSharing.extracurricularActivities': {
-    qText: 'Who can attend and participate with the child(ren) in athletic programs and other extracurricular activities?',
-    options: informationSharingOptions,
+    qText: "Do you agree to these default rights? If not, provide what rights you would like or not like your co-parent to have."
   },
 };
