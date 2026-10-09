@@ -10,7 +10,7 @@ export default function InviteModal({ isOpen, onClose, caseId, onInviteSent }) {
   const [isSending, setIsSending] = useState(false);
   const [inviteLink, setInviteLink] = useState(null);
 
-  if (!isOpen) return null;
+    if (!isOpen) return null;
 
   const handleSend = async (e) => {
     e.preventDefault();
@@ -65,6 +65,11 @@ export default function InviteModal({ isOpen, onClose, caseId, onInviteSent }) {
         <div className="invite-modal__info-box">
           <p>
             <strong>How it works:</strong> Each parent fills out the parenting plan independently. Once both complete it, a comparison summary will be generated showing areas that conflict or where further discussion is necessary. Each parent will have the opportunity to revise their responses after seeing the summary. All changes to original responses will be highlighted to make it easier to track compromises.
+          </p>
+        </div>
+        <div className="invite-modal__info-box">
+          <p>
+            <strong>Note:</strong> Currently the email system has not been configured, the link needs to be shared directly with the other parent.
           </p>
         </div>
 
