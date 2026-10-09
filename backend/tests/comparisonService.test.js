@@ -12,6 +12,15 @@ test('treats me and coParent as the same parent when answers are compared', () =
   assert.equal(diff.agreement, true);
 });
 
+test('treats parent-relative Just me answers as a conflict', () => {
+  const [diff] = computeDiff(
+    { medicalRecords: 'parent1' },
+    { medicalRecords: 'parent1' }
+  );
+
+  assert.equal(diff.agreement, false);
+});
+
 test('normalizes role-relative values inside answer arrays and objects', () => {
   const [diff] = computeDiff(
     { question: { choice: 'me', backups: ['coParent'] } },

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { buildApiUrl } from '../lib/apiClient';
+import { CUSTOM_COMPARISON_QUESTIONS } from '../lib/comparisonQuestionDefinitions';
 import { CheckCircle, AlertTriangle, Users, ArrowLeft, MessageCircle } from 'lucide-react';
 import './Comparison.css';
 
@@ -11,80 +12,6 @@ const MEDIATION_RESOURCES = [
   'Ohio State Bar Association Lawyer Referral: ohiobar.org',
   'Family Court Self-Help Center: contact your local courthouse',
 ];
-// Information sharing answer option enums
-const INFORMATION_SHARING_OPTIONS = [
-  { value: 'parent1', label: 'Just me' },
-  { value: 'parent2', label: 'Just my co-parent' },
-  { value: 'both', label: 'Both me and my co-parent' },
-  { value: 'needInfo', label: 'I need more information' },
-  { value: 'defer', label: "Default to my co-parent's choice" },
-];
-
-const PARENTING_TIME_OPTIONS = [
-  { value: 'yes', label: 'Yes' },
-  { value: 'no', label: 'No' },
-  { value: 'sometimes', label: 'Sometimes (please describe)' },
-  { value: 'needMoreInfo', label: 'I need more information' },
-  { value: 'defaultToCoParentChoice', label: "Default to my co-parent's choice" },
-];
-
-const POLICY_AGREEMENT_OPTIONS = [
-  { value: true, label: 'I agree to the standard policy' },
-  { value: false, label: 'I do not agree to the standard policy' },
-];
-
-// Information sharing question text enums
-const CUSTOM_COMPARISON_QUESTIONS = {
-  'parentingTimeAndCommunication.agreeToTransportationPolicy': {
-    qText: 'Standard Transportation Policy',
-    options: POLICY_AGREEMENT_OPTIONS,
-  },
-  'parentingTimeAndCommunication.transportationArrangementDescription': {
-    qText: 'Please describe your preferred transportation arrangement:',
-  },
-  'parentingTimeAndCommunication.agreeToActivityPolicy': {
-    qText: 'Standard Activity Policy',
-    options: POLICY_AGREEMENT_OPTIONS,
-  },
-  'parentingTimeAndCommunication.activityPolicyDescription': {
-    qText: 'Please describe your preferred activity policy:',
-  },
-  'parentingTimeAndCommunication.communicationWithCoParentOnPhone': {
-    qText: 'If your child is with you, are they allowed to talk to your co-parent on the phone?',
-    options: PARENTING_TIME_OPTIONS,
-  },
-  'parentingTimeAndCommunication.communicationWithCoParentOnPhoneDescription': {
-    qText: 'Please describe the circumstances under which your child can talk to your co-parent on the phone:',
-  },
-  'parentingTimeAndCommunication.notifyCoParentOfChildRelatedEvents': {
-    qText: 'Should your co-parent be told if your children get sick or injured?',
-    options: PARENTING_TIME_OPTIONS,
-  },
-  'parentingTimeAndCommunication.notifyCoParentOfChildRelatedEventsDescription': {
-    qText: 'Please describe the circumstances under which you would notify your co-parent if your child gets sick or injured:',
-  },
-  'informationSharing.medicalRecords': {
-    qText: "Who should get copies of any doctor's visits that your children may have? This parent can also contact the doctor and ask questions.",
-    options: INFORMATION_SHARING_OPTIONS,
-  },
-  'informationSharing.schoolContact': {
-    qText: "Who can call your child's school? This parent may also get copies of your child's academic records, like report cards, attendance, and teacher's comments.",
-    options: INFORMATION_SHARING_OPTIONS,
-  },
-  'informationSharing.schoolReports': {
-    qText: "Who can get copies of your child's school reports, calendars of school events, notices of parent-teacher conferences, and school programs?",
-    options: INFORMATION_SHARING_OPTIONS,
-  },
-  'informationSharing.schoolActivities': {
-    qText: 'Who can attend and participate in parent-teacher conferences, school trips, school programs, and other school activities that parents get invited to?',
-    options: INFORMATION_SHARING_OPTIONS,
-  },
-  'informationSharing.extracurricularActivities': {
-    qText: 'Who can attend and participate with the child(ren) in athletic programs and other extracurricular activities?',
-    options: INFORMATION_SHARING_OPTIONS,
-  },
-};
-
 export default function Comparison() {
   const { caseId } = useParams();
   const navigate = useNavigate();
@@ -94,6 +21,7 @@ export default function Comparison() {
   const [diff, setDiff] = useState([]);
   const [caseStatus, setCaseStatus] = useState('');
   const [isParent1, setIsParent1] = useState(false);
+  const [parentNames, setParentNames] = useState({ parent1: 'Parent 1', parent2: 'Parent 2' });
   const [questionMap, setQuestionMap] = useState({});
   const [activeTab, setActiveTab] = useState('merged');
 
@@ -131,6 +59,10 @@ export default function Comparison() {
         const parent1 = statusData.isParent1;
         setCaseStatus(status);
         setIsParent1(parent1);
+        setParentNames({
+          parent1: statusData.parent1Name || 'Parent 1',
+          parent2: statusData.parent2Name || 'Parent 2',
+        });
 
         // Redirect based on status + role
         if (status === 'comparison_ready' && !parent1) {
@@ -205,6 +137,8 @@ export default function Comparison() {
     if (typeof val === 'string' && answerOwner) {
       if (val === 'me') return answerOwner === 'parent1' ? 'Parent 1' : 'Parent 2';
       if (val === 'coParent') return answerOwner === 'parent1' ? 'Parent 2' : 'Parent 1';
+      if (val === 'parent1') return answerOwner === 'parent1' ? parentNames.parent1 : parentNames.parent2;
+      if (val === 'parent2') return answerOwner === 'parent1' ? parentNames.parent2 : parentNames.parent1;
     }
     if (Array.isArray(val)) return val.map((value) => formatAnswer(value, answerOwner, questionKey)).join(', ');
     if (val && typeof val === 'object') return JSON.stringify(val);
@@ -327,7 +261,7 @@ export default function Comparison() {
                 <div className="comparison__question">{questionMap[item.qKey]?.qText || item.qKey}</div>
                 <div className="comparison__answer-agreed">
                   <CheckCircle size={16} color="#22c55e" />
-                  {formatAnswer(item.answer, undefined, item.qKey)}
+                  {formatAnswer(item.answer, 'parent1', item.qKey)}
                 </div>
               </div>
             ))}
@@ -361,12 +295,12 @@ export default function Comparison() {
               <div className="comparison__answer-row">
                 <div className="comparison__answer-col">
                   <span className="comparison__parent-label">Proposed answer</span>
-                  <span className="comparison__answer-value">{formatAnswer(resolvedAnswers[item.questionKey] ?? item.parent1Answer, undefined, item.questionKey)}</span>
+                  <span className="comparison__answer-value">{formatAnswer(resolvedAnswers[item.questionKey] ?? item.parent1Answer, 'parent1', item.questionKey)}</span>
                 </div>
                 <div className="comparison__answer-divider"><AlertTriangle size={16} color="#f97316" /></div>
                 <div className="comparison__answer-col">
                   <span className="comparison__parent-label">Parent 2's answer</span>
-                  <span className="comparison__answer-value">{formatAnswer(item.parent2Answer, undefined, item.questionKey)}</span>
+                  <span className="comparison__answer-value">{formatAnswer(item.parent2Answer, 'parent2', item.questionKey)}</span>
                 </div>
               </div>
             </div>
@@ -408,7 +342,7 @@ export default function Comparison() {
               <div className="comparison__question">{questionMap[item.qKey]?.qText || item.qKey}</div>
               <div className="comparison__answer-agreed">
                 <CheckCircle size={16} color="#22c55e" />
-                {formatAnswer(item.answer, undefined, item.qKey)}
+                {formatAnswer(item.answer, 'parent1', item.qKey)}
               </div>
             </div>
           ))}
@@ -493,12 +427,12 @@ export default function Comparison() {
                     <div className="comparison__answer-row">
                       <div className="comparison__answer-col">
                         <span className="comparison__parent-label">{parent1Name} answer</span>
-                        <span className="comparison__answer-value">{formatAnswer(item.parent1Answer, undefined, item.questionKey)}</span>
+                        <span className="comparison__answer-value">{formatAnswer(item.parent1Answer, 'parent1', item.questionKey)}</span>
                       </div>
                       <div className="comparison__answer-divider"><AlertTriangle size={16} color="#f97316" /></div>
                       <div className="comparison__answer-col">
                         <span className="comparison__parent-label">{parent2Name} answer</span>
-                        <span className="comparison__answer-value">{formatAnswer(item.parent2Answer, undefined, item.questionKey)}</span>
+                        <span className="comparison__answer-value">{formatAnswer(item.parent2Answer, 'parent2', item.questionKey)}</span>
                       </div>
                     </div>
 

@@ -9,6 +9,8 @@ function normalizeAnswer(answer, parentRole) {
   if (typeof answer === 'string') {
     if (answer === 'me') return parentRole;
     if (answer === 'coParent') return parentRole === 'parent1' ? 'parent2' : 'parent1';
+    if (answer === 'parent1') return parentRole === 'parent1' ? 'parent1' : 'parent2';
+    if (answer === 'parent2') return parentRole === 'parent1' ? 'parent2' : 'parent1';
     return answer;
   }
 

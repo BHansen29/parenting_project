@@ -62,10 +62,24 @@ router.get('/:caseId/status', verifyToken, async (req, res) => {
     if (!parentingCase) return res.status(404).json({ error: 'Case not found' });
     if (!isCaseMember(parentingCase, req.user.uid)) return res.status(403).json({ error: 'Forbidden' });
 
+    // Gets parents names for comparison tool understanding
+    const [plan1, plan2, parent1, parent2] = await Promise.all([
+      parentingCase.parent1PlanId ? Plan.findById(parentingCase.parent1PlanId, 'parentFName') : null,
+      parentingCase.parent2PlanId ? Plan.findById(parentingCase.parent2PlanId, 'parentFName') : null,
+      User.findOne({ firebaseUid: parentingCase.parent1Uid }, 'name email'),
+      parentingCase.parent2Uid
+        ? User.findOne({ firebaseUid: parentingCase.parent2Uid }, 'name email')
+        : null,
+    ]);
+    const firstName = (plan, user, fallback) =>
+      plan?.parentFName?.trim() || getFirstName(user).split(/\s+/)[0] || fallback;
+
     res.status(200).json({
       caseId: parentingCase._id,
       status: parentingCase.status,
       isParent1: parentingCase.parent1Uid === req.user.uid,
+      parent1Name: firstName(plan1, parent1, 'Parent 1'),
+      parent2Name: parent2 ? firstName(plan2, parent2, 'Co-parent') : 'Co-parent',
     });
   } catch (error) {
     console.error(error);

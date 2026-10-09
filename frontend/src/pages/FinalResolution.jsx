@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { buildApiUrl } from '../lib/apiClient';
+import { CUSTOM_COMPARISON_QUESTIONS } from '../lib/comparisonQuestionDefinitions';
 import { AlertTriangle, ArrowLeft, Flag } from 'lucide-react';
 import './FinalResolution.css';
 
@@ -14,6 +15,7 @@ export default function FinalResolution() {
   const [error, setError] = useState('');
   const [flaggedItems, setFlaggedItems] = useState([]);
   const [questionMap, setQuestionMap] = useState({});
+  const [parentNames, setParentNames] = useState({ parent1: 'Parent 1', parent2: 'Parent 2' });
   // { [qKey]: { choice: 'keep'|'coparent'|'custom', customText: string } }
   const [selections, setSelections] = useState({});
   const [submitStatus, setSubmitStatus] = useState('idle');
@@ -29,6 +31,10 @@ export default function FinalResolution() {
         });
         if (!statusRes.ok) { setError('Failed to load case.'); setLoading(false); return; }
         const statusData = await statusRes.json();
+        setParentNames({
+          parent1: statusData.parent1Name || 'Parent 1',
+          parent2: statusData.parent2Name || 'Parent 2',
+        });
         if (!statusData.isParent1 || statusData.status !== 'resolutions_reviewed') {
           navigate(`/waiting/${caseId}`); return;
         }
@@ -70,8 +76,8 @@ export default function FinalResolution() {
         if (questionsRes.ok) {
           const questionsData = await questionsRes.json();
           const questions = Array.isArray(questionsData) ? questionsData : questionsData.questions || [];
-          const map = {};
-          questions.forEach((q) => { if (q.qKey) map[q.qKey] = q.qText || q.qKey; });
+          const map = { ...CUSTOM_COMPARISON_QUESTIONS };
+          questions.forEach((q) => { if (q.qKey) map[q.qKey] = q; });
           setQuestionMap(map);
         }
       } catch (e) {
@@ -82,9 +88,13 @@ export default function FinalResolution() {
     return unsub;
   }, [caseId, navigate]);
 
-  const formatAnswer = (val) => {
+  const formatAnswer = (val, questionKey, answerOwner) => {
     if (val === null || val === undefined) return 'Not answered';
-    if (Array.isArray(val)) return val.join(', ');
+    if (Array.isArray(val)) return val.map((value) => formatAnswer(value, questionKey, answerOwner)).join(', ');
+    if (val === 'parent1') return parentNames[answerOwner] || 'Parent 1';
+    if (val === 'parent2') return parentNames[answerOwner === 'parent1' ? 'parent2' : 'parent1'] || 'Parent 2';
+    const option = questionMap[questionKey]?.options?.find((item) => item.value === val);
+    if (option?.label) return option.label;
     return String(val);
   };
 
@@ -179,17 +189,17 @@ export default function FinalResolution() {
               <div key={r.qKey} className="final-res__card">
                 <div className="final-res__question-row">
                   <Flag size={15} color="#f97316" />
-                  <span className="final-res__question">{questionMap[r.qKey] || r.qKey}</span>
+                  <span className="final-res__question">{questionMap[r.qKey]?.qText || r.qKey}</span>
                 </div>
 
                 <div className="final-res__ref-row">
                   <div className="final-res__ref-block">
                     <span className="final-res__ref-label">Your proposed answer</span>
-                    <span className="final-res__ref-value">{formatAnswer(r.proposedAnswer)}</span>
+                    <span className="final-res__ref-value">{formatAnswer(r.proposedAnswer, r.qKey, 'parent1')}</span>
                   </div>
                   <div className="final-res__ref-block">
                     <span className="final-res__ref-label">Co-parent's answer</span>
-                    <span className="final-res__ref-value">{formatAnswer(r.parent2Answer)}</span>
+                    <span className="final-res__ref-value">{formatAnswer(r.parent2Answer, r.qKey, 'parent2')}</span>
                   </div>
                 </div>
 
