@@ -9,7 +9,7 @@ import { useSectionFlag } from '../hooks/useSectionFlag';
 import './Page.css';
 import SectionHeader from '../components/forms/SectionHeader';
 import RadioQuestion from '../components/forms/RadioQuestion';
-
+import Disclaimer from '../components/forms/Disclaimer';
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
 const HeartIcon = () => (
@@ -231,7 +231,9 @@ export default function InformationSharing() {
               Determine who has access to medical, school, and activity information.
             </CardDescription>
           </CardHeader>
-
+          <Disclaimer variant="warning">
+            This tool is for informational purposes only. It does not provide legal advice about your rights or options available to you. Your responses do not create or establish any legal rights for either parent. This tool is intended to help co-parents think about important topics when making a shared parenting plan. Only a court can approve a parenting plan and make it legally binding. If you have any questions, please talk with a lawyer.
+          </Disclaimer>
           <CardContent>
             {INFO_SECTIONS.map(({ key, title, description, icon, iconClassName, question }) => (
               <div key={key} className="info-section">
