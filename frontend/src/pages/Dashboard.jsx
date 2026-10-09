@@ -250,7 +250,7 @@ export default function Dashboard() {
       <main className="dashboard__main">
 
         {/* Invite co-parent banner — hidden entirely for locked-individual users */}
-        {showInviteUI && plans[0]?.isShared !== true && (
+        {showInviteUI && (
           <div className="dashboard__invite-banner">
             <div className="dashboard__invite-icon">
               <Users size={32} color="#14abdd" />
