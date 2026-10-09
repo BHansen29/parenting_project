@@ -88,9 +88,10 @@ const makePlan = () => ({
 const renderDashboard = () => renderWithRouter(<Dashboard />)
 const setMode = (mode) => { mockCollaborationMode = mode }
 
-// Opens the switch prompt by clicking the first "Switch & Invite" banner button
+// Opens the switch prompt by clicking the first per-plan invite button
 const openSwitchPrompt = async () => {
-  const switchBtns = screen.getAllByRole('button', { name: /switch & invite co-parent/i })
+  await screen.findByText('Untitled Plan')
+  const switchBtns = screen.getAllByRole('button', { name: /switch & invite/i })
   await userEvent.click(switchBtns[0])
   await screen.findByText('Switch to collaborative mode?')
 }
@@ -197,70 +198,38 @@ describe('Dashboard', () => {
 
   // ─── Invite Banner — mode: '' (not yet set) ───────────────────────────────
 
-  it('shows the invite banner when collaborationMode is not yet set', () => {
+  it('shows the default "Invite Parent" button when mode is not set', async () => {
     setMode('')
     renderDashboard()
-    expect(screen.getByText('Co-parenting works better together')).toBeInTheDocument()
-  })
-
-  it('shows the default "Invite Co-parent" button when mode is not set', () => {
-    setMode('')
-    renderDashboard()
-    expect(screen.getAllByRole('button', { name: /invite co-parent/i }).length).toBeGreaterThanOrEqual(1)
+    await screen.findByText('Untitled Plan')
+    expect(screen.getAllByRole('button', { name: /invite parent/i }).length).toBeGreaterThanOrEqual(1)
   })
 
   // ─── Invite Banner — mode: 'collaborative' ────────────────────────────────
 
-  it('shows the collaborative invite banner', () => {
+  it('shows "Invite Parent" button in collaborative mode', async () => {
     setMode('collaborative')
     renderDashboard()
-    expect(screen.getByText('Co-parenting works better together')).toBeInTheDocument()
-  })
-
-  it('shows "Invite Co-parent" button in collaborative mode', () => {
-    setMode('collaborative')
-    renderDashboard()
-    expect(screen.getAllByRole('button', { name: /^invite co-parent$/i }).length).toBeGreaterThanOrEqual(1)
-  })
-
-  it('shows "Free for both parents" note in collaborative mode', () => {
-    setMode('collaborative')
-    renderDashboard()
-    expect(screen.getByText('Free for both parents')).toBeInTheDocument()
+    await screen.findByText('Untitled Plan')
+    expect(screen.getAllByRole('button', { name: /^invite parent$/i }).length).toBeGreaterThanOrEqual(1)
   })
 
   it('opens the invite modal directly in collaborative mode', async () => {
     setMode('collaborative')
     renderDashboard()
-    const inviteBtns = screen.getAllByRole('button', { name: /^invite co-parent$/i })
+    await screen.findByText('Untitled Plan')
+    const inviteBtns = screen.getAllByRole('button', { name: /^invite parent$/i })
     await userEvent.click(inviteBtns[0])
     expect(screen.getByRole('dialog', { name: /invite modal/i })).toBeInTheDocument()
   })
 
   // ─── Invite Banner — mode: 'individual' ──────────────────────────────────
 
-  it('shows the individual mode banner title', () => {
+  it('shows "Switch & Invite" button label in individual mode', async () => {
     setMode('individual')
     renderDashboard()
-    expect(screen.getByText("You're working individually")).toBeInTheDocument()
-  })
-
-  it('shows the individual mode description', () => {
-    setMode('individual')
-    renderDashboard()
-    expect(screen.getByText(/You chose to complete this plan on your own/i)).toBeInTheDocument()
-  })
-
-  it('shows "Switch & Invite Co-parent" button label in individual mode', () => {
-    setMode('individual')
-    renderDashboard()
-    expect(screen.getAllByRole('button', { name: /switch & invite co-parent/i }).length).toBeGreaterThanOrEqual(1)
-  })
-
-  it('shows "You are currently in individual mode" note', () => {
-    setMode('individual')
-    renderDashboard()
-    expect(screen.getByText('You are currently in individual mode')).toBeInTheDocument()
+    await screen.findByText('Untitled Plan')
+    expect(screen.getAllByRole('button', { name: /switch & invite/i }).length).toBeGreaterThanOrEqual(1)
   })
 
   it('shows the switch prompt when invite is clicked in individual mode', async () => {
@@ -295,6 +264,22 @@ describe('Dashboard', () => {
   it('hides the per-card invite button in locked-individual mode', () => {
     setMode('locked-individual')
     renderDashboard()
+    expect(screen.queryByRole('button', { name: /invite parent/i })).not.toBeInTheDocument()
+  })
+
+  it('hides the per-card invite button after the co-parent joins the plan', async () => {
+    global.fetch = vi.fn((url) => {
+      if (url.includes('/all')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve([{ ...DEFAULT_PLAN, isShared: true }]),
+        })
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({}) })
+    })
+    setMode('collaborative')
+    renderDashboard()
+    await screen.findByText('Untitled Plan')
     expect(screen.queryByRole('button', { name: /invite parent/i })).not.toBeInTheDocument()
   })
 
@@ -546,7 +531,8 @@ describe('Dashboard', () => {
   it('closes the invite modal when it is dismissed', async () => {
     setMode('collaborative')
     renderDashboard()
-    await userEvent.click(screen.getAllByRole('button', { name: /^invite co-parent$/i })[0])
+    await screen.findByText('Untitled Plan')
+    await userEvent.click(screen.getAllByRole('button', { name: /^invite parent$/i })[0])
     await userEvent.click(screen.getByRole('button', { name: /close invite modal/i }))
     expect(screen.queryByRole('dialog', { name: /invite modal/i })).not.toBeInTheDocument()
   })

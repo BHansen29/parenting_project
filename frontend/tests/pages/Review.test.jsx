@@ -32,6 +32,7 @@ vi.mock('../../src/components/forms/Disclaimer', () => ({
 
 // useForm mock — state is controlled per test
 let mockCollaborationMode = ''
+let mockIsSharedPlan = false
 let mockPlanAnswers = []
 let mockQuestions = []
 const mockDispatch = vi.fn()
@@ -45,7 +46,7 @@ vi.mock('../../src/hooks/useForm', () => ({
   useForm: () => ({
     state: {
       collaborationMode: mockCollaborationMode,
-      plan: { answers: mockPlanAnswers, children: [] },
+      plan: { answers: mockPlanAnswers, children: [], isShared: mockIsSharedPlan },
     },
     dispatch: mockDispatch,
   }),
@@ -67,6 +68,7 @@ describe('Review', () => {
     mockNavigate.mockReset()
     mockDispatch.mockReset()
     mockCollaborationMode = ''
+    mockIsSharedPlan = false
     mockPlanAnswers = []
     mockQuestions = []
   })
@@ -317,6 +319,13 @@ describe('Review', () => {
     setMode('locked-individual')
     renderReview()
     expect(screen.getByRole('button', { name: /download pdf/i })).toBeInTheDocument()
+  })
+
+  it('hides the invite button after the co-parent joins the plan', () => {
+    mockIsSharedPlan = true
+    setMode('collaborative')
+    renderReview()
+    expect(screen.queryByRole('button', { name: /invite/i })).not.toBeInTheDocument()
   })
 
   // ─── Switch Prompt ────────────────────────────────────────────────────────

@@ -189,7 +189,11 @@ export default function Dashboard() {
   return (
     <div className="dashboard" onClick={() => setContextMenu(null)}>
       <Header user={user} onSignOut={handleSignOut} />
-      <InviteModal isOpen={isInviteOpen} onClose={() => setIsInviteOpen(false)} caseId={activeCaseId} />
+      <InviteModal
+        isOpen={isInviteOpen}
+        onClose={() => setIsInviteOpen(false)}
+        caseId={activeCaseId}
+      />
 
       {/* Delete confirmation modal */}
       {deleteTarget && (
@@ -246,7 +250,7 @@ export default function Dashboard() {
       <main className="dashboard__main">
 
         {/* Invite co-parent banner — hidden entirely for locked-individual users */}
-        {showInviteUI && (
+        {showInviteUI && plans[0]?.isShared !== true && (
           <div className="dashboard__invite-banner">
             <div className="dashboard__invite-icon">
               <Users size={32} color="#14abdd" />
@@ -270,18 +274,6 @@ export default function Dashboard() {
                   </p>
                 </>
               )}
-            </div>
-
-            <div className="dashboard__invite-action">
-              <button className="dashboard__invite-btn" onClick={() => { setActiveCaseId(plans[0]?.caseId || null); handleInviteClick(); }}>
-                <UserPlus size={18} />
-                {collaborationMode === 'individual' ? 'Switch & Invite Co-parent' : 'Invite Co-parent'}
-              </button>
-              <span className="dashboard__invite-note">
-                {collaborationMode === 'individual'
-                  ? 'You are currently in individual mode'
-                  : 'Free for both parents'}
-              </span>
             </div>
           </div>
         )}
@@ -345,6 +337,9 @@ export default function Dashboard() {
                           onClick={() => {
                             dispatch({ type: 'UPDATE_SECTION', section: "plan", payload: plan });
                             dispatch({ type: 'UPDATE_SECTION', section: "collaborationMode", payload: plan.collaborationMode ?? '' });
+                            dispatch({ type: 'UPDATE_SECTION', section: "timeAndCommunication", payload: plan.parentingTimeAndCommunication ?? {} });
+                            dispatch({ type: 'UPDATE_SECTION', section: "informationSharing", payload: plan.informationSharing ?? {} });
+                            dispatch({ type: 'UPDATE_SECTION', section: "taxExemptions", payload: plan.taxExemptions ?? {} });
                             dispatch({ type: 'UPDATE_SECTION', section: "parents", payload: {firstName: plan.parentFName, lastName: plan.parentLName, phone: plan.phone, address: plan.address} });
                             dispatch({ type: 'UPDATE_SECTION', section: "parentingGuideInfo", payload: {} });
                             if (plan.caseId) setActiveCaseId(plan.caseId);
@@ -390,6 +385,9 @@ export default function Dashboard() {
                             // Replace plan in context with the selected plan
                             dispatch({ type: 'UPDATE_SECTION', section: "plan", payload: plan });
                             dispatch({ type: 'UPDATE_SECTION', section: "collaborationMode", payload: plan.collaborationMode ?? '' });
+                            dispatch({ type: 'UPDATE_SECTION', section: "timeAndCommunication", payload: plan.parentingTimeAndCommunication ?? {} });
+                            dispatch({ type: 'UPDATE_SECTION', section: "informationSharing", payload: plan.informationSharing ?? {} });
+                            dispatch({ type: 'UPDATE_SECTION', section: "taxExemptions", payload: plan.taxExemptions ?? {} });
                             // Clear stale question state from a previous session so the new plan starts fresh
                             dispatch({ type: 'UPDATE_SECTION', section: "question", payload: {} });
                             dispatch({ type: 'UPDATE_SECTION', section: "parentingGuideInfo", payload: {} });
@@ -405,7 +403,7 @@ export default function Dashboard() {
                 })()}
 
                 {/* Per-card invite button — hidden for locked-individual users */}
-                {showInviteUI && (
+                {showInviteUI && !plan.isShared && (
                   <button className="plan-card__invite-btn" onClick={() => { setActiveCaseId(plan.caseId || null); handleInviteClick(); }}>
                   <UserPlus size={14} />
                     {collaborationMode === 'individual' ? 'Switch & Invite' : 'Invite Parent'}

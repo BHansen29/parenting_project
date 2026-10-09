@@ -2,13 +2,53 @@ const express = require('express');
 const router = express.Router();
 const Case = require('../models/Case');
 const Plan = require('../models/Plan');
+const Question = require('../models/Question');
 const User = require('../models/User');
 const QuestionnaireResponse = require('../models/QuestionnaireResponse');
 const Resolution = require('../models/Resolution');
 const ResolutionReview = require('../models/ResolutionReview');
 const verifyToken = require('../middleware/verifyToken');
-const { computeDiff } = require('../services/comparisonService');
+const { computeDiff, filterExcludedAnswers } = require('../services/comparisonService');
 const { getFirstName } = require('../utils/nameUtils');
+
+const COMPARABLE_SECTION_FIELDS = {
+  parentingTimeAndCommunication: [
+    'agreeToTransportationPolicy',
+    'transportationArrangementDescription',
+    'agreeToActivityPolicy',
+    'activityPolicyDescription',
+    'communicationWithCoParentOnPhone',
+    'communicationWithCoParentOnPhoneDescription',
+    'notifyCoParentOfChildRelatedEvents',
+    'notifyCoParentOfChildRelatedEventsDescription',
+  ],
+  informationSharing: [
+    'medicalRecords',
+    'schoolContact',
+    'schoolReports',
+    'schoolActivities',
+    'extracurricularActivities',
+  ],
+  taxExemptions: [
+    'parentRole',
+    'claimingChildren',
+  ],
+};
+
+async function getExcludedComparisonQuestionKeys() {
+  const excludedKeys = await Question.find({ includeInComparison: false }).distinct('qKey');
+  return new Set(excludedKeys);
+}
+
+async function getComparisonConflictValues() {
+  const questions = await Question.find({}, 'qKey comparisonConflictValues');
+  return questions.reduce((valuesByQuestion, question) => {
+    if (Array.isArray(question.comparisonConflictValues)) {
+      valuesByQuestion[question.qKey] = question.comparisonConflictValues;
+    }
+    return valuesByQuestion;
+  }, {});
+}
 
 // Helper: verify the requesting user is a member of the case
 function isCaseMember(parentingCase, uid) {
@@ -22,10 +62,24 @@ router.get('/:caseId/status', verifyToken, async (req, res) => {
     if (!parentingCase) return res.status(404).json({ error: 'Case not found' });
     if (!isCaseMember(parentingCase, req.user.uid)) return res.status(403).json({ error: 'Forbidden' });
 
+    // Gets parents names for comparison tool understanding
+    const [plan1, plan2, parent1, parent2] = await Promise.all([
+      parentingCase.parent1PlanId ? Plan.findById(parentingCase.parent1PlanId, 'parentFName') : null,
+      parentingCase.parent2PlanId ? Plan.findById(parentingCase.parent2PlanId, 'parentFName') : null,
+      User.findOne({ firebaseUid: parentingCase.parent1Uid }, 'name email'),
+      parentingCase.parent2Uid
+        ? User.findOne({ firebaseUid: parentingCase.parent2Uid }, 'name email')
+        : null,
+    ]);
+    const firstName = (plan, user, fallback) =>
+      plan?.parentFName?.trim() || getFirstName(user).split(/\s+/)[0] || fallback;
+
     res.status(200).json({
       caseId: parentingCase._id,
       status: parentingCase.status,
       isParent1: parentingCase.parent1Uid === req.user.uid,
+      parent1Name: firstName(plan1, parent1, 'Parent 1'),
+      parent2Name: parent2 ? firstName(plan2, parent2, 'Co-parent') : 'Co-parent',
     });
   } catch (error) {
     console.error(error);
@@ -134,7 +188,15 @@ router.get('/:caseId/comparison', verifyToken, async (req, res) => {
       QuestionnaireResponse.findOne({ caseId: req.params.caseId, parentUid: parentingCase.parent2Uid }),
     ]);
 
-    const diff = computeDiff(response1?.answers, response2?.answers);
+    const [excludedQuestionKeys, conflictValuesByQuestion] = await Promise.all([
+      getExcludedComparisonQuestionKeys(),
+      getComparisonConflictValues(),
+    ]);
+    const diff = computeDiff(
+      filterExcludedAnswers(response1?.answers, excludedQuestionKeys),
+      filterExcludedAnswers(response2?.answers, excludedQuestionKeys),
+      conflictValuesByQuestion
+    );
 
     res.status(200).json({ caseId: parentingCase._id, status: parentingCase.status, diff });
   } catch (error) {
@@ -162,10 +224,32 @@ router.get('/:caseId/plan-comparison', verifyToken, async (req, res) => {
 
     const toAnswerMap = (plan) => {
       if (!plan) return {};
-      return plan.answers.reduce((acc, a) => { acc[a.qKey] = a.answer; return acc; }, {});
+      const answers = plan.answers.reduce((acc, a) => {
+        acc[a.qKey] = a.answer;
+        return acc;
+      }, {});
+
+      for (const [section, fields] of Object.entries(COMPARABLE_SECTION_FIELDS)) {
+        for (const field of fields) {
+          const answer = plan[section]?.[field];
+          if (answer !== undefined && answer !== null && answer !== '') {
+            answers[`${section}.${field}`] = answer;
+          }
+        }
+      }
+
+      return answers;
     };
 
-    const diff = computeDiff(toAnswerMap(plan1), toAnswerMap(plan2));
+    const [excludedQuestionKeys, conflictValuesByQuestion] = await Promise.all([
+      getExcludedComparisonQuestionKeys(),
+      getComparisonConflictValues(),
+    ]);
+    const diff = computeDiff(
+      filterExcludedAnswers(toAnswerMap(plan1), excludedQuestionKeys),
+      filterExcludedAnswers(toAnswerMap(plan2), excludedQuestionKeys),
+      conflictValuesByQuestion
+    );
 
     res.status(200).json({ caseId: parentingCase._id, status: parentingCase.status, diff });
   } catch (error) {
