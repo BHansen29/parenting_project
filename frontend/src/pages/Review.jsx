@@ -460,7 +460,7 @@ export default function Review() {
               </div>
 
               {/* Show comparison button only in collaborative mode and after an invite has been sent. */}
-              {collaborationMode === 'collaborative' && caseId && caseStatus && caseStatus !== 'draft' && (
+              {collaborationMode === 'collaborative' && caseId && caseStatus && isSharedPlan && caseStatus !== 'draft' && (
                 <button
                   className="review__btn-invite"
                   onClick={() => navigate(`/comparison/${caseId}`)}
