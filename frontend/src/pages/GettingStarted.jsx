@@ -475,7 +475,7 @@ export default function GettingStarted() {
                 help="Help us understand your background."
               />
               <Disclaimer variant="info">
-                The Demographic Data Policy ensures the integrity of data collection by implementing standard demographic data areas for all Action for Children clients (adults and children). Collecting demographic data serves various purposes, including reporting to funders, program evaluation, and organizational planning.
+                The Demographic Data Policy ensures the integrity of data collection by implementing standard demographic data areas for all Action for Children clients (adults and children). Collecting demographic data serves various purposes, including reporting to funders, program evaluation, and organizational planning. Answering the following questions about demographic data is not required. Any information you provide is completely voluntary.
               </Disclaimer>
               <RadioQuestion
                 question="What is your gender?"

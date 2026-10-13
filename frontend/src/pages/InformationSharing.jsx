@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { Fragment, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/card';
 import { auth } from '../lib/firebase';
@@ -9,7 +9,8 @@ import { useSectionFlag } from '../hooks/useSectionFlag';
 import './Page.css';
 import SectionHeader from '../components/forms/SectionHeader';
 import RadioQuestion from '../components/forms/RadioQuestion';
-
+import Disclaimer from '../components/forms/Disclaimer';
+import TextInput from '../components/forms/TextInput';
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
 const HeartIcon = () => (
@@ -62,47 +63,44 @@ const FileTextIcon = () => (
 );
 
 // ─── Section definitions ──────────────────────────────────────────────────────
+const LEGACY_RADIO_ANSWERS = new Set([
+  'parent1',
+  'parent2',
+  'both',
+  'needInfo',
+  'defer',
+]);
 
 const INFO_SECTIONS = [
   {
     key: 'medicalRecords',
     title: 'Medical Information Access',
-    description: 'Who can access doctor visits and medical information?',
+    description: 'Unless you come to a separate agreement, you and your co-parent both have the following rights:\n1. The right to participate in major decisions about your child’s health, social situations, morals, welfare, education and economic development.\n2. The right to participate in choosing doctors, psychologists, psychiatrists, hospitals, and other health care providers for your child.\n3. The right to authorize medical, surgical, hospital, dental, institutional, psychological, and psychiatric care for your child and to get a second opinion about their medical conditions or treatment.\n4. The right to be told if your child gets sick or injured.\n5. The right to attend your child’s medical, dental, and other-health related appointments and treatments.\n6. The right to get and inspect your child’s medical and dental records and the right to talk to any treating physician, dentist, and other health care provider.',
     icon: <HeartIcon />,
     iconClassName: 'heart-icon',
-    question: "Who should get copies of any doctor's visits that your children may have? This parent can also contact the doctor and ask questions.",
+    question: "Do you agree to these default rights? If not, provide what rights you would like or not like your co-parent to have.",
+    placeholder: "Enter yes or explain which default rights you would like to modify.",
+    disclaimer: "The information outlined above is directly listed in the Ohio Supreme Court’s Parenting Plan Form. This tool is strictly informative and does not purport to give legal advice about your rights or options available to you. If you have questions, please talk with a lawyer."
   },
   {
     key: 'schoolContact',
-    title: 'School Contact Rights',
-    description: 'Who can communicate with the school?',
+    title: 'School Contact Rights & Access to Information',
+    description: 'Unless you come to a separate agreement, you and your co-parent both have the following rights:\n1. The right to talk with school officials about your child’s welfare and educational status, and the right to get and inspect your child’s school records to the extent permitted by law.\n2. The right to receive copies of all school reports, calendars of school events, notices of parent-teacher conferences, and school programs.',
     icon: <GraduationCapIcon />,
     iconClassName: 'graduation-icon',
-    question: "Who can call your child's school? This parent may also get copies of your child's academic records, like report cards, attendance, and teacher's comments.",
-  },
-  {
-    key: 'schoolReports',
-    title: 'School Reports & Notices',
-    description: 'Who receives school communications?',
-    icon: <FileTextIcon />,
-    iconClassName: 'file-icon',
-    question: "Who can get copies of your child's school reports, calendars of school events, notices of parent-teacher conferences, and school programs?",
+    question: "Do you agree to these default rights? If not, provide what rights you would like or not like your co-parent to have.",
+    placeholder: "Enter yes or explain which default rights you would like to modify.",
+    disclaimer: "The information outlined above is directly listed in the Ohio Supreme Court’s Parenting Plan Form. This tool is strictly informative and does not purport to give legal advice about your rights or options available to you. If you have questions, please talk with a lawyer."
   },
   {
     key: 'schoolActivities',
     title: 'School Activity Participation',
-    description: 'Who may attend school events?',
+    description: 'Unless you come to a separate agreement, you and your co-parent both have the following rights:\n1. The right to attend and participate in parent-teacher conferences, school trips, school programs, and other school activities that parents are invited to.\n2. The right to attend and participate with your children in athletic programs and other extracurricular activities.',
     icon: <CalendarIcon />,
     iconClassName: 'calendar-icon',
-    question: 'Who can attend and participate in parent-teacher conferences, school trips, school programs, and other school activities that parents get invited to?',
-  },
-  {
-    key: 'extracurricularActivities',
-    title: 'Extracurricular Activities',
-    description: 'Who may attend activities outside school?',
-    icon: <TrophyIcon />,
-    iconClassName: 'trophy-icon',
-    question: 'Who can attend and participate with the child(ren) in athletic programs and other extracurricular activities?',
+    question: "Do you agree to these default rights? If not, provide what rights you would like or not like your co-parent to have.",
+    placeholder: "Enter yes or explain which default rights you would like to modify.",
+    disclaimer: "The information outlined above is directly listed in the Ohio Supreme Court’s Parenting Plan Form. This tool is strictly informative and does not purport to give legal advice about your rights or options available to you. If you have questions, please talk with a lawyer."
   },
 ];
 
@@ -127,16 +125,12 @@ export default function InformationSharing() {
   // ── Flag hooks ────────────────────────────────────────────────────────────
   const medicalRecordsFlag            = useSectionFlag('medicalRecords');
   const schoolContactFlag             = useSectionFlag('schoolContact');
-  const schoolReportsFlag             = useSectionFlag('schoolReports');
   const schoolActivitiesFlag          = useSectionFlag('schoolActivities');
-  const extracurricularActivitiesFlag = useSectionFlag('extracurricularActivities');
 
   const flagMap = {
     medicalRecords:            medicalRecordsFlag,
     schoolContact:             schoolContactFlag,
-    schoolReports:             schoolReportsFlag,
     schoolActivities:          schoolActivitiesFlag,
-    extracurricularActivities: extracurricularActivitiesFlag,
   };
 
   // ── Handlers ──────────────────────────────────────────────────────────────
@@ -163,7 +157,9 @@ export default function InformationSharing() {
     const current = state.informationSharing ?? {};
     const newErrors = {};
     INFO_SECTIONS.forEach(({ key }) => {
-      if (!current[key]) newErrors[key] = 'Please select an option.';
+      if (!String(current[key] ?? '').trim()) {
+        newErrors[key] = 'Please enter a response.';
+      }
     });
     dispatch({
       type: 'UPDATE_SECTION',
@@ -231,9 +227,11 @@ export default function InformationSharing() {
               Determine who has access to medical, school, and activity information.
             </CardDescription>
           </CardHeader>
-
+          <Disclaimer variant="warning">
+            This tool is for informational purposes only. It does not provide legal advice about your rights or options available to you. Your responses do not create or establish any legal rights for either parent. This tool is intended to help co-parents think about important topics when making a shared parenting plan. Only a court can approve a parenting plan and make it legally binding. If you have any questions, please talk with a lawyer.
+          </Disclaimer>
           <CardContent>
-            {INFO_SECTIONS.map(({ key, title, description, icon, iconClassName, question }) => (
+            {INFO_SECTIONS.map(({ key, title, description, icon, iconClassName, question, placeholder, disclaimer, }) => (
               <div key={key} className="info-section">
                 <hr className="section-divider" />
 
@@ -241,21 +239,35 @@ export default function InformationSharing() {
                   icon={icon}
                   iconClassName={iconClassName}
                   title={title}
-                  help={description}
+                  help={description.split('\n').map((line, index) => (
+                    <Fragment key={`${key}-description-${index}`}>
+                      {index > 0 && <br />}
+                      {line}
+                    </Fragment>
+                  ))}
                 />
 
-                {/* onChange receives a plain string value — RadioQuestion unwraps the event internally */}
-                <RadioQuestion
-                  question={question}
-                  name={key}
-                  value={formData[key] ?? ''}
+                {/* onChange receives a plain string value — (change to TextQuestion) RadioQuestion unwraps the event internally */}
+                <TextInput
+                  id={`information-sharing-${key}`}
+                  label={question}
+                  type="textarea"
+                  rows={4}
+                  value={
+                    LEGACY_RADIO_ANSWERS.has(formData[key])
+                     ? ''
+                     : formData[key] ?? ''
+                  }
                   onChange={handleChange(key)}
-                  flag={flagMap[key]}
+                  placeholder={placeholder}
+                  required
                   error={errors[key]}
-                  options={RADIO_OPTIONS}
-                  disclaimer="Legal Disclaimer: This tool does not give instructions or legal advice about your rights or choices. If you have questions, please consult with a lawyer."
-                  disclaimerVariant="info"
-                />
+              />
+              {disclaimer && (
+                <Disclaimer variant="warning">
+                  {disclaimer}
+                </Disclaimer>
+              )}
               </div>
             ))}
           </CardContent>

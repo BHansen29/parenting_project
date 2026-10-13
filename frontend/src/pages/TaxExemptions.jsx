@@ -19,6 +19,7 @@ import SectionHeader from '../components/forms/SectionHeader';
 import RadioQuestion from '../components/forms/RadioQuestion';
 import { auth } from '../lib/firebase';
 import { buildApiUrl } from '../lib/apiClient';
+import Disclaimer from '../components/forms/Disclaimer';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -389,7 +390,9 @@ export default function TaxExemptions() {
               Decide who will claim tax exemptions for your children.
             </CardDescription>
           </CardHeader>
-
+          <Disclaimer variant="info">
+              Each child can only be claimed by one parent on a tax return each year. Parents cannot both claim the same child or split the tax credit for that child.
+          </Disclaimer>
           <CardContent>
             <hr className="section-divider" />
 

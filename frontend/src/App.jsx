@@ -18,6 +18,7 @@ import Comparison from './pages/Comparison';
 import WaitingScreen from './pages/WaitingScreen';
 import ResolutionReview from './pages/ResolutionReview';
 import FinalResolution from './pages/FinalResolution';
+import UserData from './pages/UserData';
 import { FormProvider } from './context/FormContext';
 import { NavigationProvider } from './context/NavigationContext';
 import './App.css';
@@ -63,6 +64,9 @@ function App() {
               <MainLayout>
                 <TaxExemptions />
               </MainLayout>
+            } />
+            <Route path="/aggregate-data" element={
+              <UserData />
             } />
             <Route path="/review" element={
               <MainLayout>

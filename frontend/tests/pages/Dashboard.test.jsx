@@ -114,7 +114,7 @@ beforeEach(() => {
     if (url.includes('/all')) {
       return Promise.resolve({
         ok: true,
-        json: () => Promise.resolve([DEFAULT_PLAN]),
+        json: () => Promise.resolve([{ ...DEFAULT_PLAN, collaborationMode: mockCollaborationMode }]),
       })
     }
     // POST create new plan
@@ -198,11 +198,18 @@ describe('Dashboard', () => {
 
   // ─── Invite Banner — mode: '' (not yet set) ───────────────────────────────
 
-  it('shows the default "Invite Parent" button when mode is not set', async () => {
+  it('shows the "Switch & Invite" button when mode is not set', async () => {
     setMode('')
     renderDashboard()
     await screen.findByText('Untitled Plan')
-    expect(screen.getAllByRole('button', { name: /invite parent/i }).length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByRole('button', { name: /switch & invite/i }).length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('shows the switch prompt when invite is clicked with mode not set', async () => {
+    setMode('')
+    renderDashboard()
+    await openSwitchPrompt()
+    expect(screen.getByText('Switch to collaborative mode?')).toBeInTheDocument()
   })
 
   // ─── Invite Banner — mode: 'collaborative' ────────────────────────────────
@@ -272,7 +279,7 @@ describe('Dashboard', () => {
       if (url.includes('/all')) {
         return Promise.resolve({
           ok: true,
-          json: () => Promise.resolve([{ ...DEFAULT_PLAN, isShared: true }]),
+          json: () => Promise.resolve([{ ...DEFAULT_PLAN, collaborationMode: mockCollaborationMode, isShared: true }]),
         })
       }
       return Promise.resolve({ ok: true, json: () => Promise.resolve({}) })
@@ -335,11 +342,18 @@ describe('Dashboard', () => {
     renderDashboard()
     await openSwitchPrompt()
     confirmSwitch()
-    expect(mockDispatch).toHaveBeenCalledWith({
+    await waitFor(() => expect(mockDispatch).toHaveBeenCalledWith({
       type: 'UPDATE_SECTION',
       section: 'collaborationMode',
       payload: 'collaborative',
-    })
+    }))
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/api/plan/setCollabMode/plan-1'),
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ mode: 'collaborative' }),
+      })
+    )
   })
 
   it('opens the invite modal after confirming the switch', async () => {
@@ -347,7 +361,7 @@ describe('Dashboard', () => {
     renderDashboard()
     await openSwitchPrompt()
     confirmSwitch()
-    expect(screen.getByRole('dialog', { name: /invite modal/i })).toBeInTheDocument()
+    expect(await screen.findByRole('dialog', { name: /invite modal/i })).toBeInTheDocument()
   })
 
   it('closes the switch prompt after confirming', async () => {
@@ -355,7 +369,7 @@ describe('Dashboard', () => {
     renderDashboard()
     await openSwitchPrompt()
     confirmSwitch()
-    expect(screen.queryByText('Switch to collaborative mode?')).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByText('Switch to collaborative mode?')).not.toBeInTheDocument())
   })
 
   // ─── Plan Management — Add ────────────────────────────────────────────────
