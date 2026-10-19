@@ -1,6 +1,24 @@
-import { useState, useEffect } from 'react';
-import { Plus, X, Trash2 } from 'lucide-react';
+import { Plus, Trash2, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import './ScheduleBuilder.css';
+
+const timeToMinutes = (time) => {
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(time || '')) return null;
+  const [hours, minutes] = time.split(':').map(Number);
+  return hours * 60 + minutes;
+};
+
+const slotsOverlap = (firstSlot, secondSlot) => {
+  if (firstSlot.wholeDay || secondSlot.wholeDay) return true;
+
+  const firstStart = timeToMinutes(firstSlot.startTime);
+  const firstEnd = timeToMinutes(firstSlot.endTime);
+  const secondStart = timeToMinutes(secondSlot.startTime);
+  const secondEnd = timeToMinutes(secondSlot.endTime);
+
+  if ([firstStart, firstEnd, secondStart, secondEnd].some((time) => time === null)) return false;
+  return firstStart < secondEnd && secondStart < firstEnd;
+};
 
 /**
  * ScheduleBuilder component for creating weekly parenting schedules with time frames
@@ -22,6 +40,13 @@ export default function ScheduleBuilder({
   const [schedule, setSchedule] = useState(value);
   const [selectedDay, setSelectedDay] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [recurrenceFrequency, setRecurrenceFrequency] = useState('weekly');
+  const [recurrenceDays, setRecurrenceDays] = useState([]);
+  const [recurrenceStartTime, setRecurrenceStartTime] = useState('');
+  const [recurrenceEndTime, setRecurrenceEndTime] = useState('');
+  const [recurrenceWholeDay, setRecurrenceWholeDay] = useState(false);
+  const [recurrenceError, setRecurrenceError] = useState('');
+  const [slotError, setSlotError] = useState('');
 
   // Update schedule when value prop changes
   useEffect(() => {
@@ -57,13 +82,20 @@ export default function ScheduleBuilder({
 
     const dayIndex = selectedDay.dayIndex;
     const currentSlots = schedule[dayIndex] || [];
+    
+    if (currentSlots.some((slot) => slot.wholeDay || (!slot.startTime && !slot.endTime && !slot.timeFrame))) {
+      setSlotError('Finish or remove the existing time slot before adding another.');
+      return;
+    }
 
     const newSlot = {
       parent: 'parent1',
-      timeFrame: '',
+      startTime: '',
+      endTime: '',
       wholeDay: false
     };
 
+    setSlotError('');
     setSchedule(prev => ({
       ...prev,
       [dayIndex]: [...currentSlots, newSlot]
@@ -76,25 +108,74 @@ export default function ScheduleBuilder({
 
     const dayIndex = selectedDay.dayIndex;
     const currentSlots = [...(schedule[dayIndex] || [])];
+    let updatedSlot = { ...currentSlots[slotIndex], [field]: value };
 
     if (field === 'wholeDay' && value === true) {
-      // If marking as whole day, clear time frame
-      currentSlots[slotIndex] = {
-        ...currentSlots[slotIndex],
+      updatedSlot = {
+        ...updatedSlot,
         wholeDay: true,
-        timeFrame: ''
+        startTime: '',
+        endTime: ''
       };
-    } else {
-      currentSlots[slotIndex] = {
-        ...currentSlots[slotIndex],
-        [field]: value
-      };
+    } else if (field === 'wholeDay' && value === false) {
+      updatedSlot.wholeDay = false;
     }
+
+    if (updatedSlot.wholeDay && currentSlots.some((slot, index) => index !== slotIndex && slot)) {
+      setSlotError('A whole-day visit cannot overlap another time slot.');
+      return;
+    }
+
+    const startMinutes = timeToMinutes(updatedSlot.startTime);
+    const endMinutes = timeToMinutes(updatedSlot.endTime);
+    if (startMinutes !== null && endMinutes !== null) {
+      if (endMinutes <= startMinutes) {
+        setSlotError('End time must be later than start time.');
+        return;
+      }
+      if (currentSlots.some((slot, index) => index !== slotIndex && slotsOverlap(updatedSlot, slot))) {
+        setSlotError('This time overlaps another visit on this day.');
+        return;
+      }
+    }
+
+    currentSlots[slotIndex] = updatedSlot;
+    setSlotError('');
 
     setSchedule(prev => ({
       ...prev,
       [dayIndex]: currentSlots
     }));
+  };
+
+  const validateDaySlots = (slots) => {
+    for (let index = 0; index < slots.length; index += 1) {
+      const slot = slots[index];
+      if (slot.wholeDay) continue;
+
+      const startMinutes = timeToMinutes(slot.startTime);
+      const endMinutes = timeToMinutes(slot.endTime);
+      if (startMinutes === null || endMinutes === null) {
+        return 'Enter a start and end time for every visit.';
+      }
+      if (endMinutes <= startMinutes) {
+        return 'End time must be later than start time.';
+      }
+      if (slots.some((otherSlot, otherIndex) => otherIndex !== index && slotsOverlap(slot, otherSlot))) {
+        return 'Time slots cannot overlap or repeat on the same day.';
+      }
+    }
+    return '';
+  };
+
+  const finishEditingDay = () => {
+    const validationError = validateDaySlots(schedule[selectedDay.dayIndex] || []);
+    if (validationError) {
+      setSlotError(validationError);
+      return;
+    }
+    setSlotError('');
+    setShowModal(false);
   };
 
   // Remove a time slot
@@ -118,6 +199,7 @@ export default function ScheduleBuilder({
         [dayIndex]: currentSlots
       }));
     }
+    setSlotError('');
   };
 
   // Clear all time slots for selected day
@@ -140,6 +222,60 @@ export default function ScheduleBuilder({
     }
   };
 
+  const toggleRecurrenceDay = (dayOfWeek) => {
+    setRecurrenceDays((currentDays) => currentDays.includes(dayOfWeek)
+      ? currentDays.filter((day) => day !== dayOfWeek)
+      : [...currentDays, dayOfWeek].sort((firstDay, secondDay) => firstDay - secondDay));
+    setRecurrenceError('');
+  };
+
+  const applyRecurringSchedule = () => {
+    if (recurrenceDays.length === 0) {
+      setRecurrenceError('Select at least one day of the week');
+      return;
+    }
+
+    if (!recurrenceWholeDay && (!recurrenceStartTime || !recurrenceEndTime)) {
+      setRecurrenceError('Enter a start and end time or select Whole day');
+      return;
+    }
+
+    if (!recurrenceWholeDay && timeToMinutes(recurrenceEndTime) <= timeToMinutes(recurrenceStartTime)) {
+      setRecurrenceError('End time must be later than start time');
+      return;
+    }
+
+    const recurringSlot = {
+      parent: 'parent1',
+      startTime: recurrenceWholeDay ? '' : recurrenceStartTime,
+      endTime: recurrenceWholeDay ? '' : recurrenceEndTime,
+      wholeDay: recurrenceWholeDay,
+    };
+
+    const recurringDayIndexes = [];
+    for (let week = 0; week < 4; week += 1) {
+      if (recurrenceFrequency === 'biweekly' && week % 2 !== 0) continue;
+      recurrenceDays.forEach((dayOfWeek) => recurringDayIndexes.push(getDayIndex(week, dayOfWeek)));
+    }
+
+    if (recurringDayIndexes.some((dayIndex) => (schedule[dayIndex] || []).some((slot) => slotsOverlap(recurringSlot, slot)))) {
+      setRecurrenceError('The recurring visit overlaps an existing visit.');
+      return;
+    }
+
+    setSchedule((currentSchedule) => {
+      const nextSchedule = { ...currentSchedule };
+      recurringDayIndexes.forEach((dayIndex) => {
+        nextSchedule[dayIndex] = [
+          ...(nextSchedule[dayIndex] || []),
+          { ...recurringSlot },
+        ];
+      });
+      return nextSchedule;
+    });
+    setRecurrenceError('');
+  };
+
   // Get display text for a day
   const getDayDisplay = (week, dayOfWeek) => {
     const dayIndex = getDayIndex(week, dayOfWeek);
@@ -150,11 +286,13 @@ export default function ScheduleBuilder({
     }
 
     return slots.map((slot, idx) => {
-      const parentLabel = slot.parent === 'parent1' ? parent1Label : parent2Label;
-      const time = slot.wholeDay ? 'All day' : slot.timeFrame || 'No time set';
+      const time = slot.wholeDay
+        ? 'All day'
+        : slot.startTime && slot.endTime
+          ? `${slot.startTime} - ${slot.endTime}`
+          : 'No time set';
       return (
-        <div key={idx} className={`schedule-builder__day-slot schedule-builder__day-slot--${slot.parent}`}>
-          <div className="schedule-builder__day-slot-parent">{parentLabel}</div>
+        <div key={idx} className="schedule-builder__day-slot schedule-builder__day-slot--parent1">
           <div className="schedule-builder__day-slot-time">{time}</div>
         </div>
       );
@@ -165,7 +303,6 @@ export default function ScheduleBuilder({
   const getStats = () => {
     const stats = {
       parent1Days: 0,
-      parent2Days: 0,
       splitDays: 0,
       unassignedDays: 0,
       total: 28
@@ -176,11 +313,7 @@ export default function ScheduleBuilder({
       if (!slots || slots.length === 0) {
         stats.unassignedDays++;
       } else if (slots.length === 1) {
-        if (slots[0].parent === 'parent1') {
-          stats.parent1Days++;
-        } else {
-          stats.parent2Days++;
-        }
+        stats.parent1Days++;
       } else {
         stats.splitDays++;
       }
@@ -198,10 +331,6 @@ export default function ScheduleBuilder({
         <div className="schedule-builder__legend-item">
           <div className="schedule-builder__legend-color schedule-builder__legend-color--parent1"></div>
           <span>{parent1Label}</span>
-        </div>
-        <div className="schedule-builder__legend-item">
-          <div className="schedule-builder__legend-color schedule-builder__legend-color--parent2"></div>
-          <span>{parent2Label}</span>
         </div>
         <div className="schedule-builder__legend-item">
           <div className="schedule-builder__legend-color schedule-builder__legend-color--unassigned"></div>
@@ -246,15 +375,95 @@ export default function ScheduleBuilder({
         ))}
       </div>
 
+      <div className="schedule-builder__recurring-panel">
+        <div className="schedule-builder__recurring-heading">
+          <div>
+            <h3>Recurring visitation</h3>
+            <p>Apply the same visitation time to selected weekdays.</p>
+          </div>
+        </div>
+        <div className="schedule-builder__recurring-controls">
+          <div className="schedule-builder__field">
+            <label className="schedule-builder__label" htmlFor="recurrence-frequency">Repeats:</label>
+            <select
+              id="recurrence-frequency"
+              className="schedule-builder__select"
+              value={recurrenceFrequency}
+              onChange={(event) => setRecurrenceFrequency(event.target.value)}
+            >
+              <option value="weekly">Every week</option>
+              <option value="biweekly">Every other week</option>
+            </select>
+          </div>
+          <div className="schedule-builder__field schedule-builder__recurring-days">
+            <span className="schedule-builder__label">On:</span>
+            <div className="schedule-builder__day-checkboxes">
+              {weekDays.map((day, dayOfWeek) => (
+                <label className="schedule-builder__checkbox-label" key={day}>
+                  <input
+                    type="checkbox"
+                    checked={recurrenceDays.includes(dayOfWeek)}
+                    onChange={() => toggleRecurrenceDay(dayOfWeek)}
+                    className="schedule-builder__checkbox"
+                  />
+                  {day}
+                </label>
+              ))}
+            </div>
+          </div>
+          <div className="schedule-builder__field schedule-builder__field--checkbox">
+            <label className="schedule-builder__checkbox-label">
+              <input
+                type="checkbox"
+                checked={recurrenceWholeDay}
+                onChange={(event) => setRecurrenceWholeDay(event.target.checked)}
+                className="schedule-builder__checkbox"
+              />
+              Whole day
+            </label>
+          </div>
+          <div className="schedule-builder__field schedule-builder__field--full">
+            <label className="schedule-builder__label" htmlFor="recurrence-start-time">Start time:</label>
+            <input
+              id="recurrence-start-time"
+              type="time"
+              step="900"
+              value={recurrenceStartTime}
+              disabled={recurrenceWholeDay}
+              onChange={(event) => {
+                setRecurrenceStartTime(event.target.value);
+                setRecurrenceError('');
+              }}
+              aria-label="Recurring visitation start time"
+              className="schedule-builder__input"
+            />
+            <label className="schedule-builder__label" htmlFor="recurrence-end-time">End time:</label>
+            <input
+              id="recurrence-end-time"
+              type="time"
+              step="900"
+              value={recurrenceEndTime}
+              disabled={recurrenceWholeDay}
+              onChange={(event) => {
+                setRecurrenceEndTime(event.target.value);
+                setRecurrenceError('');
+              }}
+              aria-label="Recurring visitation end time"
+              className="schedule-builder__input"
+            />
+          </div>
+        </div>
+        {recurrenceError && <div className="schedule-builder__recurring-error" role="alert">{recurrenceError}</div>}
+        <button type="button" className="schedule-builder__apply-recurring" onClick={applyRecurringSchedule}>
+          Apply recurring visitation
+        </button>
+      </div>
+
       {/* Statistics */}
       <div className="schedule-builder__stats">
         <div className="schedule-builder__stat">
           <span className="schedule-builder__stat-label">{parent1Label} (full days):</span>
           <span className="schedule-builder__stat-value">{stats.parent1Days}</span>
-        </div>
-        <div className="schedule-builder__stat">
-          <span className="schedule-builder__stat-label">{parent2Label} (full days):</span>
-          <span className="schedule-builder__stat-value">{stats.parent2Days}</span>
         </div>
         <div className="schedule-builder__stat">
           <span className="schedule-builder__stat-label">Split days:</span>
@@ -301,21 +510,8 @@ export default function ScheduleBuilder({
                 {(schedule[selectedDay.dayIndex] || []).map((slot, idx) => (
                   <div key={idx} className="schedule-builder__time-slot">
                     <div className="schedule-builder__time-slot-controls">
-                      {/* Parent selection */}
-                      <div className="schedule-builder__field">
-                        <label className="schedule-builder__label">Parent:</label>
-                        <select
-                          value={slot.parent}
-                          onChange={(e) => updateTimeSlot(idx, 'parent', e.target.value)}
-                          className="schedule-builder__select"
-                        >
-                          <option value="parent1">{parent1Label}</option>
-                          <option value="parent2">{parent2Label}</option>
-                        </select>
-                      </div>
-
                       {/* Whole day checkbox */}
-                      <div className="schedule-builder__field schedule-builder__field--checkbox">
+                      <div className="schedule-builder__field schedule-builder__field--checkbox schedule-builder__field--full">
                         <label className="schedule-builder__checkbox-label">
                           <input
                             type="checkbox"
@@ -327,19 +523,29 @@ export default function ScheduleBuilder({
                         </label>
                       </div>
 
-                      {/* Time frame */}
-                      {!slot.wholeDay && (
-                        <div className="schedule-builder__field schedule-builder__field--full">
-                          <label className="schedule-builder__label">Time frame:</label>
-                          <input
-                            type="text"
-                            value={slot.timeFrame}
-                            onChange={(e) => updateTimeSlot(idx, 'timeFrame', e.target.value)}
-                            placeholder="e.g., 'Until noon' or '4:00 PM - 7:30 PM'"
-                            className="schedule-builder__input"
-                          />
-                        </div>
-                      )}
+                      {/* Start and end times */}
+                      <div className="schedule-builder__field schedule-builder__field--full">
+                        <label className="schedule-builder__label">Start and end times:</label>
+                        <input
+                          type="time"
+                          step="900"
+                          value={slot.startTime || ''}
+                          disabled={slot.wholeDay}
+                          onChange={(e) => updateTimeSlot(idx, 'startTime', e.target.value)}
+                          aria-label="Visitation start time"
+                          className="schedule-builder__input"
+                        />
+                        <label className="schedule-builder__label">End time:</label>
+                        <input
+                          type="time"
+                          step="900"
+                          value={slot.endTime || ''}
+                          disabled={slot.wholeDay}
+                          onChange={(e) => updateTimeSlot(idx, 'endTime', e.target.value)}
+                          aria-label="Visitation end time"
+                          className="schedule-builder__input"
+                        />
+                      </div>
                     </div>
 
                     {/* Remove button */}
@@ -364,6 +570,7 @@ export default function ScheduleBuilder({
                   Add Time Slot
                 </button>
               </div>
+              {slotError && <div className="schedule-builder__recurring-error" role="alert">{slotError}</div>}
             </div>
 
             <div className="schedule-builder__modal-footer">
@@ -376,7 +583,7 @@ export default function ScheduleBuilder({
               </button>
               <button
                 type="button"
-                onClick={() => setShowModal(false)}
+                onClick={finishEditingDay}
                 className="schedule-builder__modal-button schedule-builder__modal-button--primary"
               >
                 Done
