@@ -2,7 +2,7 @@
 .schedule-builder {
   width: 100%;
   margin-bottom: var(--form-field-spacing);
-  background-color: #ffffff;
+  background-color: var(--input-background);
   border: 1.5px solid var(--input-border);
   border-radius: 10px;
   padding: 1.5rem;
@@ -121,6 +121,66 @@
   margin: auto;
 }
 
+.schedule-builder__recurring-panel {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  border: 1.5px solid var(--input-border);
+  border-radius: var(--input-border-radius);
+  background: rgba(20, 171, 221, 0.06);
+}
+
+.schedule-builder__recurring-heading h3 {
+  margin: 0;
+  color: inherit;
+  font-size: 1rem;
+}
+
+.schedule-builder__recurring-heading p {
+  margin: 0.25rem 0 1rem;
+  color: var(--help-text-color);
+  font-size: 0.8125rem;
+}
+
+.schedule-builder__recurring-controls {
+  display: grid;
+  grid-template-columns: minmax(10rem, 1fr) minmax(16rem, 2fr) minmax(10rem, 1fr) auto;
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.schedule-builder__recurring-days {
+  grid-row: span 2;
+}
+
+.schedule-builder__day-checkboxes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(6rem, 1fr));
+  gap: 0.35rem 0.75rem;
+}
+
+.schedule-builder__recurring-error {
+  margin-top: 0.75rem;
+  color: #dc2626;
+  font-size: 0.8125rem;
+}
+
+.schedule-builder__apply-recurring {
+  margin-top: 1rem;
+  padding: 0.625rem 1rem;
+  border: 1.5px solid #14abdd;
+  border-radius: 8px;
+  background: #14abdd;
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.schedule-builder__apply-recurring:hover {
+  background: #0c7a9e;
+  border-color: #0c7a9e;
+}
+
 /* Element - day slot display */
 .schedule-builder__day-slot {
   padding: 0.375rem;
@@ -222,8 +282,8 @@
   background-color: #ffffff;
   border-radius: 12px;
   width: 100%;
-  max-width: 600px;
-  max-height: 90vh;
+  max-width: 960px;
+  max-height: calc(100vh - 2rem);
   display: flex;
   flex-direction: column;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
@@ -265,8 +325,9 @@
 
 .schedule-builder__modal-content {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
-  padding: 1.5rem;
+  padding: 2rem;
 }
 
 .schedule-builder__modal-footer {
@@ -303,10 +364,16 @@
   border: 1.5px solid #d1d5db;
 }
 
-.schedule-builder__modal-button--secondary:hover {
+.schedule-builder__modal-button--secondary:hover:not(:disabled) {
   background-color: #f3f4f6;
   border-color: #9ca3af;
 }
+
+.schedule-builder__modal-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 
 /* Time slots in modal */
 .schedule-builder__time-slots {
@@ -346,6 +413,14 @@
   align-items: center;
 }
 
+.schedule-builder__time-slot-controls > .schedule-builder__field--checkbox {
+  grid-column: 1 / -1;
+}
+
+.schedule-builder__recurring-controls > .schedule-builder__field--checkbox {
+  grid-column: 1 / -1;
+}
+
 .schedule-builder__label {
   font-size: 0.875rem;
   font-weight: 500;
@@ -354,20 +429,26 @@
 
 .schedule-builder__select,
 .schedule-builder__input {
-  padding: 0.5rem;
-  border: 1.5px solid #d1d5db;
-  border-radius: 6px;
+  padding: var(--input-padding);
+  border: 1.5px solid var(--input-border);
+  border-radius: var(--input-border-radius);
   font-size: 0.875rem;
-  color: #374151;
-  background-color: #ffffff;
+  color: inherit;
+  background-color: var(--input-background);
   transition: all 0.2s ease;
 }
 
 .schedule-builder__select:focus,
 .schedule-builder__input:focus {
   outline: none;
-  border-color: #14abdd;
+  border-color: var(--input-border-focus);
   box-shadow: 0 0 0 3px rgba(20, 171, 221, 0.1);
+}
+
+.schedule-builder__select:disabled,
+.schedule-builder__input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .schedule-builder__checkbox-label {
@@ -598,6 +679,18 @@
 
 /* Responsive */
 @media (max-width: 768px) {
+  .schedule-builder__recurring-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .schedule-builder__recurring-days {
+    grid-row: auto;
+  }
+
+  .schedule-builder__day-checkboxes {
+    grid-template-columns: repeat(2, minmax(8rem, 1fr));
+  }
+
   .schedule-builder {
     padding: 1rem;
   }
