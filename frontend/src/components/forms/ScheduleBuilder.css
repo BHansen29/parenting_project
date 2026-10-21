@@ -282,8 +282,8 @@
   background-color: #ffffff;
   border-radius: 12px;
   width: 100%;
-  max-width: 600px;
-  max-height: 90vh;
+  max-width: 960px;
+  max-height: calc(100vh - 2rem);
   display: flex;
   flex-direction: column;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
@@ -325,8 +325,9 @@
 
 .schedule-builder__modal-content {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
-  padding: 1.5rem;
+  padding: 2rem;
 }
 
 .schedule-builder__modal-footer {
@@ -363,10 +364,16 @@
   border: 1.5px solid #d1d5db;
 }
 
-.schedule-builder__modal-button--secondary:hover {
+.schedule-builder__modal-button--secondary:hover:not(:disabled) {
   background-color: #f3f4f6;
   border-color: #9ca3af;
 }
+
+.schedule-builder__modal-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 
 /* Time slots in modal */
 .schedule-builder__time-slots {

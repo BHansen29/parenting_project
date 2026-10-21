@@ -73,33 +73,9 @@ export default function ScheduleBuilder({
   const handleDayClick = (week, dayOfWeek) => {
     const dayIndex = getDayIndex(week, dayOfWeek);
     setSelectedDay({ week, dayOfWeek, dayIndex });
+    setRecurrenceDays([dayOfWeek]);
+    setRecurrenceError('');
     setShowModal(true);
-  };
-
-  // Add new time slot for selected day
-  const addTimeSlot = () => {
-    if (selectedDay === null) return;
-
-    const dayIndex = selectedDay.dayIndex;
-    const currentSlots = schedule[dayIndex] || [];
-    
-    if (currentSlots.some((slot) => slot.wholeDay || (!slot.startTime && !slot.endTime && !slot.timeFrame))) {
-      setSlotError('Finish or remove the existing time slot before adding another.');
-      return;
-    }
-
-    const newSlot = {
-      parent: 'parent1',
-      startTime: '',
-      endTime: '',
-      wholeDay: false
-    };
-
-    setSlotError('');
-    setSchedule(prev => ({
-      ...prev,
-      [dayIndex]: [...currentSlots, newSlot]
-    }));
   };
 
   // Update a time slot
@@ -148,36 +124,6 @@ export default function ScheduleBuilder({
     }));
   };
 
-  const validateDaySlots = (slots) => {
-    for (let index = 0; index < slots.length; index += 1) {
-      const slot = slots[index];
-      if (slot.wholeDay) continue;
-
-      const startMinutes = timeToMinutes(slot.startTime);
-      const endMinutes = timeToMinutes(slot.endTime);
-      if (startMinutes === null || endMinutes === null) {
-        return 'Enter a start and end time for every visit.';
-      }
-      if (endMinutes <= startMinutes) {
-        return 'End time must be later than start time.';
-      }
-      if (slots.some((otherSlot, otherIndex) => otherIndex !== index && slotsOverlap(slot, otherSlot))) {
-        return 'Time slots cannot overlap or repeat on the same day.';
-      }
-    }
-    return '';
-  };
-
-  const finishEditingDay = () => {
-    const validationError = validateDaySlots(schedule[selectedDay.dayIndex] || []);
-    if (validationError) {
-      setSlotError(validationError);
-      return;
-    }
-    setSlotError('');
-    setShowModal(false);
-  };
-
   // Remove a time slot
   const removeTimeSlot = (slotIndex) => {
     if (selectedDay === null) return;
@@ -212,7 +158,8 @@ export default function ScheduleBuilder({
       delete newSchedule[dayIndex];
       return newSchedule;
     });
-    setShowModal(false);
+    setSlotError('');
+    setRecurrenceError('');
   };
 
   // Clear entire schedule
@@ -229,20 +176,54 @@ export default function ScheduleBuilder({
     setRecurrenceError('');
   };
 
+  const addForSelectedDay = () => {
+    if (selectedDay === null) return false;
+
+    if (!recurrenceWholeDay && (!recurrenceStartTime || !recurrenceEndTime)) {
+      setSlotError('Enter a start and end time or select Whole day');
+      return false;
+    }
+
+    if (!recurrenceWholeDay && timeToMinutes(recurrenceEndTime) <= timeToMinutes(recurrenceStartTime)) {
+      setSlotError('End time must be later than start time');
+      return false;
+    }
+
+    const oneTimeSlot = {
+      parent: 'parent1',
+      startTime: recurrenceWholeDay ? '' : recurrenceStartTime,
+      endTime: recurrenceWholeDay ? '' : recurrenceEndTime,
+      wholeDay: recurrenceWholeDay,
+    };
+    const currentSlots = schedule[selectedDay.dayIndex] || [];
+
+    if (currentSlots.some((slot) => slotsOverlap(oneTimeSlot, slot))) {
+      setSlotError('This time overlaps or repeats an existing visit on this day.');
+      return false;
+    }
+
+    setSchedule((currentSchedule) => ({
+      ...currentSchedule,
+      [selectedDay.dayIndex]: [...(currentSchedule[selectedDay.dayIndex] || []), oneTimeSlot],
+    }));
+    setSlotError('');
+    return true;
+  };
+
   const applyRecurringSchedule = () => {
     if (recurrenceDays.length === 0) {
       setRecurrenceError('Select at least one day of the week');
-      return;
+      return false;
     }
 
     if (!recurrenceWholeDay && (!recurrenceStartTime || !recurrenceEndTime)) {
       setRecurrenceError('Enter a start and end time or select Whole day');
-      return;
+      return false;
     }
 
     if (!recurrenceWholeDay && timeToMinutes(recurrenceEndTime) <= timeToMinutes(recurrenceStartTime)) {
       setRecurrenceError('End time must be later than start time');
-      return;
+      return false;
     }
 
     const recurringSlot = {
@@ -260,7 +241,7 @@ export default function ScheduleBuilder({
 
     if (recurringDayIndexes.some((dayIndex) => (schedule[dayIndex] || []).some((slot) => slotsOverlap(recurringSlot, slot)))) {
       setRecurrenceError('The recurring visit overlaps an existing visit.');
-      return;
+      return false;
     }
 
     setSchedule((currentSchedule) => {
@@ -274,6 +255,20 @@ export default function ScheduleBuilder({
       return nextSchedule;
     });
     setRecurrenceError('');
+    return true;
+  };
+
+  const applySelectedSchedule = () => {
+    if (recurrenceFrequency === 'none') {
+      return addForSelectedDay();
+    }
+    return applyRecurringSchedule();
+  };
+
+  const addAndClose = () => {
+    if (applySelectedSchedule()) {
+      setShowModal(false);
+    }
   };
 
   // Get display text for a day
@@ -373,90 +368,6 @@ export default function ScheduleBuilder({
             })}
           </div>
         ))}
-      </div>
-
-      <div className="schedule-builder__recurring-panel">
-        <div className="schedule-builder__recurring-heading">
-          <div>
-            <h3>Recurring visitation</h3>
-            <p>Apply the same visitation time to selected weekdays.</p>
-          </div>
-        </div>
-        <div className="schedule-builder__recurring-controls">
-          <div className="schedule-builder__field">
-            <label className="schedule-builder__label" htmlFor="recurrence-frequency">Repeats:</label>
-            <select
-              id="recurrence-frequency"
-              className="schedule-builder__select"
-              value={recurrenceFrequency}
-              onChange={(event) => setRecurrenceFrequency(event.target.value)}
-            >
-              <option value="weekly">Every week</option>
-              <option value="biweekly">Every other week</option>
-            </select>
-          </div>
-          <div className="schedule-builder__field schedule-builder__recurring-days">
-            <span className="schedule-builder__label">On:</span>
-            <div className="schedule-builder__day-checkboxes">
-              {weekDays.map((day, dayOfWeek) => (
-                <label className="schedule-builder__checkbox-label" key={day}>
-                  <input
-                    type="checkbox"
-                    checked={recurrenceDays.includes(dayOfWeek)}
-                    onChange={() => toggleRecurrenceDay(dayOfWeek)}
-                    className="schedule-builder__checkbox"
-                  />
-                  {day}
-                </label>
-              ))}
-            </div>
-          </div>
-          <div className="schedule-builder__field schedule-builder__field--checkbox">
-            <label className="schedule-builder__checkbox-label">
-              <input
-                type="checkbox"
-                checked={recurrenceWholeDay}
-                onChange={(event) => setRecurrenceWholeDay(event.target.checked)}
-                className="schedule-builder__checkbox"
-              />
-              Whole day
-            </label>
-          </div>
-          <div className="schedule-builder__field schedule-builder__field--full">
-            <label className="schedule-builder__label" htmlFor="recurrence-start-time">Start time:</label>
-            <input
-              id="recurrence-start-time"
-              type="time"
-              step="900"
-              value={recurrenceStartTime}
-              disabled={recurrenceWholeDay}
-              onChange={(event) => {
-                setRecurrenceStartTime(event.target.value);
-                setRecurrenceError('');
-              }}
-              aria-label="Recurring visitation start time"
-              className="schedule-builder__input"
-            />
-            <label className="schedule-builder__label" htmlFor="recurrence-end-time">End time:</label>
-            <input
-              id="recurrence-end-time"
-              type="time"
-              step="900"
-              value={recurrenceEndTime}
-              disabled={recurrenceWholeDay}
-              onChange={(event) => {
-                setRecurrenceEndTime(event.target.value);
-                setRecurrenceError('');
-              }}
-              aria-label="Recurring visitation end time"
-              className="schedule-builder__input"
-            />
-          </div>
-        </div>
-        {recurrenceError && <div className="schedule-builder__recurring-error" role="alert">{recurrenceError}</div>}
-        <button type="button" className="schedule-builder__apply-recurring" onClick={applyRecurringSchedule}>
-          Apply recurring visitation
-        </button>
       </div>
 
       {/* Statistics */}
@@ -560,33 +471,116 @@ export default function ScheduleBuilder({
                   </div>
                 ))}
 
-                {/* Add slot button */}
-                <button
-                  type="button"
-                  onClick={addTimeSlot}
-                  className="schedule-builder__add-slot"
-                >
-                  <Plus size={16} />
-                  Add Time Slot
-                </button>
               </div>
               {slotError && <div className="schedule-builder__recurring-error" role="alert">{slotError}</div>}
+
+              <div className="schedule-builder__recurring-panel">
+                <div className="schedule-builder__recurring-heading">
+                  <div>
+                    <h3>Repeat this visitation</h3>
+                    <p>Choose whether this visitation repeats.</p>
+                  </div>
+                </div>
+                <div className="schedule-builder__recurring-controls">
+                  <div className="schedule-builder__field">
+                    <label className="schedule-builder__label" htmlFor="recurrence-frequency">Repeats:</label>
+                    <select
+                      id="recurrence-frequency"
+                      className="schedule-builder__select"
+                      value={recurrenceFrequency}
+                      onChange={(event) => setRecurrenceFrequency(event.target.value)}
+                    >
+                      <option value="none">Doesn't repeat (this day only)</option>
+                      <option value="weekly">Every week</option>
+                      <option value="biweekly">Every other week</option>
+                    </select>
+                  </div>
+                  {recurrenceFrequency !== 'none' && (
+                    <div className="schedule-builder__field schedule-builder__recurring-days">
+                      <span className="schedule-builder__label">On:</span>
+                      <div className="schedule-builder__day-checkboxes">
+                        {weekDays.map((day, dayOfWeek) => (
+                          <label className="schedule-builder__checkbox-label" key={day}>
+                            <input
+                              type="checkbox"
+                              checked={recurrenceDays.includes(dayOfWeek)}
+                              onChange={() => toggleRecurrenceDay(dayOfWeek)}
+                              className="schedule-builder__checkbox"
+                            />
+                            {day}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <div className="schedule-builder__field schedule-builder__field--checkbox">
+                    <label className="schedule-builder__checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={recurrenceWholeDay}
+                        onChange={(event) => setRecurrenceWholeDay(event.target.checked)}
+                        className="schedule-builder__checkbox"
+                      />
+                      Whole day
+                    </label>
+                  </div>
+                  <div className="schedule-builder__field schedule-builder__field--full">
+                    <label className="schedule-builder__label" htmlFor="recurrence-start-time">Start time:</label>
+                    <input
+                      id="recurrence-start-time"
+                      type="time"
+                      step="900"
+                      value={recurrenceStartTime}
+                      disabled={recurrenceWholeDay}
+                      onChange={(event) => {
+                        setRecurrenceStartTime(event.target.value);
+                        setRecurrenceError('');
+                      }}
+                      aria-label="Recurring visitation start time"
+                      className="schedule-builder__input"
+                    />
+                    <label className="schedule-builder__label" htmlFor="recurrence-end-time">End time:</label>
+                    <input
+                      id="recurrence-end-time"
+                      type="time"
+                      step="900"
+                      value={recurrenceEndTime}
+                      disabled={recurrenceWholeDay}
+                      onChange={(event) => {
+                        setRecurrenceEndTime(event.target.value);
+                        setRecurrenceError('');
+                      }}
+                      aria-label="Recurring visitation end time"
+                      className="schedule-builder__input"
+                    />
+                  </div>
+                </div>
+                {recurrenceError && <div className="schedule-builder__recurring-error" role="alert">{recurrenceError}</div>}
+              </div>
             </div>
 
             <div className="schedule-builder__modal-footer">
               <button
                 type="button"
                 onClick={clearDay}
+                disabled={!schedule[selectedDay.dayIndex]?.length}
                 className="schedule-builder__modal-button schedule-builder__modal-button--secondary"
               >
                 Clear Day
               </button>
               <button
                 type="button"
-                onClick={finishEditingDay}
+                onClick={() => setShowModal(false)}
+                className="schedule-builder__modal-button schedule-builder__modal-button--secondary"
+              >
+                Exit
+              </button>
+              <button
+                type="button"
+                onClick={addAndClose}
                 className="schedule-builder__modal-button schedule-builder__modal-button--primary"
               >
-                Done
+                Add visitation
               </button>
             </div>
           </div>
