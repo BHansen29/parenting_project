@@ -8,7 +8,7 @@ const QuestionnaireResponse = require('../models/QuestionnaireResponse');
 const Resolution = require('../models/Resolution');
 const ResolutionReview = require('../models/ResolutionReview');
 const verifyToken = require('../middleware/verifyToken');
-const { computeDiff, filterExcludedAnswers } = require('../services/comparisonService');
+const { computeDiff, filterExcludedAnswers, normalizeAnswer } = require('../services/comparisonService');
 const { getFirstName } = require('../utils/nameUtils');
 
 const COMPARABLE_SECTION_FIELDS = {
@@ -53,6 +53,40 @@ function isCaseMember(parentingCase, uid) {
   return parentingCase.parent1Uid === uid || parentingCase.parent2Uid === uid;
 }
 
+function toPlanAnswerMap(plan, parentRole) {
+  if (!plan) return {};
+
+  const answers = {};
+  plan.answers?.forEach(({ qKey, answer }) => {
+    answers[qKey] = parentRole ? normalizeAnswer(answer, parentRole) : answer;
+  });
+
+  for (const [section, fields] of Object.entries(COMPARABLE_SECTION_FIELDS)) {
+    for (const field of fields) {
+      const answer = plan[section]?.[field];
+      if (answer !== undefined && answer !== null && answer !== '') {
+        answers[`${section}.${field}`] = parentRole ? normalizeAnswer(answer, parentRole) : answer;
+      }
+    }
+  }
+
+  return answers;
+}
+
+function toMergedAnswerEntries(answerMap) {
+  if (Array.isArray(answerMap)) return answerMap;
+  if (answerMap instanceof Map) return [...answerMap].map(([qKey, answer]) => ({ qKey, answer }));
+  return Object.entries(answerMap || {}).map(([qKey, answer]) => ({ qKey, answer }));
+}
+
+function fromMergedAnswerEntries(mergedAnswers) {
+  if (Array.isArray(mergedAnswers)) {
+    return Object.fromEntries(mergedAnswers.map(({ qKey, answer }) => [qKey, answer]));
+  }
+  if (mergedAnswers instanceof Map) return Object.fromEntries(mergedAnswers);
+  return mergedAnswers || {};
+}
+
 // GET /api/v1/cases/:caseId/status
 router.get('/:caseId/status', verifyToken, async (req, res) => {
   try {
@@ -78,6 +112,7 @@ router.get('/:caseId/status', verifyToken, async (req, res) => {
       isParent1: parentingCase.parent1Uid === req.user.uid,
       parent1Name: firstName(plan1, parent1, 'Parent 1'),
       parent2Name: parent2 ? firstName(plan2, parent2, 'Co-parent') : 'Co-parent',
+      sharedAnswers: fromMergedAnswerEntries(parentingCase.mergedAnswers),
     });
   } catch (error) {
     console.error(error);
@@ -177,7 +212,7 @@ router.get('/:caseId/comparison', verifyToken, async (req, res) => {
     if (!isCaseMember(parentingCase, req.user.uid)) return res.status(403).json({ error: 'Forbidden' });
 
     // Security gate: comparison is only available once both parents have submitted
-    if (!['comparison_ready', 'resolved'].includes(parentingCase.status)) {
+    if (!['comparison_ready', 'resolutions_reviewed', 'needs_discussion', 'resolved'].includes(parentingCase.status)) {
       return res.status(403).json({ error: 'Comparison not available yet — both parents must submit first' });
     }
 
@@ -220,32 +255,13 @@ router.get('/:caseId/plan-comparison', verifyToken, async (req, res) => {
       Plan.findOne({ caseId: req.params.caseId, userID: parentingCase.parent2Uid }),
     ]);
 
-    const toAnswerMap = (plan) => {
-      if (!plan) return {};
-      const answers = plan.answers.reduce((acc, a) => {
-        acc[a.qKey] = a.answer;
-        return acc;
-      }, {});
-
-      for (const [section, fields] of Object.entries(COMPARABLE_SECTION_FIELDS)) {
-        for (const field of fields) {
-          const answer = plan[section]?.[field];
-          if (answer !== undefined && answer !== null && answer !== '') {
-            answers[`${section}.${field}`] = answer;
-          }
-        }
-      }
-
-      return answers;
-    };
-
     const [excludedQuestionKeys, conflictValuesByQuestion] = await Promise.all([
       getExcludedComparisonQuestionKeys(),
       getComparisonConflictValues(),
     ]);
     const diff = computeDiff(
-      filterExcludedAnswers(toAnswerMap(plan1), excludedQuestionKeys),
-      filterExcludedAnswers(toAnswerMap(plan2), excludedQuestionKeys),
+      filterExcludedAnswers(toPlanAnswerMap(plan1), excludedQuestionKeys),
+      filterExcludedAnswers(toPlanAnswerMap(plan2), excludedQuestionKeys),
       conflictValuesByQuestion
     );
 
@@ -268,32 +284,39 @@ router.post('/:caseId/merge', verifyToken, async (req, res) => {
     // Only members of this case can save merged answers
     if (!isCaseMember(parentingCase, req.user.uid)) return res.status(403).json({ error: 'Forbidden' });
 
-    // Convert the merged answer map into the Plan.answers array format: [{ qKey, answer }]
-    const mergedAnswersArray = Object.entries(req.body.mergedAnswers || {}).map(([qKey, answer]) => ({ qKey, answer }));
-
-    // Look up both parents' emails to use as descriptive plan names
-    const [p1User, p2User] = await Promise.all([
-      User.findOne({ firebaseUid: parentingCase.parent1Uid }, 'name email'),
-      User.findOne({ firebaseUid: parentingCase.parent2Uid }, 'name email'),
-    ]);
-    const p1Name = getFirstName(p1User);
-    const p2Name = getFirstName(p2User);
-    const mergedPlanName = `${p1Name} & ${p2Name} - Merged Plan`;
-
-    const p1Plan = await Plan.findById(parentingCase.parent1PlanId);
-    const sharedChildren = p1Plan?.children ?? [];
-
-    await Promise.all([
-      Plan.create({ userID: parentingCase.parent1Uid, name: mergedPlanName, answers: mergedAnswersArray, children: sharedChildren, caseId: parentingCase._id, isShared: true }),
-      Plan.create({ userID: parentingCase.parent2Uid, name: mergedPlanName, answers: mergedAnswersArray, children: sharedChildren, caseId: parentingCase._id, isShared: true }),
-    ]);
-
-    // Save the case as resolved only after both plans are successfully created
-    parentingCase.mergedAnswers = req.body.mergedAnswers || {};
+    // Keep the merged answers on the shared case. Individual plans are unchanged.
+    parentingCase.mergedAnswers = toMergedAnswerEntries(req.body.mergedAnswers);
     parentingCase.status = 'resolved';
     await parentingCase.save();
 
     res.status(200).json({ message: 'Merged plan saved', status: parentingCase.status });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/v1/cases/:caseId/restart-comparison
+// Clears only the shared case result so the comparison can be run again.
+// The parents' individual plans are intentionally left unchanged.
+router.post('/:caseId/restart-comparison', verifyToken, async (req, res) => {
+  try {
+    const parentingCase = await Case.findById(req.params.caseId);
+    if (!parentingCase) return res.status(404).json({ error: 'Case not found' });
+    if (!isCaseMember(parentingCase, req.user.uid)) return res.status(403).json({ error: 'Forbidden' });
+    if (!['resolved', 'needs_discussion'].includes(parentingCase.status)) {
+      return res.status(409).json({ error: `Cannot restart comparison in status: ${parentingCase.status}` });
+    }
+
+    parentingCase.mergedAnswers = [];
+    parentingCase.status = 'pending_invite';
+    await parentingCase.save();
+    await Promise.all([
+      Resolution.deleteOne({ caseId: parentingCase._id }),
+      ResolutionReview.deleteOne({ caseId: parentingCase._id }),
+    ]);
+
+    res.status(200).json({ caseId: parentingCase._id, status: parentingCase.status });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal server error' });
@@ -318,9 +341,16 @@ router.post('/:caseId/resolutions', verifyToken, async (req, res) => {
       return res.status(400).json({ error: 'resolutions array is required' });
     }
 
+    const normalizedResolutions = resolutions.map((resolution) => ({
+      ...resolution,
+      proposedAnswer: resolution.source === 'parent1' || resolution.source === 'parent2'
+        ? normalizeAnswer(resolution.proposedAnswer, resolution.source)
+        : resolution.proposedAnswer,
+    }));
+
     await Resolution.findOneAndUpdate(
       { caseId: parentingCase._id },
-      { resolutions, submittedAt: new Date() },
+      { resolutions: normalizedResolutions, submittedAt: new Date() },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
@@ -372,7 +402,20 @@ router.post('/:caseId/resolutions/review', verifyToken, async (req, res) => {
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
-    parentingCase.status = 'resolutions_reviewed';
+    const [sourcePlan, resolution] = await Promise.all([
+      Plan.findById(parentingCase.parent1PlanId),
+      Resolution.findOne({ caseId: parentingCase._id }),
+    ]);
+    const mergedAnswers = toPlanAnswerMap(sourcePlan, 'parent1');
+    resolution?.resolutions?.forEach(({ qKey, proposedAnswer, source }) => {
+      mergedAnswers[qKey] = source === 'parent1' || source === 'parent2'
+        ? normalizeAnswer(proposedAnswer, source)
+        : proposedAnswer;
+    });
+    parentingCase.mergedAnswers = toMergedAnswerEntries(mergedAnswers);
+
+    const hasFlaggedItems = reviews.some((review) => !review.accepted);
+    parentingCase.status = hasFlaggedItems ? 'needs_discussion' : 'resolved';
     await parentingCase.save();
 
     res.status(200).json({ message: 'Review submitted', status: parentingCase.status });
@@ -444,6 +487,20 @@ router.post('/:caseId/resolutions/final', verifyToken, async (req, res) => {
     const remainingCount = [...flaggedKeys].filter((qKey) => finalAnswers[qKey] === undefined).length;
 
     parentingCase.status = remainingCount === 0 ? 'resolved' : 'needs_discussion';
+
+    if (remainingCount === 0) {
+      const sourcePlan = await Plan.findById(parentingCase.parent1PlanId);
+      const mergedAnswers = toPlanAnswerMap(sourcePlan, 'parent1');
+
+      resolution.resolutions.forEach(({ qKey, proposedAnswer, source }) => {
+        mergedAnswers[qKey] = source === 'parent1' || source === 'parent2'
+          ? normalizeAnswer(proposedAnswer, source)
+          : proposedAnswer;
+      });
+
+      parentingCase.mergedAnswers = toMergedAnswerEntries(mergedAnswers);
+    }
+
     await parentingCase.save();
 
     res.status(200).json({ message: 'Final answers submitted', status: parentingCase.status });

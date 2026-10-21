@@ -4,7 +4,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { buildApiUrl } from '../lib/apiClient';
 import { CUSTOM_COMPARISON_QUESTIONS } from '../lib/comparisonQuestionDefinitions';
-import { CheckCircle, AlertTriangle, Users, ArrowLeft, MessageCircle } from 'lucide-react';
+import { CheckCircle, AlertTriangle, Users, ArrowLeft, Printer } from 'lucide-react';
 import './Comparison.css';
 
 const MEDIATION_RESOURCES = [
@@ -22,6 +22,7 @@ export default function Comparison() {
   const [caseStatus, setCaseStatus] = useState('');
   const [isParent1, setIsParent1] = useState(false);
   const [parentNames, setParentNames] = useState({ parent1: 'Parent 1', parent2: 'Parent 2' });
+  const [sharedAnswers, setSharedAnswers] = useState({});
   const [questionMap, setQuestionMap] = useState({});
   const [activeTab, setActiveTab] = useState('merged');
 
@@ -29,10 +30,9 @@ export default function Comparison() {
   const [selections, setSelections] = useState({});
   const [submitStatus, setSubmitStatus] = useState('idle'); // idle | saving | saved | error
 
-  // Final resolved answers for resolved/needs_discussion view
-  const [resolvedAnswers, setResolvedAnswers] = useState({});
   // qKeys P2 flagged that P1 kept (still need discussion)
   const [needsDiscussionKeys, setNeedsDiscussionKeys] = useState(new Set());
+  const [restartStatus, setRestartStatus] = useState('idle');
 
   const parent1Name = isParent1 ? 'Your' : "Co-parent's";
   const parent2Name = isParent1 ? "Co-parent's" : 'Your';
@@ -63,6 +63,7 @@ export default function Comparison() {
           parent1: statusData.parent1Name || 'Parent 1',
           parent2: statusData.parent2Name || 'Parent 2',
         });
+        setSharedAnswers(statusData.sharedAnswers || {});
 
         // Redirect based on status + role
         if (status === 'comparison_ready' && !parent1) {
@@ -71,10 +72,6 @@ export default function Comparison() {
         if (status === 'resolutions_pending') {
           navigate(parent1 ? `/waiting/${caseId}` : `/resolution-review/${caseId}`); return;
         }
-        if (status === 'resolutions_reviewed') {
-          navigate(parent1 ? `/resolution/${caseId}` : `/waiting/${caseId}`); return;
-        }
-
         const compData = await compRes.json();
         if (!compRes.ok) { setError(compData.error || 'Failed to load comparison.'); setLoading(false); return; }
 
@@ -88,28 +85,13 @@ export default function Comparison() {
           setQuestionMap(map);
         }
 
-        // For resolved/needs_discussion: fetch Resolution (and review for needs_discussion)
-        if (['resolved', 'needs_discussion'].includes(status)) {
-          const fetches = [
-            fetch(buildApiUrl(`/api/v1/cases/${caseId}/resolutions`), {
-              headers: { Authorization: `Bearer ${idToken}` },
-            }),
-          ];
-          if (status === 'needs_discussion') {
-            fetches.push(fetch(buildApiUrl(`/api/v1/cases/${caseId}/resolutions/review`), {
-              headers: { Authorization: `Bearer ${idToken}` },
-            }));
-          }
-          const [resRes, reviewRes] = await Promise.all(fetches);
+        // For resolved/needs_discussion: fetch resolutions and P2's review.
+        if (['resolved', 'needs_discussion', 'resolutions_reviewed'].includes(status)) {
+          const reviewRes = await fetch(buildApiUrl(`/api/v1/cases/${caseId}/resolutions/review`), {
+            headers: { Authorization: `Bearer ${idToken}` },
+          });
 
-          if (resRes.ok) {
-            const resData = await resRes.json();
-            const answerMap = {};
-            (resData.resolutions || []).forEach((r) => { answerMap[r.qKey] = r.proposedAnswer; });
-            setResolvedAnswers(answerMap);
-          }
-
-          if (status === 'needs_discussion' && reviewRes?.ok) {
+          if (reviewRes?.ok) {
             const reviewData = await reviewRes.json();
             // Items P2 flagged AND P1 kept (not in resolvedAnswers changes) are still disagreed.
             // The backend already computed this: status is needs_discussion only for kept items.
@@ -135,10 +117,10 @@ export default function Comparison() {
   const formatAnswer = (val, answerOwner, questionKey) => {
     if (val === null || val === undefined) return 'Not answered';
     if (typeof val === 'string' && answerOwner) {
-      if (val === 'me') return answerOwner === 'parent1' ? 'Parent 1' : 'Parent 2';
-      if (val === 'coParent') return answerOwner === 'parent1' ? 'Parent 2' : 'Parent 1';
-      if (val === 'parent1') return answerOwner === 'parent1' ? parentNames.parent1 : parentNames.parent2;
-      if (val === 'parent2') return answerOwner === 'parent1' ? parentNames.parent2 : parentNames.parent1;
+      if (['me', 'meOnly'].includes(val)) return 'Just me';
+      if (['coParent', 'coParentOnly'].includes(val)) return 'Just my co-parent';
+      if (val === 'parent1') return answerOwner === 'parent1' ? 'Just me' : 'Just my co-parent';
+      if (val === 'parent2') return answerOwner === 'parent1' ? 'Just my co-parent' : 'Just me';
     }
     if (Array.isArray(val)) return val.map((value) => formatAnswer(value, answerOwner, questionKey)).join(', ');
     if (val && typeof val === 'object') return JSON.stringify(val);
@@ -196,6 +178,24 @@ export default function Comparison() {
     }
   };
 
+  const handleRestartComparison = async () => {
+    if (!window.confirm('Restart the comparison? This clears the shared merged answers but keeps both individual plans unchanged.')) return;
+
+    setRestartStatus('saving');
+    try {
+      const idToken = await auth.currentUser.getIdToken();
+      const res = await fetch(buildApiUrl(`/api/v1/cases/${caseId}/restart-comparison`), {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${idToken}` },
+      });
+      if (!res.ok) throw new Error('Failed to restart comparison');
+      window.location.reload();
+    } catch (e) {
+      console.error(e);
+      setRestartStatus('error');
+    }
+  };
+
   if (loading) {
     return (
       <div className="comparison comparison--centered">
@@ -226,50 +226,11 @@ export default function Comparison() {
     );
   }
 
-  // ── needs_discussion view ──────────────────────────────────────────────────
-  if (caseStatus === 'needs_discussion') {
-    // Show only items P2 flagged AND where P1's final answer still differs from P2's.
-    // If P1 adopted P2's answer (or a custom answer that matches), exclude it.
-    const stillDisagreed = disagreed.filter((item) =>
-      needsDiscussionKeys.has(item.questionKey) &&
-      JSON.stringify(resolvedAnswers[item.questionKey]) !== JSON.stringify(item.parent2Answer)
-    );
-
-    // All flagged items were resolved client-side — show merged plan view instead.
-    if (stillDisagreed.length === 0) {
-      const allItems = [
-        ...agreed.map((item) => ({ qKey: item.questionKey, answer: item.parent1Answer })),
-        ...disagreed.map((item) => ({ qKey: item.questionKey, answer: resolvedAnswers[item.questionKey] ?? item.parent1Answer })),
-      ];
-      return (
-        <div className="comparison">
-          <div className="comparison__header">
-            <button className="comparison__nav-back" onClick={() => navigate('/dashboard')}>
-              <ArrowLeft size={18} /> Dashboard
-            </button>
-            <div>
-              <h1 className="comparison__title">Merged Parenting Plan</h1>
-              <p className="comparison__subtitle">
-                <CheckCircle size={16} color="#22c55e" style={{ display: 'inline', verticalAlign: 'middle', marginRight: 6 }} />
-                All conflicts resolved
-              </p>
-            </div>
-          </div>
-          <div className="comparison__content">
-            {allItems.map((item) => (
-              <div key={item.qKey} className="comparison__card comparison__agreed">
-                <div className="comparison__question">{questionMap[item.qKey]?.qText || item.qKey}</div>
-                <div className="comparison__answer-agreed">
-                  <CheckCircle size={16} color="#22c55e" />
-                  {formatAnswer(item.answer, 'parent1', item.qKey)}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      );
-    }
-
+  // ── final comparison view ─────────────────────────────────────────────────
+  if (['resolved', 'needs_discussion', 'resolutions_reviewed'].includes(caseStatus)) {
+    const sharedItems = Object.entries(sharedAnswers).map(([qKey, answer]) => ({ qKey, answer }));
+    const agreedItems = sharedItems.filter((item) => !needsDiscussionKeys.has(item.qKey));
+    const discussionItems = sharedItems.filter((item) => needsDiscussionKeys.has(item.qKey));
     return (
       <div className="comparison">
         <div className="comparison__header">
@@ -277,75 +238,84 @@ export default function Comparison() {
             <ArrowLeft size={18} /> Dashboard
           </button>
           <div>
-            <h1 className="comparison__title">Items Needing Discussion</h1>
-            <p className="comparison__subtitle">
-              <MessageCircle size={16} color="#f97316" style={{ display: 'inline', verticalAlign: 'middle', marginRight: 6 }} />
-              {stillDisagreed.length} item{stillDisagreed.length !== 1 ? 's' : ''} still need agreement
-            </p>
-          </div>
-        </div>
-        <div className="comparison__content">
-          <div className="comparison__discussion-banner">
-            <AlertTriangle size={20} color="#f97316" />
-            <p>You and your co-parent were unable to fully agree on the following items. Please discuss these together or consider seeking mediation support.</p>
-          </div>
-          {stillDisagreed.map((item) => (
-            <div key={item.questionKey} className="comparison__card comparison__disagreed">
-              <div className="comparison__question">{questionMap[item.questionKey]?.qText || item.questionKey}</div>
-              <div className="comparison__answer-row">
-                <div className="comparison__answer-col">
-                  <span className="comparison__parent-label">Proposed answer</span>
-                  <span className="comparison__answer-value">{formatAnswer(resolvedAnswers[item.questionKey] ?? item.parent1Answer, 'parent1', item.questionKey)}</span>
-                </div>
-                <div className="comparison__answer-divider"><AlertTriangle size={16} color="#f97316" /></div>
-                <div className="comparison__answer-col">
-                  <span className="comparison__parent-label">Parent 2's answer</span>
-                  <span className="comparison__answer-value">{formatAnswer(item.parent2Answer, 'parent2', item.questionKey)}</span>
-                </div>
-              </div>
-            </div>
-          ))}
-          <div className="comparison__mediation-box">
-            <h3>Mediation Resources</h3>
-            <ul>
-              {MEDIATION_RESOURCES.map((r) => <li key={r}>{r}</li>)}
-            </ul>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ── resolved view ─────────────────────────────────────────────────────────
-  if (caseStatus === 'resolved') {
-    const allItems = [
-      ...agreed.map((item) => ({ qKey: item.questionKey, answer: item.parent1Answer })),
-      ...disagreed.map((item) => ({ qKey: item.questionKey, answer: resolvedAnswers[item.questionKey] ?? item.parent1Answer })),
-    ];
-    return (
-      <div className="comparison">
-        <div className="comparison__header">
-          <button className="comparison__nav-back" onClick={() => navigate('/dashboard')}>
-            <ArrowLeft size={18} /> Dashboard
-          </button>
-          <div>
-            <h1 className="comparison__title">Merged Parenting Plan</h1>
+            <h1 className="comparison__title">Final Parenting Plan Comparison</h1>
             <p className="comparison__subtitle">
               <CheckCircle size={16} color="#22c55e" style={{ display: 'inline', verticalAlign: 'middle', marginRight: 6 }} />
-              All {allItems.length} items resolved
+              {agreedItems.length} agreed, {discussionItems.length} need discussion
             </p>
           </div>
         </div>
+        <div className="comparison__tabs">
+          <button
+            className={`comparison__tab ${activeTab === 'merged' ? 'comparison__tab--active' : ''}`}
+            onClick={() => setActiveTab('merged')}
+          >
+            Agreed ({agreedItems.length})
+          </button>
+          <button
+            className={`comparison__tab ${activeTab === 'discussion' ? 'comparison__tab--active' : ''}`}
+            onClick={() => setActiveTab('discussion')}
+          >
+            Needs Discussion ({discussionItems.length})
+          </button>
+        </div>
         <div className="comparison__content">
-          {allItems.map((item) => (
+          <div className="comparison__submit-row comparison__final-actions">
+              <button
+                className="comparison__download-btn"
+              >
+                <Printer size={16} /> Print / Save PDF
+              </button>
+              <button
+                className="comparison__download-btn"
+                onClick={handleRestartComparison}
+                disabled={restartStatus === 'saving'}
+              >
+                {restartStatus === 'saving' ? 'Restarting...' : 'Restart Comparison'}
+              </button>
+              {restartStatus === 'error' && (
+                <p className="comparison__submit-error">Failed to restart. Please try again.</p>
+              )}
+            </div>
+          {activeTab === 'merged' && agreedItems.map((item) => (
             <div key={item.qKey} className="comparison__card comparison__agreed">
               <div className="comparison__question">{questionMap[item.qKey]?.qText || item.qKey}</div>
               <div className="comparison__answer-agreed">
                 <CheckCircle size={16} color="#22c55e" />
-                {formatAnswer(item.answer, 'parent1', item.qKey)}
+                {formatAnswer(item.answer, isParent1 ? 'parent1' : 'parent2', item.qKey)}
               </div>
             </div>
           ))}
+          {activeTab === 'discussion' && (
+            <>
+              <div className="comparison__discussion-banner">
+                <AlertTriangle size={20} color="#f97316" />
+                <p>These items still need agreement. Please discuss them together or consider seeking mediation support.</p>
+              </div>
+              {discussionItems.map((item) => (
+                <div key={item.qKey} className="comparison__card comparison__disagreed">
+                  <div className="comparison__question">{questionMap[item.qKey]?.qText || item.qKey}</div>
+                  <div className="comparison__answer-row">
+                    <div className="comparison__answer-col">
+                      <span className="comparison__parent-label">Shared answer</span>
+                      <span className="comparison__answer-value">{formatAnswer(item.answer, isParent1 ? 'parent1' : 'parent2', item.qKey)}</span>
+                    </div>
+                    <div className="comparison__answer-divider"><AlertTriangle size={16} color="#f97316" /></div>
+                    <div className="comparison__answer-col">
+                      <span className="comparison__parent-label">Status</span>
+                      <span className="comparison__answer-value">Needs discussion</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {discussionItems.length > 0 && (
+                <div className="comparison__mediation-box">
+                  <h3>Mediation Resources</h3>
+                  <ul>{MEDIATION_RESOURCES.map((resource) => <li key={resource}>{resource}</li>)}</ul>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
     );
@@ -397,7 +367,11 @@ export default function Comparison() {
                   <div className="comparison__question">{questionMap[item.questionKey]?.qText || item.questionKey}</div>
                   <div className="comparison__answer-agreed">
                     <CheckCircle size={16} color="#22c55e" />
-                    {formatAnswer(item.parent1Answer, 'parent1', item.questionKey)}
+                    {formatAnswer(
+                      isParent1 ? item.parent1Answer : item.parent2Answer,
+                      isParent1 ? 'parent1' : 'parent2',
+                      item.questionKey
+                    )}
                   </div>
                 </div>
               ))

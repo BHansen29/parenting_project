@@ -303,6 +303,15 @@
   gap: 8px;
 }
 
+.comparison__final-actions {
+  margin-top: 0;
+  margin-bottom: 24px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
 .comparison__submit-hint,
 .comparison__submit-error {
   font-size: 13px;

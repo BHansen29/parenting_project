@@ -91,8 +91,8 @@ export default function FinalResolution() {
   const formatAnswer = (val, questionKey, answerOwner) => {
     if (val === null || val === undefined) return 'Not answered';
     if (Array.isArray(val)) return val.map((value) => formatAnswer(value, questionKey, answerOwner)).join(', ');
-    if (val === 'parent1') return parentNames[answerOwner] || 'Parent 1';
-    if (val === 'parent2') return parentNames[answerOwner === 'parent1' ? 'parent2' : 'parent1'] || 'Parent 2';
+    if (['meOnly', 'parent1'].includes(val)) return answerOwner === 'parent1' ? 'Just me' : 'Just my co-parent';
+    if (['coParentOnly', 'parent2'].includes(val)) return answerOwner === 'parent1' ? 'Just my co-parent' : 'Just me';
     const option = questionMap[questionKey]?.options?.find((item) => item.value === val);
     if (option?.label) return option.label;
     return String(val);

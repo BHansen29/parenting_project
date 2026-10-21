@@ -26,12 +26,11 @@ const caseSchema = new mongoose.Schema(
     },
     parent1PlanId: { type: mongoose.Schema.Types.ObjectId, ref: 'Plan', default: null },
     parent2PlanId: { type: mongoose.Schema.Types.ObjectId, ref: 'Plan', default: null },
-    // Stores the final resolved answers after both parents select their preferences.
-    // Keys are question keys (qKey), values are the chosen answers (from either parent).
+    // Stores final resolved answers as [{ qKey, answer }]. An array is used because
+    // qKeys may contain dots, which Mongoose Map keys do not allow.
     mergedAnswers: {
-      type: Map,
-      of: mongoose.Schema.Types.Mixed,
-      default: {},
+      type: mongoose.Schema.Types.Mixed,
+      default: [],
     },
     status: {
       type: String,

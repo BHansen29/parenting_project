@@ -7,10 +7,12 @@
  */
 function normalizeAnswer(answer, parentRole) {
   if (typeof answer === 'string') {
-    if (answer === 'me') return parentRole;
-    if (answer === 'coParent') return parentRole === 'parent1' ? 'parent2' : 'parent1';
-    if (answer === 'parent1') return parentRole === 'parent1' ? 'parent1' : 'parent2';
-    if (answer === 'parent2') return parentRole === 'parent1' ? 'parent2' : 'parent1';
+    const normalized = answer.trim().toLowerCase().replace(/[_-]+/g, ' ');
+    const compact = normalized.replace(/[^a-z0-9]/g, '');
+    if (['me', 'meonly', 'justme', 'onlyme', 'parent1'].includes(compact)) return parentRole;
+    if (['coparent', 'coparentonly', 'justmycoparent', 'onlymycoparent', 'parent2'].includes(compact)) {
+      return parentRole === 'parent1' ? 'parent2' : 'parent1';
+    }
     return answer;
   }
 
@@ -32,6 +34,21 @@ function containsConfiguredConflictValue(answer, configuredValues) {
   return configuredValues.includes(answer);
 }
 
+function containsRelativeParentValue(answer) {
+  if (Array.isArray(answer)) return answer.some(containsRelativeParentValue);
+  if (answer && typeof answer === 'object') {
+    return Object.values(answer).some(containsRelativeParentValue);
+  }
+  if (typeof answer !== 'string') return false;
+
+  const normalized = answer.trim().toLowerCase().replace(/[_-]+/g, ' ');
+  const compact = normalized.replace(/[^a-z0-9]/g, '');
+  return [
+    'me', 'meonly', 'justme', 'onlyme', 'coparent', 'coparentonly',
+    'justmycoparent', 'onlymycoparent', 'parent1', 'parent2',
+  ].includes(compact);
+}
+
 function computeDiff(answers1, answers2, conflictValuesByQuestion = {}) {
   const a1 = answers1 instanceof Map ? Object.fromEntries(answers1) : (answers1 || {});
   const a2 = answers2 instanceof Map ? Object.fromEntries(answers2) : (answers2 || {});
@@ -43,17 +60,22 @@ function computeDiff(answers1, answers2, conflictValuesByQuestion = {}) {
     const v2 = a2[key] ?? null;
     const configuredConflictValues = conflictValuesByQuestion[key];
     const hasConfiguredConflictValues = Array.isArray(configuredConflictValues);
+    const hasRelativeParentValue = containsRelativeParentValue(v1) || containsRelativeParentValue(v2);
     const hasConflictingValue = hasConfiguredConflictValues && [v1, v2].some((value) =>
       containsConfiguredConflictValue(value, configuredConflictValues)
     );
+    const normalizedValuesAgree = JSON.stringify(normalizeAnswer(v1, 'parent1')) ===
+      JSON.stringify(normalizeAnswer(v2, 'parent2'));
 
     return {
       questionKey: key,
       parent1Answer: v1,
       parent2Answer: v2,
-      agreement: hasConfiguredConflictValues
+      agreement: hasRelativeParentValue
+        ? normalizedValuesAgree
+        : hasConfiguredConflictValues
         ? !hasConflictingValue
-        : JSON.stringify(normalizeAnswer(v1, 'parent1')) === JSON.stringify(normalizeAnswer(v2, 'parent2')),
+        : normalizedValuesAgree,
     };
   });
 }
@@ -70,4 +92,4 @@ function filterExcludedAnswers(answers, excludedQuestionKeys = new Set()) {
   );
 }
 
-module.exports = { computeDiff, filterExcludedAnswers };
+module.exports = { computeDiff, filterExcludedAnswers, normalizeAnswer };
