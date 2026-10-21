@@ -12,6 +12,157 @@ const MEDIATION_RESOURCES = [
   'Ohio State Bar Association Lawyer Referral: ohiobar.org',
   'Family Court Self-Help Center: contact your local courthouse',
 ];
+
+const WEEK_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const SCHEDULE_KEYS = new Set([
+  'parentingTimeAndCommunication.parentingSchedule',
+  'parentingTimeAndCommunication.holidaySchedule',
+  'parentingTimeAndCommunication.schoolSchedule',
+]);
+
+function formatTime(time) {
+  if (!time) return '';
+  const [hours, minutes] = time.split(':').map(Number);
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) return time;
+  const suffix = hours >= 12 ? 'PM' : 'AM';
+  const displayHour = hours % 12 || 12;
+  return `${displayHour}:${String(minutes).padStart(2, '0')} ${suffix}`;
+}
+
+function formatSlot(slot) {
+  if (!slot || typeof slot !== 'object') return '';
+  if (slot.wholeDay) return 'All day';
+  const start = formatTime(slot.startTime);
+  const end = formatTime(slot.endTime);
+  return start && end ? `${start}–${end}` : start || end;
+}
+
+function RegularScheduleGrid({ parent1Schedule = {}, parent2Schedule = {} }) {
+  const parent1 = parent1Schedule && typeof parent1Schedule === 'object' ? parent1Schedule : {};
+  const parent2 = parent2Schedule && typeof parent2Schedule === 'object' ? parent2Schedule : {};
+
+  return (
+    <div className="comparison__regular-schedule" aria-label="Regular parenting schedule">
+      <div className="comparison__schedule-legend">
+        <div className="comparison__schedule-legend-item">
+          <span className="comparison__schedule-legend-color comparison__schedule-legend-color--parent1" />
+          Parent 1 time
+        </div>
+        <div className="comparison__schedule-legend-item">
+          <span className="comparison__schedule-legend-color comparison__schedule-legend-color--parent2" />
+          Parent 2 time
+        </div>
+      </div>
+
+      <div className="comparison__weekly-grid">
+        <div className="comparison__weekday-header">
+          <span />
+          {WEEK_DAYS.map((day) => <span key={day}>{day}</span>)}
+        </div>
+        {[0, 1, 2, 3].map((week) => (
+          <div className="comparison__week-row" key={week}>
+            <span className="comparison__week-label">Week {week + 1}</span>
+            {[0, 1, 2, 3, 4, 5, 6].map((dayOfWeek) => {
+              const dayIndex = week * 7 + dayOfWeek;
+              const slots = [
+                ...(Array.isArray(parent1[dayIndex]) ? parent1[dayIndex].map((slot) => ({ ...slot, owner: 'parent1' })) : []),
+                ...(Array.isArray(parent2[dayIndex]) ? parent2[dayIndex].map((slot) => ({ ...slot, owner: 'parent2' })) : []),
+              ];
+              return (
+                <div className={`comparison__day-cell ${slots.length ? 'comparison__day-cell--assigned' : ''}`} key={dayIndex}>
+                  {slots.map((slot, index) => (
+                    <div className={`comparison__day-slot comparison__day-slot--${slot.owner}`} key={`${dayIndex}-${slot.owner}-${index}`}>
+                      {formatSlot(slot) || 'No time set'}
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function formatCalendarDetails(details) {
+  if (!details || typeof details !== 'object') return 'No preference entered';
+  if (details.doesNotApply) return 'Does not apply';
+  const parts = [];
+  if (details.year) parts.push(details.year);
+  if (details.time) parts.push(details.time);
+  if (details.alternativeRequest) parts.push(details.alternativeRequest);
+  return parts.join(' · ') || 'No preference entered';
+}
+
+function HolidayScheduleComparison({ parent1Schedule = {}, parent2Schedule = {} }) {
+  const parent1 = parent1Schedule && typeof parent1Schedule === 'object' ? parent1Schedule : {};
+  const parent2 = parent2Schedule && typeof parent2Schedule === 'object' ? parent2Schedule : {};
+  const names = [...new Set([...Object.keys(parent1), ...Object.keys(parent2)])];
+
+  if (names.length === 0) {
+    return <span className="comparison__answer-value">No entries entered</span>;
+  }
+
+  return (
+    <div className="comparison__calendar-comparison" aria-label="Holiday and school schedule comparison">
+      <div className="comparison__schedule-legend">
+        <div className="comparison__schedule-legend-item">
+          <span className="comparison__schedule-legend-color comparison__schedule-legend-color--parent1" />
+          Parent 1 answer
+        </div>
+        <div className="comparison__schedule-legend-item">
+          <span className="comparison__schedule-legend-color comparison__schedule-legend-color--parent2" />
+          Parent 2 answer
+        </div>
+      </div>
+      <div className="comparison__calendar-rows">
+        {names.map((name) => (
+          <div className="comparison__calendar-row" key={name}>
+            <div className="comparison__calendar-name">{name}</div>
+            <div className="comparison__calendar-answer comparison__calendar-answer--parent1">
+              {formatCalendarDetails(parent1[name])}
+            </div>
+            <div className="comparison__calendar-answer comparison__calendar-answer--parent2">
+              {formatCalendarDetails(parent2[name])}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function ScheduleAnswer({ questionKey, value, answerOwner, parent1Value, parent2Value }) {
+  const firstScheduleValue = parent1Value ?? (answerOwner === 'parent1' ? value : {});
+  const secondScheduleValue = parent2Value ?? (answerOwner === 'parent2' ? value : {});
+  const firstSchedule = firstScheduleValue && typeof firstScheduleValue === 'object' ? firstScheduleValue : {};
+  const secondSchedule = secondScheduleValue && typeof secondScheduleValue === 'object' ? secondScheduleValue : {};
+
+  if (!Object.keys(firstSchedule).length && !Object.keys(secondSchedule).length) {
+    return <span className="comparison__answer-value">Not scheduled</span>;
+  }
+
+  if (questionKey.endsWith('.parentingSchedule')) {
+    const hasSchedule = [firstSchedule, secondSchedule].some((schedule) =>
+      Object.values(schedule).some((slots) => Array.isArray(slots) && slots.length > 0)
+    );
+    if (!hasSchedule) {
+      return <span className="comparison__answer-value">No regular parenting time entered</span>;
+    }
+
+    return <RegularScheduleGrid
+      parent1Schedule={firstSchedule}
+      parent2Schedule={secondSchedule}
+    />;
+  }
+
+  return <HolidayScheduleComparison
+    parent1Schedule={firstSchedule}
+    parent2Schedule={secondSchedule}
+  />;
+}
+
 export default function Comparison() {
   const { caseId } = useParams();
   const navigate = useNavigate();
@@ -128,6 +279,18 @@ export default function Comparison() {
     if (option?.label) return option.label;
     return String(val);
   };
+
+  const renderAnswer = (value, answerOwner, questionKey, parent1Value, parent2Value) => (
+    SCHEDULE_KEYS.has(questionKey)
+      ? <ScheduleAnswer
+        questionKey={questionKey}
+        value={value}
+        answerOwner={answerOwner}
+        parent1Value={parent1Value}
+        parent2Value={parent2Value}
+      />
+      : formatAnswer(value, answerOwner, questionKey)
+  );
 
   const setSelection = (qKey, choice) => {
     setSelections((prev) => ({
@@ -282,7 +445,13 @@ export default function Comparison() {
               <div className="comparison__question">{questionMap[item.qKey]?.qText || item.qKey}</div>
               <div className="comparison__answer-agreed">
                 <CheckCircle size={16} color="#22c55e" />
-                {formatAnswer(item.answer, isParent1 ? 'parent1' : 'parent2', item.qKey)}
+                {renderAnswer(
+                  item.answer,
+                  isParent1 ? 'parent1' : 'parent2',
+                  item.qKey,
+                  diff.find((difference) => difference.questionKey === item.qKey)?.parent1Answer,
+                  diff.find((difference) => difference.questionKey === item.qKey)?.parent2Answer
+                )}
               </div>
             </div>
           ))}
@@ -295,17 +464,37 @@ export default function Comparison() {
               {discussionItems.map((item) => (
                 <div key={item.qKey} className="comparison__card comparison__disagreed">
                   <div className="comparison__question">{questionMap[item.qKey]?.qText || item.qKey}</div>
-                  <div className="comparison__answer-row">
-                    <div className="comparison__answer-col">
-                      <span className="comparison__parent-label">Shared answer</span>
-                      <span className="comparison__answer-value">{formatAnswer(item.answer, isParent1 ? 'parent1' : 'parent2', item.qKey)}</span>
+                  {SCHEDULE_KEYS.has(item.qKey) ? (
+                    <ScheduleAnswer
+                      questionKey={item.qKey}
+                      parent1Value={diff.find((difference) => difference.questionKey === item.qKey)?.parent1Answer}
+                      parent2Value={diff.find((difference) => difference.questionKey === item.qKey)?.parent2Answer}
+                    />
+                  ) : (
+                    <div className="comparison__answer-row">
+                      <div className="comparison__answer-col">
+                        <span className="comparison__parent-label">{parentNames.parent1}'s answer</span>
+                        <div className="comparison__answer-value">
+                          {renderAnswer(
+                            diff.find((difference) => difference.questionKey === item.qKey)?.parent1Answer,
+                            'parent1',
+                            item.qKey
+                          )}
+                        </div>
+                      </div>
+                      <div className="comparison__answer-divider"><AlertTriangle size={16} color="#f97316" /></div>
+                      <div className="comparison__answer-col">
+                        <span className="comparison__parent-label">{parentNames.parent2}'s answer</span>
+                        <div className="comparison__answer-value">
+                          {renderAnswer(
+                            diff.find((difference) => difference.questionKey === item.qKey)?.parent2Answer,
+                            'parent2',
+                            item.qKey
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <div className="comparison__answer-divider"><AlertTriangle size={16} color="#f97316" /></div>
-                    <div className="comparison__answer-col">
-                      <span className="comparison__parent-label">Status</span>
-                      <span className="comparison__answer-value">Needs discussion</span>
-                    </div>
-                  </div>
+                  )}
                 </div>
               ))}
               {discussionItems.length > 0 && (
@@ -367,10 +556,12 @@ export default function Comparison() {
                   <div className="comparison__question">{questionMap[item.questionKey]?.qText || item.questionKey}</div>
                   <div className="comparison__answer-agreed">
                     <CheckCircle size={16} color="#22c55e" />
-                    {formatAnswer(
+                    {renderAnswer(
                       isParent1 ? item.parent1Answer : item.parent2Answer,
                       isParent1 ? 'parent1' : 'parent2',
-                      item.questionKey
+                      item.questionKey,
+                      item.parent1Answer,
+                      item.parent2Answer
                     )}
                   </div>
                 </div>
@@ -398,17 +589,25 @@ export default function Comparison() {
                 return (
                   <div key={item.questionKey} className="comparison__card comparison__disagreed">
                     <div className="comparison__question">{questionMap[item.questionKey]?.qText || item.questionKey}</div>
-                    <div className="comparison__answer-row">
-                      <div className="comparison__answer-col">
-                        <span className="comparison__parent-label">{parent1Name} answer</span>
-                        <span className="comparison__answer-value">{formatAnswer(item.parent1Answer, 'parent1', item.questionKey)}</span>
-                      </div>
+                    {SCHEDULE_KEYS.has(item.questionKey) ? (
+                      <ScheduleAnswer
+                        questionKey={item.questionKey}
+                        parent1Value={item.parent1Answer}
+                        parent2Value={item.parent2Answer}
+                      />
+                    ) : (
+                      <div className="comparison__answer-row">
+                        <div className="comparison__answer-col">
+                          <span className="comparison__parent-label">{parent1Name} answer</span>
+                          <div className="comparison__answer-value">{renderAnswer(item.parent1Answer, 'parent1', item.questionKey)}</div>
+                        </div>
                       <div className="comparison__answer-divider"><AlertTriangle size={16} color="#f97316" /></div>
                       <div className="comparison__answer-col">
                         <span className="comparison__parent-label">{parent2Name} answer</span>
-                        <span className="comparison__answer-value">{formatAnswer(item.parent2Answer, 'parent2', item.questionKey)}</span>
+                        <div className="comparison__answer-value">{renderAnswer(item.parent2Answer, 'parent2', item.questionKey)}</div>
                       </div>
-                    </div>
+                      </div>
+                    )}
 
                     {isParent1 && (
                       <div className="comparison__resolution-choices">

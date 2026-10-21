@@ -126,6 +126,39 @@ test('flags a configured value even when both parents select it', () => {
   assert.equal(diff.agreement, false);
 });
 
+test('requires explicit agreement for identical regular parenting schedules', () => {
+  const [diff] = computeDiff(
+    {
+      'parentingTimeAndCommunication.parentingSchedule': {
+        1: [{ parent: 'parent1', startTime: '08:00', endTime: '17:00', wholeDay: false }],
+      },
+    },
+    {
+      'parentingTimeAndCommunication.parentingSchedule': {
+        1: [{ parent: 'parent1', startTime: '08:00', endTime: '17:00', wholeDay: false }],
+      },
+    }
+  );
+
+  assert.equal(diff.agreement, false);
+});
+
+test('requires explicit agreement for identical holiday and school schedules', () => {
+  const [holidayDiff, schoolDiff] = computeDiff(
+    {
+      'parentingTimeAndCommunication.holidaySchedule': { Christmas: { year: 'every' } },
+      'parentingTimeAndCommunication.schoolSchedule': { 'Spring Break': { year: 'odd' } },
+    },
+    {
+      'parentingTimeAndCommunication.holidaySchedule': { Christmas: { year: 'every' } },
+      'parentingTimeAndCommunication.schoolSchedule': { 'Spring Break': { year: 'odd' } },
+    }
+  );
+
+  assert.equal(holidayDiff.agreement, false);
+  assert.equal(schoolDiff.agreement, false);
+});
+
 test('filters only questions excluded from comparison', () => {
   const filtered = filterExcludedAnswers(
     { living_arrangements: 'yes', legal_decisions: 'together' },

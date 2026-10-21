@@ -5,6 +5,12 @@
  * @param {Map|Object} answers2 - Parent 2's answers keyed by questionKey
  * @returns {Array<{questionKey, parent1Answer, parent2Answer, agreement}>}
  */
+const EXPLICIT_AGREEMENT_KEYS = new Set([
+  'parentingTimeAndCommunication.parentingSchedule',
+  'parentingTimeAndCommunication.holidaySchedule',
+  'parentingTimeAndCommunication.schoolSchedule',
+]);
+
 function normalizeAnswer(answer, parentRole) {
   if (typeof answer === 'string') {
     const normalized = answer.trim().toLowerCase().replace(/[_-]+/g, ' ');
@@ -71,7 +77,9 @@ function computeDiff(answers1, answers2, conflictValuesByQuestion = {}) {
       questionKey: key,
       parent1Answer: v1,
       parent2Answer: v2,
-      agreement: hasRelativeParentValue
+      agreement: EXPLICIT_AGREEMENT_KEYS.has(key)
+        ? false
+        : hasRelativeParentValue
         ? normalizedValuesAgree
         : hasConfiguredConflictValues
         ? !hasConflictingValue

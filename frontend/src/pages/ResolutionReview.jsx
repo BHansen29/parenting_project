@@ -4,6 +4,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { buildApiUrl } from '../lib/apiClient';
 import { CUSTOM_COMPARISON_QUESTIONS } from '../lib/comparisonQuestionDefinitions';
+import { ScheduleAnswer } from './Comparison';
 import { CheckCircle, Flag, AlertTriangle, ArrowLeft } from 'lucide-react';
 import './ResolutionReview.css';
 
@@ -89,6 +90,14 @@ export default function ResolutionReview() {
     return String(val);
   };
 
+  const renderAnswer = (value, questionKey, answerOwner, otherParentValue) => {
+    return formatAnswer(value, questionKey, answerOwner);
+  };
+
+  const isScheduleQuestion = (questionKey) => questionKey.startsWith('parentingTimeAndCommunication.')
+    && ['parentingSchedule', 'holidaySchedule', 'schoolSchedule']
+      .some((scheduleKey) => questionKey.endsWith(scheduleKey));
+
   const allReviewed = resolutions.length > 0 && resolutions.every((r) => reviews[r.qKey] !== undefined);
 
   const handleSubmit = async () => {
@@ -168,16 +177,31 @@ export default function ResolutionReview() {
             >
               <div className="res-review__question">{questionMap[r.qKey]?.qText || r.qKey}</div>
 
-              <div className="res-review__answers">
-                <div className="res-review__answer-block res-review__answer-block--proposed">
-                  <span className="res-review__answer-label">Co-parent's proposed answer</span>
-                  <span className="res-review__answer-value">{formatAnswer(r.proposedAnswer, r.qKey, 'parent1')}</span>
+              {isScheduleQuestion(r.qKey) ? (
+                <div className="res-review__answers res-review__answers--schedule">
+                  <div className="res-review__answer-block res-review__answer-block--proposed">
+                    <span className="res-review__answer-label">Parent 1 and Parent 2 schedule answers</span>
+                    <ScheduleAnswer
+                      questionKey={r.qKey}
+                      value={r.proposedAnswer}
+                      answerOwner="parent1"
+                      parent1Value={r.proposedAnswer}
+                      parent2Value={diffMap[r.qKey]?.parent2Answer}
+                    />
+                  </div>
                 </div>
-                <div className="res-review__answer-block">
-                  <span className="res-review__answer-label">Your original answer</span>
-                  <span className="res-review__answer-value">{formatAnswer(diffMap[r.qKey]?.parent2Answer, r.qKey, 'parent2')}</span>
+              ) : (
+                <div className="res-review__answers">
+                  <div className="res-review__answer-block res-review__answer-block--proposed">
+                    <span className="res-review__answer-label">Co-parent's proposed answer</span>
+                    <div className="res-review__answer-value">{renderAnswer(r.proposedAnswer, r.qKey, 'parent1')}</div>
+                  </div>
+                  <div className="res-review__answer-block">
+                    <span className="res-review__answer-label">Your original answer</span>
+                    <div className="res-review__answer-value">{renderAnswer(diffMap[r.qKey]?.parent2Answer, r.qKey, 'parent2')}</div>
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="res-review__actions">
                 <button

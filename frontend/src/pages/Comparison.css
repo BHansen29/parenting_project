@@ -189,6 +189,19 @@
   font-size: 15px;
 }
 
+.comparison__answer-agreed .comparison__schedule-list {
+  color: #374151;
+}
+
+.comparison__answer-agreed:has(.comparison__regular-schedule) {
+  align-items: flex-start;
+}
+
+.comparison__answer-agreed .comparison__regular-schedule {
+  flex: 1;
+  min-width: 0;
+}
+
 .comparison__answer-row {
   display: flex;
   align-items: center;
@@ -215,8 +228,221 @@
   color: #374151;
 }
 
+.comparison__schedule-list,
+.comparison__calendar-comparison {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+  width: 100%;
+}
+
+.comparison__calendar-comparison {
+  gap: 12px;
+}
+
+.comparison__schedule-row {
+  display: grid;
+  grid-template-columns: minmax(130px, 0.8fr) 1fr;
+  gap: 12px;
+  padding: 7px 10px;
+  background: #f8fafc;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.comparison__calendar-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.comparison__calendar-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) minmax(140px, 1fr) minmax(140px, 1fr);
+  gap: 8px;
+  align-items: stretch;
+}
+
+.comparison__calendar-name,
+.comparison__calendar-answer {
+  min-width: 0;
+  padding: 9px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.comparison__calendar-name {
+  display: flex;
+  align-items: center;
+  background: #f8fafc;
+  color: #374151;
+  font-weight: 600;
+}
+
+.comparison__calendar-answer {
+  color: #fff;
+}
+
+.comparison__calendar-answer--parent1 {
+  background: #14abdd;
+}
+
+.comparison__calendar-answer--parent2 {
+  background: #f37b35;
+}
+
+.comparison__regular-schedule {
+  width: 100%;
+  margin-top: 8px;
+  padding: 16px;
+  box-sizing: border-box;
+  background: #fff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+}
+
+.comparison__schedule-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding: 10px 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.comparison__schedule-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #374151;
+  font-size: 13px;
+}
+
+.comparison__schedule-legend-color {
+  width: 18px;
+  height: 18px;
+  box-sizing: border-box;
+  border-radius: 4px;
+}
+
+.comparison__schedule-legend-color--parent1 {
+  background: #14abdd;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.comparison__schedule-legend-color--parent2 {
+  background: #f37b35;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.comparison__weekly-grid {
+  overflow-x: auto;
+}
+
+.comparison__weekday-header,
+.comparison__week-row {
+  display: grid;
+  grid-template-columns: 64px repeat(7, minmax(72px, 1fr));
+  gap: 6px;
+  min-width: 590px;
+}
+
+.comparison__weekday-header {
+  margin-bottom: 6px;
+}
+
+.comparison__weekday-header span,
+.comparison__week-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 4px;
+  color: #666;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.comparison__week-row {
+  margin-bottom: 6px;
+}
+
+.comparison__day-cell {
+  min-height: 72px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px;
+  box-sizing: border-box;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.comparison__day-cell--assigned {
+  border-color: #14abdd;
+}
+
+.comparison__day-slot {
+  padding: 6px 4px;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 10px;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.comparison__day-slot--parent1 {
+  background: #14abdd;
+}
+
+.comparison__day-slot--parent2 {
+  background: #f37b35;
+}
+
+.comparison__schedule-day {
+  color: #374151;
+  font-weight: 600;
+}
+
 .comparison__answer-divider {
   flex-shrink: 0;
+}
+
+.comparison__answer-col:has(.comparison__schedule-list) {
+  min-width: 0;
+}
+
+@media (max-width: 640px) {
+  .comparison__calendar-row {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .comparison__calendar-name {
+    padding-bottom: 4px;
+  }
+}
+
+@media (max-width: 640px) {
+  .comparison__answer-row {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .comparison__answer-divider {
+    display: none;
+  }
+
+  .comparison__schedule-row {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
 }
 
 .comparison__empty {

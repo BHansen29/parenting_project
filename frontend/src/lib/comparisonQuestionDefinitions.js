@@ -20,6 +20,15 @@ const policyAgreementOptions = [
 ];
 
 export const CUSTOM_COMPARISON_QUESTIONS = {
+  'parentingTimeAndCommunication.parentingSchedule': {
+    qText: 'Regular Parenting Schedule',
+  },
+  'parentingTimeAndCommunication.holidaySchedule': {
+    qText: 'Holiday Schedule',
+  },
+  'parentingTimeAndCommunication.schoolSchedule': {
+    qText: 'School Schedule',
+  },
   'parentingTimeAndCommunication.agreeToTransportationPolicy': {
     qText: 'Standard Transportation Policy',
     options: policyAgreementOptions,

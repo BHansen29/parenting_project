@@ -13,6 +13,9 @@ const { getFirstName } = require('../utils/nameUtils');
 
 const COMPARABLE_SECTION_FIELDS = {
   parentingTimeAndCommunication: [
+    'parentingSchedule',
+    'holidaySchedule',
+    'schoolSchedule',
     'agreeToTransportationPolicy',
     'transportationArrangementDescription',
     'agreeToActivityPolicy',
