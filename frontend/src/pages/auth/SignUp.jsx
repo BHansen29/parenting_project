@@ -76,7 +76,7 @@ export default function SignUp() {
         navigate(redirect || '/dashboard');
       } catch (err) {
         // Show Firebase error in the form
-        setErrors({ general: err.message });
+        setErrors({ general: 'Email already in use, please use a different email address.' });
       } finally {
         setIsLoading(false);
       }

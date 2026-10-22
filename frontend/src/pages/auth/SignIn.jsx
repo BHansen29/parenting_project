@@ -65,7 +65,7 @@ export default function SignIn() {
         navigate(redirect || '/dashboard');
       } catch (err) {
         // Show Firebase error in the form
-        setErrors({ general: err.message });
+        setErrors({ general: 'Invalid email or password, please check both and try again.' });
         setIsLoading(false);
       }
     }
