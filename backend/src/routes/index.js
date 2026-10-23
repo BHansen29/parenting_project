@@ -14,6 +14,7 @@ const adminRoutes = require('./admin');
 const verifyToken = require('../middleware/verifyToken');
 const requireAdmin = require('../middleware/requireAdmin');
 const { getFirebaseAuth } = require('../config/firebaseAdmin');
+const Plan = require('../models/Plan');
 
 const requireDatabaseConnection = (req, res, next) => {
   if (mongoose.connection.readyState !== 1) {
@@ -192,6 +193,29 @@ router.post('/auth/firebase/session', requireDatabaseConnection, async (req, res
   }
 });
 
+router.get('/aggregate-data', requireDatabaseConnection, async (req, res) => {
+  try {
+    const plans = await Plan.find(
+      {},
+      'parentAge zipCode collaborationMode aggregateData'
+    ).lean();
+
+    res.json(plans.map((plan) => ({
+      parentAge: plan.parentAge ?? null,
+      zipCode: plan.zipCode ?? null,
+      collaborationMode: plan.collaborationMode ?? null,
+      gender: plan.aggregateData?.gender ?? null,
+      background: plan.aggregateData?.background ?? null,
+      race: plan.aggregateData?.race ?? null,
+      income: plan.aggregateData?.income ?? null,
+      household: plan.aggregateData?.household ?? null,
+      language: plan.aggregateData?.language ?? null,
+      education: plan.aggregateData?.education ?? null
+    })));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 // GET /api - Show available endpoints
 router.get('/', (req, res) => {
   res.json({

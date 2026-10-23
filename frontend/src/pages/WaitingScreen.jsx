@@ -51,9 +51,7 @@ export default function WaitingScreen() {
     // Navigate away if no longer in a waiting state
     if (currentStatus === 'resolutions_pending' && !parent1) {
       navigate(`/resolution-review/${caseId}`);
-    } else if (currentStatus === 'resolutions_reviewed' && parent1) {
-      navigate(`/resolution/${caseId}`);
-    } else if (currentStatus === 'needs_discussion' || currentStatus === 'resolved') {
+    } else if (currentStatus === 'resolutions_reviewed' || currentStatus === 'needs_discussion' || currentStatus === 'resolved') {
       navigate(`/comparison/${caseId}`);
     }
   };

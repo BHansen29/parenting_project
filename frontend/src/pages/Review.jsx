@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { onAuthStateChanged } from 'firebase/auth';
 import { CheckCircle, Download, UserPlus, Pencil, ChevronDown, ChevronUp } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/card';
 import Disclaimer from '../components/forms/Disclaimer';
@@ -87,9 +88,7 @@ const CUSTOM_SECTION_FIELDS = {
     fields: {
       medicalRecords: 'Medical information access',
       schoolContact: 'School contact rights',
-      schoolReports: 'School reports and notices',
       schoolActivities: 'School activity participation',
-      extracurricularActivities: 'Extracurricular activity participation',
     },
   },
 };
@@ -120,15 +119,21 @@ const CUSTOM_FIELD_OPTIONS = {
   ],
   medicalRecords: INFORMATION_SHARING_OPTIONS,
   schoolContact: INFORMATION_SHARING_OPTIONS,
-  schoolReports: INFORMATION_SHARING_OPTIONS,
   schoolActivities: INFORMATION_SHARING_OPTIONS,
-  extracurricularActivities: INFORMATION_SHARING_OPTIONS,
 };
 
 const STATE_FIELD_OPTIONS = {
+  residentialParent: [
+    { value: 'yes', label: 'Yes, I am the residential parent' },
+    { value: 'no', label: 'No, I am not the residential parent' },
+  ],
   parentRole: [
     { value: 'residential', label: 'I am the residential parent' },
     { value: 'nonresidential', label: 'I am the non-residential parent' },
+  ],
+  collaborationMode: [
+    { value: 'individual', label: 'I wish to complete the form on my own'},
+    { value: 'collaborative', label: 'I wish to collaborate with my co-parent'},
   ],
 };
 
@@ -267,6 +272,7 @@ export default function Review() {
   //   'collaborative'     — user chose collaborative; invite button opens modal directly
   //   ''                  — not yet set; treat same as individual (no invite)
   const collaborationMode = state.collaborationMode ?? '';
+  const isSharedPlan = state.plan?.isShared === true;
 
   const [questionsByKey, setQuestionsByKey] = useState({});
   const groupedResponses = groupResponsesBySection(state.plan?.answers || [], questionsByKey);
@@ -281,20 +287,32 @@ export default function Review() {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [showSwitchPrompt, setShowSwitchPrompt] = useState(false);
   const [caseStatus, setCaseStatus] = useState(null);
+  
 
   const caseId = state.plan?.caseId;
 
   useEffect(() => {
-    if (!caseId) return;
-    const user = auth.currentUser;
-    if (!user) return;
-    user.getIdToken().then((idToken) =>
-      fetch(buildApiUrl(`api/v1/cases/${caseId}/status`), {
-        headers: { Authorization: `Bearer ${idToken}` },
-      })
-    ).then((res) => res.ok ? res.json() : null)
-     .then((data) => { if (data?.status) setCaseStatus(data.status); })
-     .catch(() => {});
+    if (!caseId) return undefined;
+
+    let isActive = true;
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) return;
+
+      user.getIdToken()
+        .then((idToken) => fetch(buildApiUrl(`api/v1/cases/${caseId}/status`), {
+          headers: { Authorization: `Bearer ${idToken}` },
+        }))
+        .then((res) => res.ok ? res.json() : null)
+        .then((data) => {
+          if (isActive && data?.status) setCaseStatus(data.status);
+        })
+        .catch(() => {});
+    });
+
+    return () => {
+      isActive = false;
+      unsubscribe();
+    };
   }, [caseId]);
 
   useEffect(() => {
@@ -346,7 +364,7 @@ export default function Review() {
     setInviteOpen(true);
   };
 
-  const showInviteUI = collaborationMode !== 'locked-individual';
+  const showInviteUI = collaborationMode !== 'locked-individual' && !isSharedPlan;
 
   return (
     <div className="page-container">
@@ -438,7 +456,7 @@ export default function Review() {
               </div>
 
               {/* Show comparison button only in collaborative mode and after an invite has been sent. */}
-              {collaborationMode === 'collaborative' && caseId && caseStatus && caseStatus !== 'draft' && (
+              {collaborationMode === 'collaborative' && caseId && caseStatus && isSharedPlan && caseStatus !== 'draft' && (
                 <button
                   className="review__btn-invite"
                   onClick={() => navigate(`/comparison/${caseId}`)}
@@ -453,7 +471,12 @@ export default function Review() {
       </div>
 
       {/* caseId lets the modal send a real invite linked to this shared case */}
-      <InviteModal isOpen={inviteOpen} onClose={() => setInviteOpen(false)} caseId={caseId} onInviteSent={() => setCaseStatus('pending_invite')} />
+      <InviteModal
+        isOpen={inviteOpen}
+        onClose={() => setInviteOpen(false)}
+        caseId={caseId}
+        onInviteSent={() => setCaseStatus('pending_invite')}
+      />
     </div>
   );
 }

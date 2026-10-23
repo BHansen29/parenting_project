@@ -11,7 +11,7 @@ export default function Header({
   const navigate = useNavigate();
 
   const handleLogoClick = () => {
-    navigate('/landing-page');
+    navigate('/dashboard');
   };
 
   return (

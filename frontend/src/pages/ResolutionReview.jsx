@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { buildApiUrl } from '../lib/apiClient';
+import { CUSTOM_COMPARISON_QUESTIONS } from '../lib/comparisonQuestionDefinitions';
+import { ScheduleAnswer } from './Comparison';
 import { CheckCircle, Flag, AlertTriangle, ArrowLeft } from 'lucide-react';
 import './ResolutionReview.css';
 
@@ -14,7 +16,8 @@ export default function ResolutionReview() {
   const [error, setError] = useState('');
   const [resolutions, setResolutions] = useState([]); // P1's proposed answers
   const [diffMap, setDiffMap] = useState({});          // { qKey: { parent2Answer } }
-  const [questionMap, setQuestionMap] = useState({});   // { qKey: qText }
+  const [questionMap, setQuestionMap] = useState({});   // { qKey: question }
+  const [parentNames, setParentNames] = useState({ parent1: 'Parent 1', parent2: 'Parent 2' });
   // { [qKey]: true (accepted) | false (flagged) }
   const [reviews, setReviews] = useState({});
   const [submitStatus, setSubmitStatus] = useState('idle'); // idle | saving | error
@@ -31,6 +34,10 @@ export default function ResolutionReview() {
         });
         if (!statusRes.ok) { setError('Failed to load case.'); setLoading(false); return; }
         const statusData = await statusRes.json();
+        setParentNames({
+          parent1: statusData.parent1Name || 'Parent 1',
+          parent2: statusData.parent2Name || 'Parent 2',
+        });
         if (statusData.isParent1 || statusData.status !== 'resolutions_pending') {
           navigate(`/waiting/${caseId}`); return;
         }
@@ -51,7 +58,7 @@ export default function ResolutionReview() {
 
         if (compRes.ok) {
           const compData = await compRes.json();
-          const map = {};
+          const map = { ...CUSTOM_COMPARISON_QUESTIONS };
           (compData.diff || []).filter((d) => !d.agreement).forEach((d) => {
             map[d.questionKey] = { parent2Answer: d.parent2Answer };
           });
@@ -61,8 +68,8 @@ export default function ResolutionReview() {
         if (questionsRes.ok) {
           const questionsData = await questionsRes.json();
           const questions = Array.isArray(questionsData) ? questionsData : questionsData.questions || [];
-          const map = {};
-          questions.forEach((q) => { if (q.qKey) map[q.qKey] = q.qText || q.qKey; });
+          const map = { ...CUSTOM_COMPARISON_QUESTIONS };
+          questions.forEach((q) => { if (q.qKey) map[q.qKey] = q; });
           setQuestionMap(map);
         }
       } catch (e) {
@@ -73,11 +80,23 @@ export default function ResolutionReview() {
     return unsub;
   }, [caseId, navigate]);
 
-  const formatAnswer = (val) => {
+  const formatAnswer = (val, questionKey, answerOwner) => {
     if (val === null || val === undefined) return 'Not answered';
-    if (Array.isArray(val)) return val.join(', ');
+    if (Array.isArray(val)) return val.map((value) => formatAnswer(value, questionKey, answerOwner)).join(', ');
+    if (['meOnly', 'parent1'].includes(val)) return answerOwner === 'parent1' ? 'Just me' : 'Just my co-parent';
+    if (['coParentOnly', 'parent2'].includes(val)) return answerOwner === 'parent1' ? 'Just my co-parent' : 'Just me';
+    const option = questionMap[questionKey]?.options?.find((item) => item.value === val);
+    if (option?.label) return option.label;
     return String(val);
   };
+
+  const renderAnswer = (value, questionKey, answerOwner, otherParentValue) => {
+    return formatAnswer(value, questionKey, answerOwner);
+  };
+
+  const isScheduleQuestion = (questionKey) => questionKey.startsWith('parentingTimeAndCommunication.')
+    && ['parentingSchedule', 'holidaySchedule', 'schoolSchedule']
+      .some((scheduleKey) => questionKey.endsWith(scheduleKey));
 
   const allReviewed = resolutions.length > 0 && resolutions.every((r) => reviews[r.qKey] !== undefined);
 
@@ -93,7 +112,7 @@ export default function ResolutionReview() {
         body: JSON.stringify({ reviews: reviewsArray }),
       });
       if (!res.ok) throw new Error('Failed to submit');
-      navigate(`/waiting/${caseId}`);
+      navigate(`/comparison/${caseId}`);
     } catch (e) {
       console.error(e);
       setSubmitStatus('error');
@@ -156,18 +175,33 @@ export default function ResolutionReview() {
               key={r.qKey}
               className={`res-review__card ${accepted === true ? 'res-review__card--accepted' : accepted === false ? 'res-review__card--flagged' : ''}`}
             >
-              <div className="res-review__question">{questionMap[r.qKey] || r.qKey}</div>
+              <div className="res-review__question">{questionMap[r.qKey]?.qText || r.qKey}</div>
 
-              <div className="res-review__answers">
-                <div className="res-review__answer-block res-review__answer-block--proposed">
-                  <span className="res-review__answer-label">Co-parent's proposed answer</span>
-                  <span className="res-review__answer-value">{formatAnswer(r.proposedAnswer)}</span>
+              {isScheduleQuestion(r.qKey) ? (
+                <div className="res-review__answers res-review__answers--schedule">
+                  <div className="res-review__answer-block res-review__answer-block--proposed">
+                    <span className="res-review__answer-label">Parent 1 and Parent 2 schedule answers</span>
+                    <ScheduleAnswer
+                      questionKey={r.qKey}
+                      value={r.proposedAnswer}
+                      answerOwner="parent1"
+                      parent1Value={r.proposedAnswer}
+                      parent2Value={diffMap[r.qKey]?.parent2Answer}
+                    />
+                  </div>
                 </div>
-                <div className="res-review__answer-block">
-                  <span className="res-review__answer-label">Your original answer</span>
-                  <span className="res-review__answer-value">{formatAnswer(diffMap[r.qKey]?.parent2Answer)}</span>
+              ) : (
+                <div className="res-review__answers">
+                  <div className="res-review__answer-block res-review__answer-block--proposed">
+                    <span className="res-review__answer-label">Co-parent's proposed answer</span>
+                    <div className="res-review__answer-value">{renderAnswer(r.proposedAnswer, r.qKey, 'parent1')}</div>
+                  </div>
+                  <div className="res-review__answer-block">
+                    <span className="res-review__answer-label">Your original answer</span>
+                    <div className="res-review__answer-value">{renderAnswer(diffMap[r.qKey]?.parent2Answer, r.qKey, 'parent2')}</div>
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="res-review__actions">
                 <button

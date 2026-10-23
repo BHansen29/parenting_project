@@ -38,7 +38,22 @@ router.post('/', verifyToken, async (req, res) => {
           plan.name = `Shared Plan with ${getFirstName(p1User)}`;
           plan.caseId = existingCase._id;
           plan.isShared = true;
+          plan.isParent2 = true;
           plan.children = p1Plan?.children ?? [];
+          plan.collaborationMode = p1Plan?.collaborationMode ?? '';
+          const oppositeUserRole = {
+            'parent1/petitioner1/plaintiff': 'parent2/petitioner2/defendant',
+            'parent2/petitioner2/defendant': 'parent1/petitioner1/plaintiff',
+          };
+          const oppositeResidentialParent = {
+            yes: 'no',
+            no: 'yes',
+          };
+          plan.userRole = oppositeUserRole[p1Plan?.userRole] ?? p1Plan?.userRole ?? '';
+          plan.residentialParent = oppositeResidentialParent[p1Plan?.residentialParent] ?? p1Plan?.residentialParent ?? '';
+          plan.parentingTimeAndCommunication = {
+            parentingSchedule: p1Plan?.parentingTimeAndCommunication?.parentingSchedule ?? {},
+          };
           await plan.save();
         }
       } catch (caseErr) {
@@ -183,7 +198,7 @@ router.post('/:planId/sections', verifyToken, async (req, res) => {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
-    const allowedSections = ['parentingTimeAndCommunication', 'informationSharing'];
+    const allowedSections = ['parentingTimeAndCommunication', 'informationSharing', 'taxExemptions'];
     const { section, answers } = req.body;
     if (!allowedSections.includes(section) || !answers || typeof answers !== 'object' || Array.isArray(answers)) {
       return res.status(400).json({ error: 'Invalid section answers' });

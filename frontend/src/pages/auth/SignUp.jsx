@@ -72,11 +72,11 @@ export default function SignUp() {
         // Try to sync Mongo profile, but do not block sign-up if backend/database is down.
         await syncFirebaseUserProfileSafely(firebaseUser);
 
-        // On success, send them to the first onboarding step.
-        navigate(redirect || '/getting-started');
+        // New accounts start from the dashboard, where they can create a plan.
+        navigate(redirect || '/dashboard');
       } catch (err) {
         // Show Firebase error in the form
-        setErrors({ general: err.message });
+        setErrors({ general: 'Email already in use, please use a different email address.' });
       } finally {
         setIsLoading(false);
       }

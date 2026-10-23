@@ -666,13 +666,13 @@ describe('ParentingTimeAndCommunication', () => {
 
     it('navigates to /informationsharing when descriptions are provided instead of checkboxes', async () => {
       renderWithRouter(<ParentingTimeAndCommunication />)
-      await userEvent.type(
+      fireEvent.change(
         document.querySelector('#transportationArrangementDescription'),
-        'We will alternate pick-up'
+        { target: { value: 'We will alternate pick-up' } }
       )
-      await userEvent.type(
+      fireEvent.change(
         document.querySelector('#activityPolicyDescription'),
-        'Both parents attend all events'
+        { target: { value: 'Both parents attend all events' } }
       )
       await userEvent.click(
         document.querySelector('input[name="communicationWithCoParentOnPhone"][value="no"]')

@@ -17,6 +17,9 @@ import FlagButton from '../components/forms/FlagButton';
 import { useSectionFlag } from '../hooks/useSectionFlag';
 import SectionHeader from '../components/forms/SectionHeader';
 import RadioQuestion from '../components/forms/RadioQuestion';
+import { auth } from '../lib/firebase';
+import { buildApiUrl } from '../lib/apiClient';
+import Disclaimer from '../components/forms/Disclaimer';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -328,13 +331,32 @@ export default function TaxExemptions() {
 
   const [submitAttempted, setSubmitAttempted] = useState(false);
 
-  const handleNext = useCallback(() => {
-    if (validateForm()) {
-      navigate('/review');
-    } else {
+  const handleNext = useCallback(async () => {
+    if (!validateForm()) {
       setSubmitAttempted(true);
+      return;
     }
-  }, [validateForm, state]);
+
+    const user = auth.currentUser;
+    if (!user || !state.plan?._id) {
+      navigate('/review');
+      return;
+    }
+
+    try {
+      const idToken = await user.getIdToken();
+      const response = await fetch(buildApiUrl(`api/plan/${state.plan._id}/sections`), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+        body: JSON.stringify({ section: 'taxExemptions', answers: state.taxExemptions }),
+      });
+      if (!response.ok) throw new Error('Failed to save tax exemption answers');
+      dispatch({ type: 'UPDATE_SECTION', section: 'plan', payload: await response.json() });
+      navigate('/review');
+    } catch (error) {
+      console.error(error.message);
+    }
+  }, [dispatch, navigate, state, validateForm]);
 
   const handleBack = useCallback(() => {
     update({ errors: {} });
@@ -368,7 +390,9 @@ export default function TaxExemptions() {
               Decide who will claim tax exemptions for your children.
             </CardDescription>
           </CardHeader>
-
+          <Disclaimer variant="info">
+              Each child can only be claimed by one parent on a tax return each year. Parents cannot both claim the same child or split the tax credit for that child.
+          </Disclaimer>
           <CardContent>
             <hr className="section-divider" />
 
@@ -412,6 +436,9 @@ export default function TaxExemptions() {
                 />
               </CardHeader>
               <CardContent>
+                {allChildNames.length === 0 && (
+                  <p className="text-input__error-message">No children found in your plan. Please add children in the "Getting Started" section first.</p>
+                )}
                 <div className="checkbox-group">
                   {allChildNames.map((name) => (
                     <Checkbox
