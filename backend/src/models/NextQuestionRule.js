@@ -2,6 +2,13 @@
 
 const mongoose = require('mongoose');
 
+const revisionSchema = new mongoose.Schema({
+  actorUid: { type: String, required: true },
+  changedAt: { type: Date, required: true },
+  before: { type: mongoose.Schema.Types.Mixed, default: null },
+  after: { type: mongoose.Schema.Types.Mixed, required: true },
+}, { _id: false });
+
 const ruleSchema = new mongoose.Schema({
   operator: {
     type: String,
@@ -47,7 +54,12 @@ const nextQuestionRuleSchema = new mongoose.Schema({
   goToDefault: {
     // qKey of default next question if isDefault is true
     type: String,
-  }
-})
+  },
+  revisionHistory: {
+    type: [revisionSchema],
+    default: [],
+    select: false
+  },
+}, { timestamps: true, optimisticConcurrency: true });
 
 module.exports = mongoose.model('NextQuestionRule', nextQuestionRuleSchema);

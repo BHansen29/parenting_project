@@ -17,6 +17,7 @@ import InviteAccept from './pages/InviteAccept';
 import Comparison from './pages/Comparison';
 import WaitingScreen from './pages/WaitingScreen';
 import ResolutionReview from './pages/ResolutionReview';
+import AdminQuestionEditor from './pages/AdminQuestionEditor';
 import FinalResolution from './pages/FinalResolution';
 import { FormProvider } from './context/FormContext';
 import { NavigationProvider } from './context/NavigationContext';
@@ -37,6 +38,7 @@ function App() {
 
         {/* Dashboard (no sidebar) */}
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/admin/questions" element={<AdminQuestionEditor />} />
 
             {/* Form routes with sidebar */}
             <Route path="/getting-started" element={

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { Users, FileText, Calendar, UserPlus, Plus, Trash2, Pencil, Lock } from 'lucide-react';
 import { auth } from '../lib/firebase';
@@ -15,6 +15,7 @@ export default function Dashboard() {
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [activeCaseId, setActiveCaseId] = useState(null);
   const [showSwitchPrompt, setShowSwitchPrompt] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const { state, dispatch } = useForm();
 
@@ -152,11 +153,39 @@ export default function Dashboard() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
       if (!currentUser) navigate('/signin');
-      else setUser(currentUser);
     });
     return unsubscribe;
   }, [navigate]);
+
+  useEffect(() => {
+    if (!user) {
+      setIsAdmin(false);
+      return undefined;
+    }
+
+    let active = true;
+    setIsAdmin(false);
+    user.getIdToken()
+      .then((idToken) => fetch(buildApiUrl('/api/admin/access'), {
+        headers: { Authorization: `Bearer ${idToken}` }
+      }))
+      .then((response) => {
+        if (active && response.ok) {
+          setIsAdmin(true);
+        } else if (active && response.status !== 403) {
+          console.error('Could not check administrator access');
+        }
+      })
+      .catch((error) => {
+        if (active) console.error('Could not check administrator access:', error);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [user]);
 
   const handleSignOut = async () => {
     await signOut(auth);
@@ -290,10 +319,18 @@ export default function Dashboard() {
         <section className="dashboard__plans">
           <div className="dashboard__plans-header">
             <h2 className="dashboard__plans-title">Your Plans</h2>
-            <button className="dashboard__new-plan-btn" onClick={handleNewPlan}>
-              <Plus size={16} />
-              New Plan
-            </button>
+            <div className="dashboard__plans-actions">
+              {isAdmin && (
+                <Link className="dashboard__admin-btn" to="/admin/questions">
+                  <Lock size={16} />
+                  Edit questions
+                </Link>
+              )}
+              <button className="dashboard__new-plan-btn" onClick={handleNewPlan}>
+                <Plus size={16} />
+                New Plan
+              </button>
+            </div>
           </div>
 
           <div className="dashboard__plans-grid">

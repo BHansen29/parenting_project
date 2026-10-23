@@ -19,7 +19,7 @@ router.get('/nextQuestion/:qkey/:answer', async (req, res) => {
     ? nextQRules.goToDefault 
     : nextQRules.nextQuestions.find(rule => questionLogicHandler.evaluate(userAnswer, rule.operator, rule.value)).goTo
   try {
-    const nextQ = await Question.findOne({qKey: next})
+    const nextQ = await Question.findOne({ qKey: next, isArchived: { $ne: true } })
     console.log("Returning next question of id: " + next)
     res.status(200).json(nextQ)
   } catch(err) {
@@ -31,7 +31,7 @@ router.get('/nextQuestion/:qkey/:answer', async (req, res) => {
 // GET /api/logic-engine/questions - Get all questions
 router.get('/questions', async (req, res) => {
   try {
-    const questions = await Question.find();
+    const questions = await Question.find({ isArchived: { $ne: true } });
     res.json(questions);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -51,7 +51,10 @@ router.get('/next-question-rules', async (req, res) => {
 // GET /api/logic-engine/questions/:section - Get all questions from the section specified
 router.get('/questions/:section', async (req, res) => {
   try {
-    const questions = await Question.find({section: req.params.section});
+    const questions = await Question.find({
+      section: req.params.section,
+      isArchived: { $ne: true }
+    });
     res.json(questions);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -61,7 +64,10 @@ router.get('/questions/:section', async (req, res) => {
 // GET /api/logic-engine/question/:qkey - Get the questions with the specified qkey
 router.get('/question/:qkey', async (req, res) => {
   try {
-    const questions = await Question.findOne({qKey: req.params.qkey});
+    const questions = await Question.findOne({
+      qKey: req.params.qkey,
+      isArchived: { $ne: true }
+    });
     res.json(questions);
   } catch (error) {
     res.status(500).json({ error: error.message });

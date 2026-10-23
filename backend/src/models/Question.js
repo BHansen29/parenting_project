@@ -2,6 +2,13 @@
 
 const mongoose = require('mongoose');
 
+const revisionSchema = new mongoose.Schema({
+  actorUid: { type: String, required: true },
+  changedAt: { type: Date, required: true },
+  before: { type: mongoose.Schema.Types.Mixed, default: null },
+  after: { type: mongoose.Schema.Types.Mixed, required: true },
+}, { _id: false });
+
 const optionSchema = new mongoose.Schema(
 {
   value: { 
@@ -76,6 +83,15 @@ const questionSchema = new mongoose.Schema({
   // the followings field is dependant on the type of question
   // options will contain different multiple choice/checkbox options a user can select
   options: [optionSchema],
-}, { timestamps: true});
+  isArchived: {
+    type: Boolean,
+    default: false
+  },
+  revisionHistory: {
+    type: [revisionSchema],
+    default: [],
+    select: false
+  },
+}, { timestamps: true, optimisticConcurrency: true });
 
 module.exports = mongoose.model('Question', questionSchema);

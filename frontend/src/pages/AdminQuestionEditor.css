@@ -1,0 +1,523 @@
+.admin-editor {
+  width: min(1000px, calc(100% - 2rem));
+  margin: 2rem auto;
+  color: #1f2937;
+}
+
+.admin-editor__header {
+  margin-bottom: 1.5rem;
+}
+
+.admin-editor__header h1 {
+  margin: 0.5rem 0;
+}
+
+.admin-editor__back {
+  color: #087fa8;
+}
+
+.admin-editor__create,
+.admin-editor__question-card,
+.admin-editor__advanced {
+  padding: 1.25rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  background: #fff;
+}
+
+.admin-editor__create {
+  display: grid;
+  gap: 1rem;
+  margin: 0.25rem 0 1rem;
+}
+
+.admin-editor__create h2,
+.admin-editor__create p {
+  margin: 0;
+}
+
+.admin-editor__create-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.admin-editor__create-fields > :nth-child(3) {
+  grid-column: 1 / -1;
+}
+
+.admin-editor__list {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.admin-editor__flow-item {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.admin-editor__insert {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.35rem 0;
+}
+
+.admin-editor__insert-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2.25rem;
+  padding: 0.35rem 0.8rem;
+  border: 1px solid #9ca3af;
+  border-radius: 999px;
+  background: #fff;
+  color: #374151;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.admin-editor__cancel-insert {
+  border-color: #9ca3af;
+  background: #fff;
+  color: #374151;
+}
+
+.admin-editor__entry {
+  scroll-margin-top: 1rem;
+  padding: 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  background: #f5f7fa;
+}
+
+.admin-editor__entry--archived {
+  opacity: 0.8;
+}
+
+.admin-editor__archived-label {
+  margin: 0.25rem 0 0.75rem;
+  color: #b45309;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.admin-editor__question-card {
+  display: grid;
+  gap: 1rem;
+  max-width: none;
+  margin: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.admin-editor__question-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.admin-editor__question-icon {
+  display: grid;
+  flex: 0 0 2.75rem;
+  width: 2.75rem;
+  height: 2.75rem;
+  place-items: center;
+  border-radius: 0.5rem;
+  background: #e0f2fe;
+  color: #087fa8;
+}
+
+.admin-editor__question-heading-fields {
+  display: grid;
+  flex: 1;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.admin-editor__question-key {
+  color: #6b7280;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.75rem;
+}
+
+.admin-editor__prompt-card {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background: #fff;
+}
+
+.admin-editor__field {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+  font-weight: 600;
+}
+
+.admin-editor__field > span {
+  color: #374151;
+}
+
+.admin-editor__field input,
+.admin-editor__field select,
+.admin-editor__field textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #b6c0cc;
+  border-radius: 0.35rem;
+  background: #fff;
+  color: #111827;
+  font: inherit;
+  font-weight: 500;
+}
+
+.admin-editor__question-heading .admin-editor__field input {
+  padding: 0.25rem 0;
+  border: 0;
+  border-bottom: 1px solid #d1d5db;
+  border-radius: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.admin-editor__prompt-card > .admin-editor__field:first-child textarea {
+  min-height: 4rem;
+  border: 0;
+  padding: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.admin-editor__choice-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.admin-editor__choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  background: #fff;
+}
+
+.admin-editor__choice-fields {
+  display: grid;
+  flex: 1;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.admin-editor__radio-mark,
+.admin-editor__checkbox-mark {
+  flex: 0 0 1.1rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  margin-top: 0.4rem;
+  border: 2px solid #9ca3af;
+}
+
+.admin-editor__radio-mark {
+  border-radius: 50%;
+}
+
+.admin-editor__checkbox-mark {
+  border-radius: 0.2rem;
+}
+
+.admin-editor__answer-preview {
+  padding: 0.75rem;
+  border: 1px solid #b6c0cc;
+  border-radius: 0.35rem;
+  color: #6b7280;
+}
+
+.admin-editor__entry-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  padding: 0.75rem 0.25rem;
+}
+
+.admin-editor__entry-actions button,
+.admin-editor__insert-button,
+.admin-editor__cancel-insert,
+.admin-editor__create button,
+.admin-editor__rules-form button,
+.admin-editor__choice-list > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 2.5rem;
+  padding: 0.55rem 0.9rem;
+  border: 1px solid #9ca3af;
+  border-radius: 0.35rem;
+  background: #fff;
+  color: #374151;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.admin-editor button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.admin-editor .admin-editor__save {
+  border-color: #087fa8;
+  background: #087fa8;
+  color: #fff;
+}
+
+.admin-editor__archive-button {
+  color: #9f1239 !important;
+}
+
+.admin-editor__text-button {
+  justify-self: start;
+  padding: 0.2rem 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: #b91c1c !important;
+  font-weight: 500 !important;
+}
+
+.admin-editor__secondary-button {
+  justify-self: start;
+}
+
+.admin-editor__advanced {
+  margin-top: 0.25rem;
+}
+
+.admin-editor__advanced > summary,
+.admin-editor__settings > summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.admin-editor__settings {
+  padding-top: 0.25rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.admin-editor__settings-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  padding-top: 0.75rem;
+}
+
+.admin-editor__rules-form {
+  display: grid;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.admin-editor__json {
+  min-height: 14rem;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace !important;
+}
+
+.admin-editor__history {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.admin-editor__history h3 {
+  margin: 0.5rem 0;
+}
+
+.admin-editor__history details {
+  padding: 0.65rem 0;
+  border-top: 1px solid #e5e7eb;
+}
+
+.admin-editor__history summary {
+  cursor: pointer;
+}
+
+.admin-editor__restore-button {
+  min-height: 2.25rem;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid #087fa8;
+  border-radius: 0.35rem;
+  background: #fff;
+  color: #087fa8;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.admin-editor__history pre {
+  overflow: auto;
+  max-height: 18rem;
+  padding: 0.75rem;
+  background: #f3f4f6;
+  font-size: 0.75rem;
+}
+
+.admin-editor__message {
+  padding: 0.8rem 1rem;
+  border-radius: 0.25rem;
+}
+
+.admin-editor__message--error {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.admin-editor__message--success {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.admin-editor__access {
+  padding: 1.25rem;
+  border: 1px solid #f59e0b;
+  border-radius: 0.5rem;
+  background: #fff;
+}
+
+@media (max-width: 700px) {
+  .admin-editor__create-fields,
+  .admin-editor__settings-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-editor__create-fields > :nth-child(3) {
+    grid-column: auto;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .admin-editor {
+    color: #e5e7eb;
+  }
+
+  .admin-editor__create,
+  .admin-editor__question-card,
+  .admin-editor__advanced,
+  .admin-editor__access {
+    border-color: #4b5563;
+    background: #293548;
+  }
+
+  .admin-editor__entry {
+    border-color: #4b5563;
+    background: #1f2937;
+  }
+
+  .admin-editor__prompt-card,
+  .admin-editor__choice {
+    border-color: #4b5563;
+    background: #1f2937;
+  }
+
+  .admin-editor__field > span {
+    color: #e5e7eb;
+  }
+
+  .admin-editor__field input,
+  .admin-editor__field select,
+  .admin-editor__field textarea {
+    border-color: #6b7280;
+    background: #111827;
+    color: #f3f4f6;
+    color-scheme: dark;
+  }
+
+  .admin-editor__question-heading .admin-editor__field input {
+    background: transparent;
+  }
+
+  .admin-editor__question-icon {
+    background: #164e63;
+    color: #67d5f5;
+  }
+
+  .admin-editor__question-key {
+    color: #9ca3af;
+  }
+
+  .admin-editor__radio-mark,
+  .admin-editor__checkbox-mark {
+    border-color: #9ca3af;
+  }
+
+  .admin-editor__answer-preview {
+    border-color: #6b7280;
+    color: #9ca3af;
+  }
+
+  .admin-editor__entry-actions button,
+  .admin-editor__insert-button,
+  .admin-editor__cancel-insert,
+  .admin-editor__restore-button,
+  .admin-editor__create button,
+  .admin-editor__rules-form button,
+  .admin-editor__choice-list > button {
+    border-color: #6b7280;
+    background: #374151;
+    color: #f3f4f6;
+  }
+
+  .admin-editor .admin-editor__save {
+    border-color: #14abdd;
+    background: #087fa8;
+    color: #fff;
+  }
+
+  .admin-editor__archive-button {
+    color: #fecdd3 !important;
+  }
+
+  .admin-editor__restore-button {
+    border-color: #67d5f5;
+    background: #1f2937;
+    color: #67d5f5;
+  }
+
+  .admin-editor__text-button {
+    border: 0 !important;
+    background: transparent !important;
+    color: #fca5a5 !important;
+  }
+
+  .admin-editor__settings {
+    border-color: #4b5563;
+  }
+
+  .admin-editor__history details {
+    border-color: #4b5563;
+  }
+
+  .admin-editor__history pre {
+    background: #111827;
+    color: #e5e7eb;
+  }
+
+  .admin-editor__message--error {
+    background: #7f1d1d;
+    color: #fee2e2;
+  }
+
+  .admin-editor__message--success {
+    background: #14532d;
+    color: #dcfce7;
+  }
+
+  .admin-editor__back {
+    color: #67d5f5;
+  }
+}

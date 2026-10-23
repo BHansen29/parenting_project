@@ -10,6 +10,9 @@ const planRoutes = require('./plan');
 const logicRoutes = require('./logic-engine');
 const caseRoutes = require('./cases');
 const invitationRoutes = require('./invitations');
+const adminRoutes = require('./admin');
+const verifyToken = require('../middleware/verifyToken');
+const requireAdmin = require('../middleware/requireAdmin');
 const { getFirebaseAuth } = require('../config/firebaseAdmin');
 
 const requireDatabaseConnection = (req, res, next) => {
@@ -36,7 +39,7 @@ router.get('/health', (req, res) => {
 });
 
 // GET /api/documents - Get all documents
-router.get('/documents', requireDatabaseConnection, async (req, res) => {
+router.get('/documents', requireDatabaseConnection, verifyToken.withRevocationCheck(), requireAdmin, async (req, res) => {
   try {
     const documents = await Document.find();
     res.json(documents);
@@ -47,9 +50,10 @@ router.get('/documents', requireDatabaseConnection, async (req, res) => {
 
 
 // GET /api/users - Get all users
-router.get('/users', requireDatabaseConnection, async (req, res) => {
+router.get('/users', requireDatabaseConnection, verifyToken.withRevocationCheck(), requireAdmin, async (req, res) => {
   try {
-    const users = await User.find();
+    const users = await User.find()
+      .select('name lname email role emailVerified authProvider createdAt lastLoginAt');
     res.json(users);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -57,7 +61,7 @@ router.get('/users', requireDatabaseConnection, async (req, res) => {
 });
 
 // GET /api/documents/:id - Get a single document by ID
-router.get('/documents/:id', requireDatabaseConnection, async (req, res) => {
+router.get('/documents/:id', requireDatabaseConnection, verifyToken.withRevocationCheck(), requireAdmin, async (req, res) => {
   try {
     const document = await Document.findById(req.params.id);
 
@@ -72,7 +76,7 @@ router.get('/documents/:id', requireDatabaseConnection, async (req, res) => {
 });
 
 // POST /api/documents - Create a new document
-router.post('/documents', requireDatabaseConnection, async (req, res) => {
+router.post('/documents', requireDatabaseConnection, verifyToken.withRevocationCheck(), requireAdmin, async (req, res) => {
   try {
     const document = await Document.create(req.body);
     res.status(201).json(document);
@@ -98,18 +102,33 @@ router.post('/auth/firebase/session', requireDatabaseConnection, async (req, res
 
     // Extract key fields
     const decodedToken = await getFirebaseAuth().verifyIdToken(idToken);
-    const email = decodedToken.email;
-    const displayName = decodedToken.name || req.body.name || '';
-
-    // Verify there is an attached email
-    if (!email) {
+    if (typeof decodedToken.email !== 'string' || !decodedToken.email.trim()) {
       return res.status(400).json({ error: 'Firebase token is missing an email claim' });
     }
+    const email = decodedToken.email.trim().toLowerCase();
+    const displayName = decodedToken.name || req.body.name || '';
 
     const now = new Date(); // Timestamp for current login
-    let syncedUser = await User.findOne({ // Search for existing Mongo user by Firebase UID or by email
-      $or: [{ firebaseUid: decodedToken.uid }, { email }]
-    });
+    const userByUid = await User.findOne({ firebaseUid: decodedToken.uid });
+    const userByEmail = await User.findOne({ email });
+    if (userByUid && userByEmail && userByUid.id !== userByEmail.id) {
+      return res.status(409).json({
+        error: 'This account is already linked to a different Firebase identity'
+      });
+    }
+    let syncedUser = userByUid || userByEmail;
+
+    if (syncedUser && syncedUser.firebaseUid && syncedUser.firebaseUid !== decodedToken.uid) {
+      return res.status(409).json({
+        error: 'This account is already linked to a different Firebase identity'
+      });
+    }
+
+    if (syncedUser && !syncedUser.firebaseUid && decodedToken.email_verified !== true) {
+      return res.status(403).json({
+        error: 'Verify your email before linking this account'
+      });
+    }
 
     if (!syncedUser) { // If no current user in Mongo, create one
       syncedUser = await User.create({
@@ -190,6 +209,7 @@ router.get('/', (req, res) => {
 });
 
 router.use('/email', emailRoutes);
+router.use('/admin', requireDatabaseConnection, adminRoutes);
 router.use('/plan', requireDatabaseConnection, planRoutes);
 router.use('/logic-engine', requireDatabaseConnection, logicRoutes);
 router.use('/v1/cases', requireDatabaseConnection, caseRoutes);

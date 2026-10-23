@@ -1,22 +1,33 @@
 const { getFirebaseAuth } = require('../config/firebaseAdmin');
 
-const verifyToken = async (req, res, next) => {
-  const authHeader = req.headers.authorization;
+function createVerifyToken({ checkRevoked = false } = {}) {
+  return async (req, res, next) => {
+    const authHeader = req.headers.authorization;
 
-  // Check that the Authorization header exists and starts with "Bearer "
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ message: 'Unauthorized' });
-  }
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
 
-  const token = authHeader.split('Bearer ')[1];
+    const token = authHeader.slice('Bearer '.length).trim();
+    if (!token) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
 
-  try {
-    // Verify the token with Firebase Admin and attach the decoded user to the request
-    req.user = await getFirebaseAuth().verifyIdToken(token);
-    next();
-  } catch (err) {
-    return res.status(401).json({ message: 'Invalid or expired token' });
-  }
-};
+    try {
+      req.user = await getFirebaseAuth().verifyIdToken(token, checkRevoked);
+      return next();
+    } catch (error) {
+      if (typeof error.code === 'string' && error.code.startsWith('auth/')) {
+        return res.status(401).json({ message: 'Invalid or expired token' });
+      }
+
+      console.error('Firebase token verification failed:', error);
+      return res.status(500).json({ message: 'Authentication service unavailable' });
+    }
+  };
+}
+
+const verifyToken = createVerifyToken();
+verifyToken.withRevocationCheck = () => createVerifyToken({ checkRevoked: true });
 
 module.exports = verifyToken;

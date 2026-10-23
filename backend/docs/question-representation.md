@@ -72,4 +72,53 @@ Contains an operator and a value.
 }
 ```
 
-In this example, if a User has insurance and they answer "Yes" (True), the NextRule will evaluate that the user be routed to Question 1 (Q1) since the operator "eq" finds that True and True are equal. If they had answered False, they would be routed to Question 2 (Q2) 
+In this example, if a User has insurance and they answer "Yes" (True), the NextRule will evaluate that the user be routed to Question 1 (Q1) since the operator "eq" finds that True and True are equal. If they had answered False, they would be routed to Question 2 (Q2)
+
+## Administrator editing and access
+
+Question and branching-rule edits are available only through the authenticated
+`/api/admin` endpoints. The server verifies a Firebase ID token, checks
+revocation, and looks up the matching MongoDB user on every request. That user
+must have both a verified email and the `admin` role. The browser's role display
+is only for navigation and is not used to authorize a write.
+
+Create the account through the normal Firebase sign-up flow and verify its
+email. Then grant access from the repository root. The command checks the
+account directly with Firebase Admin and creates or links its MongoDB profile
+if needed. It loads `MONGODB_URI` from `backend/.env` if present, otherwise
+from the repository-root `.env`:
+
+```sh
+npm --prefix backend run grant-admin -- verified-admin@example.com
+```
+
+The command only promotes an existing Firebase account with a verified email;
+it will not grant access to an unverified or disabled account. There is no
+public route for changing roles. Keep backend MongoDB and Firebase Admin
+credentials out of source control. To remove administrator access, change that
+MongoDB user's role back to `user`; the server rechecks the role on every admin
+request.
+
+Question and branching-rule changes store the prior and updated values, the
+Firebase UID of the administrator, and a timestamp. Up to the 50 most recent
+revisions are kept per question and per rule document. Question keys are
+immutable through the editor, and branching destinations must refer to an
+active question key. The revision history stores a backup on each save.
+Administrators can restore a prior question snapshot from its revision entry;
+the restore itself is saved as a new revision, preserving both the version
+being replaced and the restored version in the audit trail.
+
+The editor adds questions with the plus control after an existing question.
+The server updates the flow so the new question appears immediately after that
+question and its previous successor follows the new question. The insertion
+and branching-rule changes are committed together and require a MongoDB
+deployment that supports transactions, such as an Atlas replica set.
+Insertion is unavailable after questions with different branch destinations;
+add within an individual branch instead to preserve answer-dependent paths.
+Archiving keeps the question record and saved answers.
+When the archived question has a single default successor, inbound rules are
+rewritten to bypass it. Questions with answer-dependent outgoing branches
+cannot be auto-bypassed safely and must have their branching rules changed
+first. Restoring an archived question does not automatically reconnect it.
+The editor currently permits multiple-choice and text-input questions, which
+are the types rendered by the dynamic questionnaire page.
