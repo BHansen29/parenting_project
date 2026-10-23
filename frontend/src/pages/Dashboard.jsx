@@ -12,6 +12,7 @@ import { API_BASE_URL, buildApiUrl } from '../lib/apiClient';
 export default function Dashboard() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [activeCaseId, setActiveCaseId] = useState(null);
   const [showSwitchPrompt, setShowSwitchPrompt] = useState(false);
