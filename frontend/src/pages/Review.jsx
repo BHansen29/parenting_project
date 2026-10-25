@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
 import { CheckCircle, Download, UserPlus, Pencil, ChevronDown, ChevronUp } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/card';
@@ -8,6 +8,7 @@ import InviteModal from '../components/common/InviteModal';
 import { useForm } from '../hooks/useForm';
 import { auth } from '../lib/firebase';
 import { buildApiUrl } from '../lib/apiClient';
+import shareCareLogo from '../assets/logos/ShareCare_Symmetrical Diamond Logo (1120 x 310 px).png';
 import './Page.css';
 import './Review.css';
 
@@ -262,6 +263,59 @@ function SectionBlock({ sectionKey, responses, onEdit, isOpen, onToggle }) {
 }
 
 
+function PrintablePlan({ groupedResponses, sectionKeys, state }) {
+  const parentName = [state.parents?.firstName, state.parents?.lastName]
+    .filter(Boolean)
+    .join(' ');
+
+  return (
+    <div className="review__print-document">
+      <header className="review__print-header">
+        <img src={shareCareLogo} alt="ShareCare" className="review__print-logo" />
+        <div>
+          <h1>Parenting Plan Questionnaire Responses</h1>
+          <p>{parentName || 'Parent'}{state.plan?.name ? ` · ${state.plan.name}` : ''}</p>
+          <p>Generated {new Date().toLocaleDateString()}</p>
+        </div>
+      </header>
+
+      <div className="review__print-disclaimer">
+        This document contains the questionnaire responses entered in ShareCare. It is a draft
+        and is not legal advice or a court-approved parenting plan.
+      </div>
+
+      {sectionKeys.map((sectionKey) => {
+        const meta = SECTION_META[sectionKey] || {
+          label: sectionKey.replaceAll('_', ' '),
+        };
+        const responses = groupedResponses[sectionKey] ?? [];
+
+        return (
+          <section className="review__print-section" key={sectionKey}>
+            <h2>{meta.label}</h2>
+            {responses.length > 0 ? (
+              <dl>
+                {responses.map((response, index) => (
+                  <div className="review__print-answer" key={response.qKey || index}>
+                    <dt>{response.question?.qText || response.label}</dt>
+                    <dd>
+                      <span className="review__print-answer-label">Answer</span>
+                      {formatAnswer(response.answer, response.question)}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            ) : (
+              <p className="review__print-empty">No answers recorded for this section.</p>
+            )}
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
+
 export default function Review() {
   const navigate = useNavigate();
   const { state, dispatch } = useForm();
@@ -287,6 +341,7 @@ export default function Review() {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [showSwitchPrompt, setShowSwitchPrompt] = useState(false);
   const [caseStatus, setCaseStatus] = useState(null);
+  const [isPrinting, setIsPrinting] = useState(false);
   
 
   const caseId = state.plan?.caseId;
@@ -365,10 +420,23 @@ export default function Review() {
   };
 
   const showInviteUI = collaborationMode !== 'locked-individual' && !isSharedPlan;
+  useEffect(() => {
+    if (!isPrinting) return undefined;
+
+    const printTimer = setTimeout(() => {
+      window.print();
+      setIsPrinting(false);
+    }, 0);
+
+    return () => clearTimeout(printTimer);
+  }, [isPrinting]);
+
+  const handleDownload = () => setIsPrinting(true);
 
   return (
-    <div className="page-container">
-      <div className="page-content">
+    <>
+      <div className="page-container">
+        <div className="page-content">
 
         {/* Switch-to-collaborative confirmation prompt */}
         {showSwitchPrompt && (
@@ -435,6 +503,9 @@ export default function Review() {
 
             <div className="review__actions">
               <div className="review__action-buttons">
+                <Link className="review__btn-invite" to="/form-designer">
+                  Customize PDF Form
+                </Link>
 
                 {/* Invite button — hidden for locked-individual (safety concern) users */}
                 {showInviteUI && (
@@ -449,7 +520,7 @@ export default function Review() {
                   </button>
                 )}
 
-                <button className="review__btn-download">
+                <button className="review__btn-download" onClick={handleDownload}>
                   <Download size={16} />
                   Download PDF
                 </button>
@@ -468,15 +539,23 @@ export default function Review() {
 
           </CardContent>
         </Card>
-      </div>
+        </div>
 
-      {/* caseId lets the modal send a real invite linked to this shared case */}
-      <InviteModal
-        isOpen={inviteOpen}
-        onClose={() => setInviteOpen(false)}
-        caseId={caseId}
-        onInviteSent={() => setCaseStatus('pending_invite')}
-      />
-    </div>
+        {/* caseId lets the modal send a real invite linked to this shared case */}
+        <InviteModal
+          isOpen={inviteOpen}
+          onClose={() => setInviteOpen(false)}
+          caseId={caseId}
+          onInviteSent={() => setCaseStatus('pending_invite')}
+        />
+      </div>
+      {isPrinting && (
+        <PrintablePlan
+          groupedResponses={groupedResponses}
+          sectionKeys={knownSectionKeys}
+          state={state}
+        />
+      )}
+    </>
   );
 }

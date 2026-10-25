@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
 import LandingPage from './pages/LandingPage';
+import HowItWorks from './pages/HowItWorks';
 import Dashboard from './pages/Dashboard';
 import SignIn from './pages/auth/SignIn';
 import SignUp from './pages/auth/SignUp';
@@ -19,6 +20,7 @@ import WaitingScreen from './pages/WaitingScreen';
 import ResolutionReview from './pages/ResolutionReview';
 import FinalResolution from './pages/FinalResolution';
 import UserData from './pages/UserData';
+import FormDesigner from './pages/FormDesigner';
 import { FormProvider } from './context/FormContext';
 import { NavigationProvider } from './context/NavigationContext';
 import './App.css';
@@ -31,6 +33,7 @@ function App() {
           <Routes>
             {/* Landing page (no sidebar) */}
             <Route path="/" element={<LandingPage />} />
+            <Route path="/how-it-works" element={<HowItWorks />} />
 
         {/* Auth routes without sidebar */}
         <Route path="/signin" element={<SignIn />} />
@@ -71,6 +74,11 @@ function App() {
             <Route path="/review" element={
               <MainLayout>
                 <Review />
+              </MainLayout>
+            } />
+            <Route path="/form-designer" element={
+              <MainLayout>
+                <FormDesigner />
               </MainLayout>
             } />
             

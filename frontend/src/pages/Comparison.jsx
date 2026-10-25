@@ -611,7 +611,7 @@ export default function Comparison() {
 
                     {isParent1 && (
                       <div className="comparison__resolution-choices">
-                        <label className={`comparison__choice ${sel.choice === 'parent1' ? 'comparison__choice--selected' : ''}`}>
+                        <label className={`comparison__choice ${sel.choice === 'parent1' ?  'comparison__choice--selected' : ''}`}>
                           <input type="radio" name={item.questionKey} value="parent1" checked={sel.choice === 'parent1'} onChange={() => setSelection(item.questionKey, 'parent1')} />
                           Keep my answer
                         </label>
