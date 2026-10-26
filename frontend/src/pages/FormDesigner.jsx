@@ -431,7 +431,27 @@ const customOptionValues = {
   },
 };
 
+const FLAG_KEY_ALIASES = {
+  'personalInfo.userRole': 'caseFilingStatus',
+  'getting-started.children': 'children',
+  'taxExemptions.parentRole': 'taxParentalRole',
+  'taxExemptions.claimingChildren': 'taxClaimingChildren',
+  'parentingTimeAndCommunication.agreeToTransportationPolicy': 'transportationAgreement',
+  'parentingTimeAndCommunication.agreeToActivityPolicy': 'activitiesAndScheduling',
+};
+
+function isAnswerFlagged(qKey, flags = {}) {
+  const field = String(qKey).split('.').pop();
+  return Boolean(
+    flags[qKey] ||
+    flags[`question-${qKey}`] ||
+    flags[field] ||
+    flags[FLAG_KEY_ALIASES[qKey]],
+  );
+}
+
 export function collectAnswers(state, questions, caseParentNames = {}) {
+  const flags = state.flags ?? {};
   const responses = (Array.isArray(state.plan?.answers) ? state.plan.answers : [])
     .filter((response) => (
       response &&
@@ -440,6 +460,7 @@ export function collectAnswers(state, questions, caseParentNames = {}) {
     ))
     .map((response) => ({
     ...response,
+    isFlagged: Boolean(response.isFlagged || isAnswerFlagged(response.qKey, flags)),
     section: questions[response.qKey]?.section || 'Questionnaire',
     }));
 
@@ -470,6 +491,7 @@ export function collectAnswers(state, questions, caseParentNames = {}) {
       responses.push({
         qKey: `${questionSection}.${key}`,
         answer,
+        isFlagged: isAnswerFlagged(`${questionSection}.${key}`, flags),
         section,
         personalInfo,
         label: fields[key] || customFieldLabels[key] || key,
@@ -523,8 +545,31 @@ export function collectAnswers(state, questions, caseParentNames = {}) {
     ...(state.plan?.parentingTime || {}),
     ...(state.plan?.parentingTimeAndCommunication || {}),
   };
-  addFields(parentingTimeData, 'Parenting Time & Communication');
-  addFields(state.plan?.informationSharing, 'Information Sharing');
+  addFields(
+    parentingTimeData,
+    'Parenting Time & Communication',
+    {
+      agreeToTransportationPolicy: customFieldLabels.agreeToTransportationPolicy,
+      transportationArrangementDescription: customFieldLabels.transportationArrangementDescription,
+      agreeToActivityPolicy: customFieldLabels.agreeToActivityPolicy,
+      activityPolicyDescription: customFieldLabels.activityPolicyDescription,
+      communicationWithCoParentOnPhone: customFieldLabels.communicationWithCoParentOnPhone,
+      communicationWithCoParentOnPhoneDescription: customFieldLabels.communicationWithCoParentOnPhoneDescription,
+      notifyCoParentOfChildRelatedEvents: customFieldLabels.notifyCoParentOfChildRelatedEvents,
+      notifyCoParentOfChildRelatedEventsDescription: customFieldLabels.notifyCoParentOfChildRelatedEventsDescription,
+    },
+    'parentingTimeAndCommunication',
+  );
+  addFields(
+    state.plan?.informationSharing,
+    'Information Sharing',
+    {
+      medicalRecords: customFieldLabels.medicalRecords,
+      schoolContact: customFieldLabels.schoolContact,
+      schoolActivities: customFieldLabels.schoolActivities,
+    },
+    'informationSharing',
+  );
   addFields(state.taxExemptions, 'Tax Exemptions', {
     parentRole: 'Parental role',
     claimingChildren: 'Children claimed for tax exemptions',
@@ -533,6 +578,7 @@ export function collectAnswers(state, questions, caseParentNames = {}) {
     responses.push({
       qKey: 'taxExemptions.childAnswers',
       answer: state.taxExemptions.childAnswers,
+      isFlagged: isAnswerFlagged('taxExemptions.childAnswers', flags),
       section: 'Tax Exemptions',
       label: 'Tax exemption arrangements for each child',
       question: DESIGNER_CUSTOM_QUESTIONS['taxExemptions.childAnswers'],
@@ -551,6 +597,7 @@ export function collectAnswers(state, questions, caseParentNames = {}) {
     responses.push({
       qKey: `parentingTimeAndCommunication.${field}`,
       answer,
+      isFlagged: isAnswerFlagged(`parentingTimeAndCommunication.${field}`, flags),
       section: 'Parenting Time & Communication',
       label,
       question: {
@@ -567,6 +614,7 @@ export function collectAnswers(state, questions, caseParentNames = {}) {
     responses.push({
       qKey: 'getting-started.children',
       answer: children,
+      isFlagged: isAnswerFlagged('getting-started.children', flags),
       section: 'Getting Started',
       personalInfo: true,
       label: 'Children',
@@ -658,6 +706,9 @@ export function FormTemplatePrintDocument({
         if (!response || !hasAnswer(response.answer)) return null;
         return (
           <div className="form-designer__block form-designer__block--answer" key={block.id}>
+            {response.isFlagged && (
+              <div className="form-designer__flagged-notice">Flagged</div>
+            )}
             {needsDiscussionKeys?.has(block.qKey) && (
               <div className="form-designer__discussion-notice">Needs discussion</div>
             )}

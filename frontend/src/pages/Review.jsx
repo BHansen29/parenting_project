@@ -389,8 +389,13 @@ export default function Review() {
       state: reviewPlan.state,
       zipCode: reviewPlan.zipCode,
     },
-    timeAndCommunication: reviewPlan.parentingTimeAndCommunication,
+    timeAndCommunication: {
+      ...(reviewPlan.timeAndCommunication || {}),
+      ...(reviewPlan.parentingTime || {}),
+      ...(reviewPlan.parentingTimeAndCommunication || {}),
+    },
     taxExemptions: reviewPlan.taxExemptions,
+    flags: state.flags,
   };
   const reviewAnswersByKey = Object.fromEntries(
     collectAnswers(designerState, questionsByKey).map((response) => [response.qKey, response]),

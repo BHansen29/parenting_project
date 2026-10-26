@@ -51,7 +51,9 @@ export default function ParentalRights() {
     }, [question?.qKey, state.parental_rights.responses, state.currAnswer, dispatch]);
 
     //flag states for this section
-    const childrenApplicationFlag = useSectionFlag('childrenApplication');
+    const childrenApplicationFlag = useSectionFlag(
+      question?.qKey ? `question-${question.qKey}` : 'childrenApplication',
+    );
 
     //scroll to first error when validation fails
     const submitAttempted = useRef(false);

@@ -87,6 +87,25 @@ export default function GettingStarted() {
   }, []);
 
   useEffect(() => {
+    if (!plan._id) return;
+    dispatch({
+      type: 'UPDATE_SECTION',
+      section: 'parents',
+      payload: {
+        firstName: plan.parentFName ?? '',
+        lastName: plan.parentLName ?? '',
+        age: plan.parentAge ?? '',
+        phone: plan.phoneNumber ?? plan.phone ?? '',
+        streetAddress: plan.streetAddress ?? '',
+        addressLine2: plan.addressLine2 ?? '',
+        city: plan.city ?? '',
+        state: plan.state ?? '',
+        zipCode: plan.zipCode ?? '',
+      },
+    });
+  }, [plan._id]);
+
+  useEffect(() => {
     const savedChildren = children.map(({ key, errors, ...child }) => ({ ...child, age: child.age === '' ? null : Number(child.age)}));
     dispatch({ type: 'UPDATE_SECTION', section: 'plan', payload: { children: savedChildren }});
   }, [children, dispatch]);
