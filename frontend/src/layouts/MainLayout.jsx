@@ -241,8 +241,8 @@ export default function Layout({ children }) {
 
   const handleNext = async () => {
     if (pageOnNext) {
-      pageOnNext();
-      return;
+      const pageValidationResult = await pageOnNext();
+      if (pageValidationResult !== true) return;
     }
     // prevent user from clicking next if answer is not selected
     const hasValidQuestionAnswer = q?.type === 'text input' ? String(answer ?? '').trim().length > 0 : q?.options && q.options.findIndex(qAnswer => qAnswer.value === answer) >= 0;
@@ -272,7 +272,10 @@ export default function Layout({ children }) {
         // Small delay so the answer save (questionnaireNext) has time to finish
         // before we navigate away — both are fire-and-forget parallel chains.
         if (!data || !data.section) {
-          setTimeout(() => navigate('/review'), 600);
+          const nextRoute = location.pathname === '/parental-rights'
+            ? '/parenting-time-communication'
+            : '/review';
+          setTimeout(() => navigate(nextRoute), 600);
           return;
         }
         // Otherwise advance to the next question's section route.

@@ -1,16 +1,18 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../../lib/firebase';
-import { syncFirebaseUserProfileSafely } from '../../lib/authApi';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/common/card';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import logo from '../../assets/logos/ShareCare_Symmetrical Diamond Logo (1120 x 310 px).png';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/common/card';
 import TextInput from '../../components/forms/TextInput';
+import { useForm } from '../../hooks/useForm';
+import { syncFirebaseUserProfileSafely } from '../../lib/authApi';
+import { auth } from '../../lib/firebase';
 import '../Page.css';
 import './Auth.css';
-import logo from '../../assets/logos/ShareCare_Symmetrical Diamond Logo (1120 x 310 px).png';
 
 export default function SignIn() {
   const navigate = useNavigate();
+  const { dispatch } = useForm();
   const redirect = new URLSearchParams(window.location.search).get('redirect');
 
   const [formData, setFormData] = useState({
@@ -60,6 +62,7 @@ export default function SignIn() {
         await syncFirebaseUserProfileSafely(userCredential.user);
 
         // Clear any stale form state from a previous user's session
+        dispatch({ type: 'RESET' });
         localStorage.removeItem('sharedCareForm');
         // Next Step
         navigate(redirect || '/dashboard');

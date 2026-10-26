@@ -64,6 +64,8 @@ export default function GettingStarted() {
 
   const [collaborationModeError, setCollaborationModeError] = useState('');
   const [caseFilingError, setCaseFilingError] = useState('');
+  const [residentialParentError, setResidentialParentError] = useState('');
+  const [parentingGuideError, setParentingGuideError] = useState('');
 
   const caseFilingFlag = useSectionFlag('caseFilingStatus');
   const childrenFlag = useSectionFlag('children');
@@ -83,6 +85,8 @@ export default function GettingStarted() {
     dispatch({ type: 'UPDATE_SECTION', section: 'parents', payload: { errors: {} } });
     setCollaborationModeError('');
     setCaseFilingError('');
+    setResidentialParentError('');
+    setParentingGuideError('');
     setChildren(prev => prev.map(c => ({ ...c, errors: {} })));
   }, []);
 
@@ -99,6 +103,7 @@ export default function GettingStarted() {
 
   const handleRadioChange = (section) => (value) => {
     dispatch({ type: 'UPDATE_SECTION', section: section, payload: value });
+    if (section === 'parentingGuideInfo') setParentingGuideError('');
   };
 
   const handleFormChange = (section, field) => (value) => {
@@ -106,6 +111,7 @@ export default function GettingStarted() {
     if (errors[field]) {
       dispatch({ type: 'UPDATE_SECTION', section: section, payload: { errors: { ...errors, [field]: '' } } });
     }
+    if (section === 'plan' && field === 'residentialParent') setResidentialParentError('');
   };
 
   const handleAggregateChange = (field) => (value) => {
@@ -159,6 +165,77 @@ export default function GettingStarted() {
       setSubmitAttempted(false);
     }
   }, [submitAttempted]); 
+
+  const validateGettingStarted = () => {
+    const requiredParentFields = [
+      ['firstName', 'Enter your first name.'],
+      ['lastName', 'Enter your last name.'],
+      ['age', 'Enter your age.'],
+      ['phone', 'Enter your phone number.'],
+      ['streetAddress', 'Enter your street address.'],
+      ['city', 'Enter your city.'],
+      ['state', 'Enter your state.'],
+      ['zipCode', 'Enter your ZIP code.'],
+    ];
+    const parentErrors = {};
+    requiredParentFields.forEach(([field, message]) => {
+      if (!String(formData[field] ?? '').trim()) parentErrors[field] = message;
+    });
+
+    dispatch({
+      type: 'UPDATE_SECTION',
+      section: 'parents',
+      payload: { errors: parentErrors },
+    });
+
+    let isValid = Object.keys(parentErrors).length === 0;
+    if (!collaborationMode) {
+      setCollaborationModeError('Select a collaboration mode to continue.');
+      isValid = false;
+    } else {
+      setCollaborationModeError('');
+    }
+
+    if (!caseFilingStatus) {
+      setCaseFilingError('Select a case filing status to continue.');
+      isValid = false;
+    } else {
+      setCaseFilingError('');
+    }
+
+    const nextChildren = children.map((child) => {
+      const childErrors = {};
+      if (!String(child.fName ?? '').trim()) childErrors.fName = 'Enter the child\'s first name.';
+      if (!String(child.lName ?? '').trim()) childErrors.lName = 'Enter the child\'s last name.';
+      if (!String(child.age ?? '').trim()) childErrors.age = 'Enter the child\'s age.';
+      if (!child.birthday) childErrors.birthday = 'Enter the child\'s date of birth.';
+      if (!child.classifications?.length) childErrors.classification = 'Select at least one child classification.';
+      if (Object.keys(childErrors).length > 0) isValid = false;
+      return { ...child, errors: childErrors };
+    });
+    setChildren(nextChildren);
+
+    if (!residentialParent) {
+      setResidentialParentError('Select an option to continue.');
+      isValid = false;
+    } else {
+      setResidentialParentError('');
+    }
+
+    if (!parentingGuideInfo) {
+      setParentingGuideError('Select an option to continue.');
+      isValid = false;
+    } else {
+      setParentingGuideError('');
+    }
+
+    setSubmitAttempted(true);
+    return isValid;
+  };
+
+  useEffect(() => {
+    setOnNext(() => validateGettingStarted());
+  }, [state, children, setOnNext]);
 
   return (
     <div className="page-container">
@@ -459,6 +536,7 @@ export default function GettingStarted() {
                 name="residentialParent"
                 value={residentialParent}
                 onChange={handleFormChange('plan', 'residentialParent')}
+                error={residentialParentError}
                 options={[
                   { value: 'yes',   label: 'Yes, I am the residential parent' },
                   { value: 'no',    label: 'No, I am not' }
@@ -614,6 +692,7 @@ export default function GettingStarted() {
                 name="parentingGuideInfo"
                 value={parentingGuideInfo}
                 onChange={handleRadioChange('parentingGuideInfo')}
+                error={parentingGuideError}
                 options={[
                   { value: 'yes',   label: 'I understand' }
                 ]}
