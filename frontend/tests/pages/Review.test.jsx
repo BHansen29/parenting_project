@@ -6,6 +6,15 @@ import { renderWithRouter } from '../../src/utils/renderWithRouter'
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
+vi.mock('firebase/auth', () => ({
+  onAuthStateChanged: vi.fn((_auth, callback) => {
+    callback({ getIdToken: vi.fn(() => Promise.resolve('test-token')) })
+    return vi.fn()
+  }),
+}))
+
+vi.mock('../../src/lib/firebase', () => ({ auth: {} }))
+
 const mockNavigate = vi.fn()
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom')
@@ -46,7 +55,13 @@ vi.mock('../../src/hooks/useForm', () => ({
   useForm: () => ({
     state: {
       collaborationMode: mockCollaborationMode,
-      plan: { answers: mockPlanAnswers, children: [], isShared: mockIsSharedPlan },
+      plan: {
+        _id: 'plan-1',
+        answers: mockPlanAnswers,
+        children: [],
+        collaborationMode: mockCollaborationMode,
+        isShared: mockIsSharedPlan,
+      },
     },
     dispatch: mockDispatch,
   }),
@@ -71,6 +86,30 @@ describe('Review', () => {
     mockIsSharedPlan = false
     mockPlanAnswers = []
     mockQuestions = []
+    vi.mocked(fetch).mockImplementation((url) => {
+      if (String(url).includes('/api/plan/plan-1')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            _id: 'plan-1',
+            answers: mockPlanAnswers,
+            children: [],
+            collaborationMode: mockCollaborationMode,
+            isShared: mockIsSharedPlan,
+          }),
+        })
+      }
+      if (String(url).includes('/api/logic-engine/questions')) {
+        return Promise.resolve({ ok: true, json: async () => mockQuestions })
+      }
+      if (String(url).includes('/api/form-templates/')) {
+        return Promise.resolve({ ok: true, json: async () => null })
+      }
+      if (String(url).includes('/api/auth/me')) {
+        return Promise.resolve({ ok: true, json: async () => ({ role: 'user' }) })
+      }
+      return Promise.resolve({ ok: true, json: async () => ({}) })
+    })
   })
 
   // ─── Render ──────────────────────────────────────────────────────────────
@@ -377,6 +416,7 @@ describe('Review', () => {
       section: 'collaborationMode',
       payload: 'collaborative',
     })
+
   })
 
   it('opens the invite modal after confirming the switch', async () => {

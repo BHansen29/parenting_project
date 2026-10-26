@@ -56,7 +56,7 @@ export default function HowItWorks() {
             <Heart size={17} fill="currentColor" />
             Built for families
           </div>
-          <h1>Simplyfing parenting plan creation for all families</h1>
+          <h1>Simplifying parenting plan creation for all families</h1>
           <p>
             ShareCare is a free tool, guiding parents through the process of creating a thoughtful
             parenting plan—one step at a time, with your child(ren) at the center.

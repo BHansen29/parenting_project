@@ -238,7 +238,7 @@ describe('SignUp', () => {
     renderWithRouter(<SignUp />)
     await openModal()
     fireEvent.click(screen.getByRole('button', { name: /i agree/i }))
-    expect(await screen.findByText('Email already in use')).toBeInTheDocument()
+    expect(await screen.findByText('Email already in use, please use a different email address.')).toBeInTheDocument()
   })
 
   // ── Navigation links ────────────────────────────────────────────────────────

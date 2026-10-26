@@ -362,7 +362,7 @@ export default function Review() {
     };
   }, [planId]);
 
-  const reviewPlan = storedPlan || {};
+  const reviewPlan = storedPlan || state.plan || {};
 
   // collaborationMode drives invite button behaviour — mirrors Dashboard logic:
   //   'locked-individual' — safety concern; invite button hidden entirely
