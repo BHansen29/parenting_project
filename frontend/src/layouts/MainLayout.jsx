@@ -272,7 +272,10 @@ export default function Layout({ children }) {
         // Small delay so the answer save (questionnaireNext) has time to finish
         // before we navigate away — both are fire-and-forget parallel chains.
         if (!data || !data.section) {
-          setTimeout(() => navigate('/review'), 600);
+          const nextRoute = location.pathname === '/parental-rights'
+            ? '/parenting-time-communication'
+            : '/review';
+          setTimeout(() => navigate(nextRoute), 600);
           return;
         }
         // Otherwise advance to the next question's section route.
