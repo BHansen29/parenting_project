@@ -241,8 +241,8 @@ export default function Layout({ children }) {
 
   const handleNext = async () => {
     if (pageOnNext) {
-      pageOnNext();
-      return;
+      const pageValidationResult = await pageOnNext();
+      if (pageValidationResult !== true) return;
     }
     // prevent user from clicking next if answer is not selected
     const hasValidQuestionAnswer = q?.type === 'text input' ? String(answer ?? '').trim().length > 0 : q?.options && q.options.findIndex(qAnswer => qAnswer.value === answer) >= 0;

@@ -1,17 +1,19 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
 import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
-import { auth } from '../../lib/firebase';
-import { syncFirebaseUserProfileSafely } from '../../lib/authApi';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/common/card';
-import TextInput from '../../components/forms/TextInput';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import logo from '../../assets/logos/ShareCare_Symmetrical Diamond Logo (1120 x 310 px).png';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/common/card';
 import LegalNoticeModal from '../../components/common/LegalNoticeModal';
+import TextInput from '../../components/forms/TextInput';
+import { useForm } from '../../hooks/useForm';
+import { syncFirebaseUserProfileSafely } from '../../lib/authApi';
+import { auth } from '../../lib/firebase';
 import '../Page.css';
 import './Auth.css';
-import logo from '../../assets/logos/ShareCare_Symmetrical Diamond Logo (1120 x 310 px).png';
 
 export default function SignUp() {
   const navigate = useNavigate();
+  const { dispatch } = useForm();
   const redirect = new URLSearchParams(window.location.search).get('redirect');
 
   const [formData, setFormData] = useState({
@@ -73,6 +75,8 @@ export default function SignUp() {
         await syncFirebaseUserProfileSafely(firebaseUser);
 
         // New accounts start from the dashboard, where they can create a plan.
+        dispatch({ type: 'RESET' });
+        localStorage.removeItem('sharedCareForm');
         navigate(redirect || '/dashboard');
       } catch (err) {
         // Show Firebase error in the form

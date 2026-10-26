@@ -195,10 +195,10 @@ export default function InformationSharing() {
       if (!response.ok) throw new Error('Failed to save information sharing answers');
       const plan = await response.json();
       dispatch({ type: 'UPDATE_SECTION', section: 'plan', payload: plan });
-      navigate('/tax-exemptions');
     } catch (error) {
       console.error(error.message);
     }
+    navigate('/tax-exemptions');
   }, [dispatch, navigate, state, validateForm]);
 
   const handleBack = useCallback(() => {

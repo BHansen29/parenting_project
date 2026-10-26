@@ -1,13 +1,13 @@
-import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { Users, FileText, Calendar, UserPlus, Plus, Trash2, Pencil, Lock } from 'lucide-react';
-import { auth } from '../lib/firebase';
-import { useForm } from '../hooks/useForm';
+import { Calendar, FileText, Lock, Pencil, Plus, Trash2, UserPlus, Users } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import Header from '../components/common/Header';
 import InviteModal from '../components/common/InviteModal';
+import { useForm } from '../hooks/useForm';
+import { buildApiUrl } from '../lib/apiClient';
+import { auth } from '../lib/firebase';
 import './Dashboard.css';
-import { API_BASE_URL, buildApiUrl } from '../lib/apiClient';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -140,8 +140,8 @@ export default function Dashboard() {
           } else {
             const plan = await response.json()
             setPlans(prev => [...prev, plan]);
+            dispatch({ type: 'RESET' });
             dispatch({ type: 'UPDATE_SECTION', section: 'plan', payload: plan });
-            dispatch({ type: 'UPDATE_SECTION', section: 'collaborationMode', payload: '' });
             if (plan.caseId) setActiveCaseId(plan.caseId);
           }
         });
@@ -189,6 +189,8 @@ export default function Dashboard() {
   }, [user]);
 
   const handleSignOut = async () => {
+    dispatch({ type: 'RESET' });
+    localStorage.removeItem('sharedCareForm');
     await signOut(auth);
     navigate('/');
   };
@@ -403,6 +405,7 @@ export default function Dashboard() {
                         <button
                           className="plan-card__open-btn"
                           onClick={() => {
+                            dispatch({ type: 'RESET' });
                             dispatch({ type: 'UPDATE_SECTION', section: "plan", payload: plan });
                             dispatch({ type: 'UPDATE_SECTION', section: "collaborationMode", payload: plan.collaborationMode ?? '' });
                             dispatch({ type: 'UPDATE_SECTION', section: "timeAndCommunication", payload: plan.parentingTimeAndCommunication ?? {} });
@@ -450,6 +453,7 @@ export default function Dashboard() {
                         <button
                           className="plan-card__open-btn"
                           onClick={() => {
+                            dispatch({ type: 'RESET' });
                             // Replace plan in context with the selected plan
                             dispatch({ type: 'UPDATE_SECTION', section: "plan", payload: plan });
                             dispatch({ type: 'UPDATE_SECTION', section: "collaborationMode", payload: plan.collaborationMode ?? '' });
