@@ -1,12 +1,24 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowDown, ArrowUp, GripVertical, Plus, Printer, Trash2 } from 'lucide-react';
+import { onAuthStateChanged } from 'firebase/auth';
 import { useForm } from '../hooks/useForm';
 import { buildApiUrl } from '../lib/apiClient';
+import { auth } from '../lib/firebase';
 import { CUSTOM_COMPARISON_QUESTIONS } from '../lib/comparisonQuestionDefinitions';
 import './Page.css';
 import './FormDesigner.css';
 
 const STORAGE_KEY = 'shareCareFormTemplate';
+const TEMPLATE_FORMATS = {
+  review: {
+    label: 'Review PDF',
+    title: 'Parenting Plan Questionnaire Responses',
+  },
+  comparison: {
+    label: 'Comparison PDF',
+    title: 'Merged Parenting Plan Responses',
+  },
+};
 const WEEK_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const SCHEDULE_FIELDS = {
   parentingSchedule: 'Regular Parenting Schedule',
@@ -147,6 +159,22 @@ function formatScheduleSlot(slot) {
   return start && end ? `${start}–${end}` : start || end;
 }
 
+function formatCalendarDetails(details) {
+  if (!details || typeof details !== 'object') return 'No preference entered';
+  if (details.doesNotApply) return 'Does not apply';
+  const yearLabels = {
+    odd: 'Odd years',
+    even: 'Even years',
+    every: 'Every year',
+  };
+  const parts = [
+    yearLabels[details.year] || details.year,
+    formatTime(details.time),
+    details.alternativeRequest,
+  ].filter(Boolean);
+  return parts.join(' · ') || 'No preference entered';
+}
+
 function formatSchedule(answer, scheduleType) {
   if (!answer || typeof answer !== 'object') return 'Not scheduled';
   const entries = Object.entries(answer);
@@ -169,10 +197,7 @@ function formatSchedule(answer, scheduleType) {
   const lines = entries.map(([name, details]) => {
     if (!details || typeof details !== 'object') return `${name}: ${details}`;
     if (details.doesNotApply) return `${name}: Does not apply`;
-    const detailsText = [details.year, details.time, details.alternativeRequest]
-      .filter(Boolean)
-      .join(' · ');
-    return `${name}: ${detailsText || 'No preference entered'}`;
+    return `${name}: ${formatCalendarDetails(details)}`;
   });
   return lines.join('\n');
 }
@@ -203,13 +228,75 @@ function ScheduleCalendar({ schedule = {} }) {
                     className={`form-designer__schedule-slot form-designer__schedule-slot--${slot.parent || 'parent1'}`}
                     key={`${dayIndex}-${index}`}
                   >
-                    <span>{slot.parent === 'parent2' ? 'Parent 2' : 'Parent 1'}</span>
+                    <span className="form-designer__schedule-slot-parent">
+                      {slot.parent === 'parent2' ? 'Parent 2' : 'Parent 1'}
+                    </span>
                     <span>{formatScheduleSlot(slot) || 'No time set'}</span>
                   </div>
                 ))}
               </div>
             );
           })}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ComparisonSchedule({ value, type }) {
+  const parent1 = value?.parent1 && typeof value.parent1 === 'object' ? value.parent1 : {};
+  const parent2 = value?.parent2 && typeof value.parent2 === 'object' ? value.parent2 : {};
+  if (type === 'regular') {
+    const schedule = {};
+    [parent1, parent2].forEach((source, parentIndex) => {
+      Object.entries(source).forEach(([day, slots]) => {
+        if (!Array.isArray(slots)) return;
+        schedule[day] = [
+          ...(schedule[day] || []),
+          ...slots.map((slot) => ({ ...slot, parent: `parent${parentIndex + 1}` })),
+        ];
+      });
+    });
+    return <ScheduleCalendar schedule={schedule} />;
+  }
+  const names = [...new Set([...Object.keys(parent1), ...Object.keys(parent2)])];
+  return (
+    <div className="form-designer__comparison-schedule">
+      {names.map((name) => (
+        <div className="form-designer__comparison-schedule-row" key={name}>
+          <strong>{name}</strong>
+          <span className="form-designer__comparison-schedule-box">
+            <strong>Parent 1</strong> {formatCalendarDetails(parent1[name])}
+          </span>
+          <span className="form-designer__comparison-schedule-box">
+            <strong>Parent 2</strong> {formatCalendarDetails(parent2[name])}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function scheduleTypeForKey(qKey) {
+  const field = String(qKey || '').split('.').pop();
+  return field === 'parentingSchedule' ? 'regular'
+    : field === 'holidaySchedule' || field === 'schoolSchedule' ? 'calendar'
+      : null;
+}
+
+function renderScheduleAnswer(qKey, answer, question) {
+  const scheduleType = scheduleTypeForKey(qKey) || question?.scheduleType;
+  if (!scheduleType) return null;
+  if (answer?.parent1 || answer?.parent2) {
+    return <ComparisonSchedule value={answer} type={scheduleType} />;
+  }
+  if (scheduleType === 'regular') return <ScheduleCalendar schedule={answer} />;
+  return (
+    <div className="form-designer__comparison-schedule">
+      {Object.entries(answer || {}).map(([name, details]) => (
+        <div className="form-designer__comparison-schedule-row" key={name}>
+          <strong>{name}</strong>
+          <span className="form-designer__comparison-schedule-box">{formatCalendarDetails(details)}</span>
         </div>
       ))}
     </div>
@@ -344,7 +431,7 @@ const customOptionValues = {
   },
 };
 
-function collectAnswers(state, questions) {
+export function collectAnswers(state, questions, caseParentNames = {}) {
   const responses = (Array.isArray(state.plan?.answers) ? state.plan.answers : [])
     .filter((response) => (
       response &&
@@ -356,15 +443,25 @@ function collectAnswers(state, questions) {
     section: questions[response.qKey]?.section || 'Questionnaire',
     }));
 
-  const addFields = (source, section, fields = {}, questionSection = section, personalInfo = false) => {
-    Object.entries(source || {}).forEach(([key, answer]) => {
+  const addFields = (
+    source,
+    section,
+    fields = {},
+    questionSection = section,
+    personalInfo = false,
+    includeEmpty = false,
+  ) => {
+    Object.entries(fields).forEach(([key]) => {
+      const answer = source?.[key];
       if (
         isInternalFormField(key) ||
         key === 'childAnswers' ||
         SCHEDULE_FIELDS[key] ||
-        answer === '' ||
-        answer === null ||
-        answer === undefined
+        (!includeEmpty && (
+          answer === '' ||
+          answer === null ||
+          answer === undefined
+        ))
       ) return;
       const valueMap = customOptionValues[key];
       const options = valueMap
@@ -381,7 +478,19 @@ function collectAnswers(state, questions) {
     });
   };
 
-  addFields(state.parents, 'Getting Started', {
+  const personalInfo = {
+    firstName: state.plan?.parentFName,
+    lastName: state.plan?.parentLName,
+    age: state.plan?.parentAge,
+    phone: state.plan?.phoneNumber,
+    streetAddress: state.plan?.streetAddress,
+    addressLine2: state.plan?.addressLine2,
+    city: state.plan?.city,
+    state: state.plan?.state,
+    zipCode: state.plan?.zipCode,
+    ...(state.parents || {}),
+  };
+  addFields(personalInfo, 'Getting Started', {
     firstName: 'Your first name',
     lastName: 'Your last name',
     age: 'Your age',
@@ -391,7 +500,19 @@ function collectAnswers(state, questions) {
     city: 'City',
     state: 'State',
     zipCode: 'ZIP code',
-  }, 'personalInfo', true);
+  }, 'personalInfo', true, true);
+  addFields(caseParentNames, 'Personal info', {
+    parent1Name: 'Parent 1 name',
+    parent2Name: 'Parent 2 name',
+    parent1Address: 'Parent 1 street address',
+    parent1City: 'Parent 1 city',
+    parent1State: 'Parent 1 state',
+    parent1ZipCode: 'Parent 1 ZIP code',
+    parent2Address: 'Parent 2 street address',
+    parent2City: 'Parent 2 city',
+    parent2State: 'Parent 2 state',
+    parent2ZipCode: 'Parent 2 ZIP code',
+  }, 'case', true, true, true);
   addFields(state.plan, 'Getting Started', {
     userRole: 'Case filing status',
     residentialParent: 'Residential parent',
@@ -456,51 +577,173 @@ function collectAnswers(state, questions) {
   return responses;
 }
 
-const defaultTemplate = {
-  title: 'Parenting Plan Questionnaire Responses',
-  layout: 'blank',
-  blocks: [{ id: 'intro', type: 'heading', text: 'Questionnaire Responses' }],
-};
+function defaultTemplate(format) {
+  return {
+    title: TEMPLATE_FORMATS[format].title,
+    layout: 'blank',
+    blocks: [{ id: 'intro', type: 'heading', text: 'Questionnaire Responses' }],
+  };
+}
 
-function loadTemplate() {
+export function templateStorageKey(format) {
+  return `${STORAGE_KEY}:${format}`;
+}
+
+function normalizeTemplate(saved, format) {
+  const fallback = defaultTemplate(format);
+  if (!saved || !Array.isArray(saved.blocks)) return fallback;
+
+  return {
+    ...fallback,
+    ...saved,
+    title: typeof saved.title === 'string' ? saved.title : fallback.title,
+    layout: 'blank',
+    blocks: saved.blocks
+      .map((block) => (
+        block && SCHEDULE_QKEYS[String(block.qKey || '').split('.').pop()]
+          ? { ...block, qKey: canonicalScheduleKey(block.qKey) }
+          : block
+      ))
+      .filter((block) => (
+      block &&
+      typeof block.id === 'string' &&
+      ['heading', 'text', 'answer'].includes(block.type)
+      ))
+      .filter((block, index, blocks) => (
+        !blocks.some((other, otherIndex) => (
+          otherIndex < index && other.qKey && other.qKey === block.qKey
+        ))
+      )),
+  };
+}
+
+export function loadTemplate(format) {
   try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (!saved || !Array.isArray(saved.blocks)) return defaultTemplate;
-
-    return {
-      ...defaultTemplate,
-      ...saved,
-      title: typeof saved.title === 'string' ? saved.title : defaultTemplate.title,
-      layout: 'blank',
-      blocks: saved.blocks
-        .map((block) => (
-          block && SCHEDULE_QKEYS[String(block.qKey || '').split('.').pop()]
-            ? { ...block, qKey: canonicalScheduleKey(block.qKey) }
-            : block
-        ))
-        .filter((block) => (
-        block &&
-        typeof block.id === 'string' &&
-        ['heading', 'text', 'answer'].includes(block.type)
-        ))
-        .filter((block, index, blocks) => (
-          !blocks.some((other, otherIndex) => (
-            otherIndex < index && other.qKey && other.qKey === block.qKey
-          ))
-        )),
-    };
+    const saved = JSON.parse(
+      localStorage.getItem(templateStorageKey(format)) ||
+      (format === 'review' ? localStorage.getItem(STORAGE_KEY) : null),
+    );
+    return normalizeTemplate(saved, format);
   } catch {
-    return defaultTemplate;
+    return defaultTemplate(format);
   }
+}
+
+export function FormTemplatePrintDocument({ template, answersByKey, questions }) {
+  return (
+    <div className="form-designer__template-print form-designer__canvas form-designer__canvas--blank">
+      <div className="form-designer__print-title">{template.title}</div>
+      {template.blocks.map((block) => {
+        const response = answersByKey[block.qKey];
+        const question = questions[block.qKey] || response?.question;
+        if (block.type === 'heading') {
+          return (
+            <div className="form-designer__block form-designer__block--heading" key={block.id}>
+              <div className="form-designer__print-text">{block.text}</div>
+            </div>
+          );
+        }
+        if (block.type === 'text') {
+          return (
+            <div className="form-designer__block form-designer__block--text" key={block.id}>
+              <div className="form-designer__print-text">{block.text}</div>
+            </div>
+          );
+        }
+        if (!response || !hasAnswer(response.answer)) return null;
+        return (
+          <div className="form-designer__block form-designer__block--answer" key={block.id}>
+            <div className="form-designer__print-text">{block.questionText}</div>
+            <div className="form-designer__answer-value">
+              {renderScheduleAnswer(block.qKey, response.answer, question)
+                || answerText(response.answer, question)}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 export default function FormDesigner() {
   const { state } = useForm();
   const [questions, setQuestions] = useState({});
-  const [template, setTemplate] = useState(loadTemplate);
-  const [hasSavedTemplate] = useState(() => Boolean(localStorage.getItem(STORAGE_KEY)));
+  const [selectedFormat, setSelectedFormat] = useState('review');
+  const [template, setTemplate] = useState(() => loadTemplate('review'));
+  const [caseParentNames, setCaseParentNames] = useState({});
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [seededFormats, setSeededFormats] = useState(() => ({
+    review: Boolean(localStorage.getItem(templateStorageKey('review')) || localStorage.getItem(STORAGE_KEY)),
+    comparison: Boolean(localStorage.getItem(templateStorageKey('comparison'))),
+  }));
   const [draggedToken, setDraggedToken] = useState(null);
   const [selectedPalettePage, setSelectedPalettePage] = useState('Getting Started');
+
+  const changeFormat = (event) => {
+    const format = event.target.value;
+    setSelectedFormat(format);
+    setTemplate(loadTemplate(format));
+    setSeededFormats((current) => ({
+      ...current,
+      [format]: Boolean(localStorage.getItem(templateStorageKey(format))),
+    }));
+  };
+
+  useEffect(() => {
+    if (!isPrinting) return undefined;
+
+    const printTimer = setTimeout(() => {
+      window.print();
+      setIsPrinting(false);
+    }, 0);
+
+    return () => clearTimeout(printTimer);
+  }, [isPrinting]);
+
+  useEffect(() => {
+    const caseId = state.plan?.caseId;
+    if (!caseId) {
+      setCaseParentNames({});
+      return undefined;
+    }
+
+    let active = true;
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user || !active) return;
+      try {
+        const idToken = await user.getIdToken();
+        const response = await fetch(buildApiUrl(`/api/v1/cases/${caseId}/status`), {
+          headers: { Authorization: `Bearer ${idToken}` },
+        });
+        if (!response.ok) throw new Error('Failed to load case parent names');
+        const data = await response.json();
+        if (active) {
+          setCaseParentNames({
+            parent1Name: data.parent1Name || '',
+            parent2Name: data.parent2Name || '',
+            parent1Address: data.parent1Address || '',
+            parent1City: data.parent1City || '',
+            parent1State: data.parent1State || '',
+            parent1ZipCode: data.parent1ZipCode || '',
+            parent2Address: data.parent2Address || '',
+            parent2City: data.parent2City || '',
+            parent2State: data.parent2State || '',
+            parent2ZipCode: data.parent2ZipCode || '',
+          });
+        }
+      } catch (error) {
+        if (active) {
+          setCaseParentNames({});
+          console.error(error.message);
+        }
+      }
+    });
+
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, [state.plan?.caseId]);
 
   useEffect(() => {
     fetch(buildApiUrl('/api/logic-engine/questions'))
@@ -520,7 +763,7 @@ export default function FormDesigner() {
           ]),
         ]);
         setQuestions(mergedQuestions);
-        if (!hasSavedTemplate) {
+        if (!seededFormats[selectedFormat]) {
           setTemplate((current) => ({
             ...current,
             blocks: [
@@ -529,16 +772,23 @@ export default function FormDesigner() {
                 .map(createQuestionToken),
             ],
           }));
+          setSeededFormats((current) => ({ ...current, [selectedFormat]: true }));
         }
       })
       .catch((error) => console.error(error.message));
-  }, [hasSavedTemplate]);
+  }, [selectedFormat, seededFormats]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(template));
-  }, [template]);
+    localStorage.setItem(templateStorageKey(selectedFormat), JSON.stringify(template));
+    if (selectedFormat === 'review') {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(template));
+    }
+  }, [selectedFormat, template]);
 
-  const allAnswers = useMemo(() => collectAnswers(state, questions), [state, questions]);
+  const allAnswers = useMemo(
+    () => collectAnswers(state, questions, caseParentNames),
+    [state, questions, caseParentNames],
+  );
   const currentAnswersByKey = useMemo(
     () => Object.fromEntries(allAnswers.map((response) => [response.qKey, response])),
     [allAnswers],
@@ -629,6 +879,7 @@ export default function FormDesigner() {
   }));
 
   return (
+    <>
     <div className="page-container form-designer">
       <div className="page-content">
         <div className="form-designer__header">
@@ -636,7 +887,15 @@ export default function FormDesigner() {
             <h1>Form Designer</h1>
             <p>Create a document, then add questions and answers from the palette.</p>
           </div>
-          <button className="form-designer__print" onClick={() => window.print()}>
+          <label className="form-designer__scenario">
+            PDF format
+            <select value={selectedFormat} onChange={changeFormat}>
+              {Object.entries(TEMPLATE_FORMATS).map(([value, format]) => (
+                <option key={value} value={value}>{format.label}</option>
+              ))}
+            </select>
+          </label>
+          <button className="form-designer__print" onClick={() => setIsPrinting(true)}>
             <Printer size={16} /> Preview / Print
           </button>
         </div>
@@ -745,12 +1004,14 @@ export default function FormDesigner() {
                     <div className="form-designer__print-text">{block.questionText}</div>
                     <label>Answer</label>
                     <div className="form-designer__answer-value">
-                      {(questions[block.qKey] || currentAnswersByKey[block.qKey]?.question)?.scheduleType === 'regular'
-                        ? <ScheduleCalendar schedule={currentAnswersByKey[block.qKey]?.answer || {}} />
-                        : answerText(
-                          currentAnswersByKey[block.qKey]?.answer,
-                          questions[block.qKey] || currentAnswersByKey[block.qKey]?.question,
-                        )}
+                      {renderScheduleAnswer(
+                        block.qKey,
+                        currentAnswersByKey[block.qKey]?.answer,
+                        questions[block.qKey] || currentAnswersByKey[block.qKey]?.question,
+                      ) || answerText(
+                        currentAnswersByKey[block.qKey]?.answer,
+                        questions[block.qKey] || currentAnswersByKey[block.qKey]?.question,
+                      )}
                     </div>
                   </>
                 ) : (
@@ -766,5 +1027,13 @@ export default function FormDesigner() {
         </div>
       </div>
     </div>
+    {isPrinting && (
+      <FormTemplatePrintDocument
+        template={template}
+        answersByKey={currentAnswersByKey}
+        questions={questions}
+      />
+    )}
+    </>
   );
 }

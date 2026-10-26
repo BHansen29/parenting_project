@@ -4,8 +4,10 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { buildApiUrl } from '../lib/apiClient';
 import { CUSTOM_COMPARISON_QUESTIONS } from '../lib/comparisonQuestionDefinitions';
+import { FormTemplatePrintDocument, loadTemplate } from './FormDesigner';
 import { CheckCircle, AlertTriangle, Users, ArrowLeft, Printer } from 'lucide-react';
 import './Comparison.css';
+import './FormDesigner.css';
 
 const MEDIATION_RESOURCES = [
   'Ohio Mediation Association: ohiomediation.org',
@@ -19,6 +21,11 @@ const SCHEDULE_KEYS = new Set([
   'parentingTimeAndCommunication.holidaySchedule',
   'parentingTimeAndCommunication.schoolSchedule',
 ]);
+const SCHEDULE_TYPES = {
+  'parentingTimeAndCommunication.parentingSchedule': 'regular',
+  'parentingTimeAndCommunication.holidaySchedule': 'calendar',
+  'parentingTimeAndCommunication.schoolSchedule': 'calendar',
+};
 
 function formatTime(time) {
   if (!time) return '';
@@ -43,17 +50,6 @@ function RegularScheduleGrid({ parent1Schedule = {}, parent2Schedule = {} }) {
 
   return (
     <div className="comparison__regular-schedule" aria-label="Regular parenting schedule">
-      <div className="comparison__schedule-legend">
-        <div className="comparison__schedule-legend-item">
-          <span className="comparison__schedule-legend-color comparison__schedule-legend-color--parent1" />
-          Parent 1 time
-        </div>
-        <div className="comparison__schedule-legend-item">
-          <span className="comparison__schedule-legend-color comparison__schedule-legend-color--parent2" />
-          Parent 2 time
-        </div>
-      </div>
-
       <div className="comparison__weekly-grid">
         <div className="comparison__weekday-header">
           <span />
@@ -72,6 +68,7 @@ function RegularScheduleGrid({ parent1Schedule = {}, parent2Schedule = {} }) {
                 <div className={`comparison__day-cell ${slots.length ? 'comparison__day-cell--assigned' : ''}`} key={dayIndex}>
                   {slots.map((slot, index) => (
                     <div className={`comparison__day-slot comparison__day-slot--${slot.owner}`} key={`${dayIndex}-${slot.owner}-${index}`}>
+                      <strong>{slot.owner === 'parent2' ? 'Parent 2' : 'Parent 1'}</strong>
                       {formatSlot(slot) || 'No time set'}
                     </div>
                   ))}
@@ -88,10 +85,16 @@ function RegularScheduleGrid({ parent1Schedule = {}, parent2Schedule = {} }) {
 function formatCalendarDetails(details) {
   if (!details || typeof details !== 'object') return 'No preference entered';
   if (details.doesNotApply) return 'Does not apply';
-  const parts = [];
-  if (details.year) parts.push(details.year);
-  if (details.time) parts.push(details.time);
-  if (details.alternativeRequest) parts.push(details.alternativeRequest);
+  const yearLabels = {
+    odd: 'Odd years',
+    even: 'Even years',
+    every: 'Every year',
+  };
+  const parts = [
+    yearLabels[details.year] || details.year,
+    formatTime(details.time),
+    details.alternativeRequest,
+  ].filter(Boolean);
   return parts.join(' · ') || 'No preference entered';
 }
 
@@ -106,25 +109,15 @@ function HolidayScheduleComparison({ parent1Schedule = {}, parent2Schedule = {} 
 
   return (
     <div className="comparison__calendar-comparison" aria-label="Holiday and school schedule comparison">
-      <div className="comparison__schedule-legend">
-        <div className="comparison__schedule-legend-item">
-          <span className="comparison__schedule-legend-color comparison__schedule-legend-color--parent1" />
-          Parent 1 answer
-        </div>
-        <div className="comparison__schedule-legend-item">
-          <span className="comparison__schedule-legend-color comparison__schedule-legend-color--parent2" />
-          Parent 2 answer
-        </div>
-      </div>
       <div className="comparison__calendar-rows">
         {names.map((name) => (
           <div className="comparison__calendar-row" key={name}>
             <div className="comparison__calendar-name">{name}</div>
             <div className="comparison__calendar-answer comparison__calendar-answer--parent1">
-              {formatCalendarDetails(parent1[name])}
+              <strong>Parent 1</strong> {formatCalendarDetails(parent1[name])}
             </div>
             <div className="comparison__calendar-answer comparison__calendar-answer--parent2">
-              {formatCalendarDetails(parent2[name])}
+              <strong>Parent 2</strong> {formatCalendarDetails(parent2[name])}
             </div>
           </div>
         ))}
@@ -184,6 +177,16 @@ export default function Comparison() {
   // qKeys P2 flagged that P1 kept (still need discussion)
   const [needsDiscussionKeys, setNeedsDiscussionKeys] = useState(new Set());
   const [restartStatus, setRestartStatus] = useState('idle');
+  const [isPrinting, setIsPrinting] = useState(false);
+
+  useEffect(() => {
+    if (!isPrinting) return undefined;
+    const timer = setTimeout(() => {
+      window.print();
+      setIsPrinting(false);
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [isPrinting]);
 
   const parent1Name = isParent1 ? 'Your' : "Co-parent's";
   const parent2Name = isParent1 ? "Co-parent's" : 'Your';
@@ -214,7 +217,24 @@ export default function Comparison() {
           parent1: statusData.parent1Name || 'Parent 1',
           parent2: statusData.parent2Name || 'Parent 2',
         });
-        setSharedAnswers(statusData.sharedAnswers || {});
+        const mergedAnswers = statusData.sharedAnswers;
+        const mergedAnswerMap = Array.isArray(mergedAnswers)
+          ? Object.fromEntries(mergedAnswers.map(({ qKey, answer }) => [qKey, answer]))
+          : mergedAnswers || {};
+        setSharedAnswers({
+          ...mergedAnswerMap,
+          'getting-started.children': statusData.children || [],
+          'case.parent1Name': statusData.parent1Name || '',
+          'case.parent2Name': statusData.parent2Name || '',
+          'case.parent1Address': statusData.parent1Address || '',
+          'case.parent1City': statusData.parent1City || '',
+          'case.parent1State': statusData.parent1State || '',
+          'case.parent1ZipCode': statusData.parent1ZipCode || '',
+          'case.parent2Address': statusData.parent2Address || '',
+          'case.parent2City': statusData.parent2City || '',
+          'case.parent2State': statusData.parent2State || '',
+          'case.parent2ZipCode': statusData.parent2ZipCode || '',
+        });
 
         // Redirect based on status + role
         if (status === 'comparison_ready' && !parent1) {
@@ -231,8 +251,22 @@ export default function Comparison() {
         if (questionsRes.ok) {
           const questionsData = await questionsRes.json();
           const questions = Array.isArray(questionsData) ? questionsData : questionsData.questions || [];
-          const map = { ...CUSTOM_COMPARISON_QUESTIONS };
-          questions.forEach((q) => { if (q.qKey) map[q.qKey] = q; });
+          const map = Object.fromEntries(
+            Object.entries(CUSTOM_COMPARISON_QUESTIONS).map(([qKey, question]) => [
+              qKey,
+              SCHEDULE_TYPES[qKey]
+                ? { ...question, scheduleType: SCHEDULE_TYPES[qKey] }
+                : question,
+            ]),
+          );
+          map['getting-started.children'] = {
+            qKey: 'getting-started.children',
+            qText: 'Children',
+            childDetails: true,
+          };
+          questions.forEach((q) => {
+            if (q.qKey) map[q.qKey] = { ...map[q.qKey], ...q };
+          });
           setQuestionMap(map);
         }
 
@@ -392,9 +426,21 @@ export default function Comparison() {
   // ── final comparison view ─────────────────────────────────────────────────
   if (['resolved', 'needs_discussion', 'resolutions_reviewed'].includes(caseStatus)) {
     const sharedItems = Object.entries(sharedAnswers).map(([qKey, answer]) => ({ qKey, answer }));
+    const printItems = sharedItems.map((item) => {
+      if (!SCHEDULE_KEYS.has(item.qKey)) return item;
+      const difference = diff.find((entry) => entry.questionKey === item.qKey);
+      return {
+        ...item,
+        answer: {
+          parent1: difference?.parent1Answer || {},
+          parent2: difference?.parent2Answer || {},
+        },
+      };
+    });
     const agreedItems = sharedItems.filter((item) => !needsDiscussionKeys.has(item.qKey));
     const discussionItems = sharedItems.filter((item) => needsDiscussionKeys.has(item.qKey));
     return (
+      <>
       <div className="comparison">
         <div className="comparison__header">
           <button className="comparison__nav-back" onClick={() => navigate('/dashboard')}>
@@ -426,6 +472,7 @@ export default function Comparison() {
           <div className="comparison__submit-row comparison__final-actions">
               <button
                 className="comparison__download-btn"
+                onClick={() => setIsPrinting(true)}
               >
                 <Printer size={16} /> Print / Save PDF
               </button>
@@ -507,6 +554,22 @@ export default function Comparison() {
           )}
         </div>
       </div>
+      {isPrinting && (
+        <FormTemplatePrintDocument
+          template={loadTemplate('comparison')}
+          answersByKey={Object.fromEntries(printItems.map((item) => [
+            item.qKey,
+            { ...item, question: questionMap[item.qKey] },
+          ]))}
+          questions={Object.fromEntries(Object.entries(questionMap).map(([qKey, question]) => [
+            qKey,
+            SCHEDULE_KEYS.has(qKey)
+              ? { ...question, comparisonSchedule: qKey.endsWith('.parentingSchedule') ? 'regular' : 'calendar' }
+              : question,
+          ]))}
+        />
+      )}
+      </>
     );
   }
 

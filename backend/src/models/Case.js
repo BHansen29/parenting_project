@@ -24,6 +24,22 @@ const caseSchema = new mongoose.Schema(
       type: String,
       default: null
     },
+    parent1Name: {
+      type: String,
+      default: ''
+    },
+    parent2Name: {
+      type: String,
+      default: ''
+    },
+    parent1Address: { type: String, default: '' },
+    parent1City: { type: String, default: '' },
+    parent1State: { type: String, default: '' },
+    parent1ZipCode: { type: String, default: '' },
+    parent2Address: { type: String, default: '' },
+    parent2City: { type: String, default: '' },
+    parent2State: { type: String, default: '' },
+    parent2ZipCode: { type: String, default: '' },
     parent1PlanId: { type: mongoose.Schema.Types.ObjectId, ref: 'Plan', default: null },
     parent2PlanId: { type: mongoose.Schema.Types.ObjectId, ref: 'Plan', default: null },
     // Stores final resolved answers as [{ qKey, answer }]. An array is used because

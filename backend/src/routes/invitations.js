@@ -108,6 +108,16 @@ router.post('/invitations/:token/accept', verifyToken, async (req, res) => {
       const p2Name = getFirstName(p2User);
       const p1Plan = await Plan.findById(parentingCase.parent1PlanId);
       const sharedChildren = p1Plan?.children ?? [];
+      parentingCase.parent1Name = [p1Plan?.parentFName, p1Plan?.parentLName].filter(Boolean).join(' ') || p1Name;
+      parentingCase.parent2Name = [parent2Plan?.parentFName, parent2Plan?.parentLName].filter(Boolean).join(' ') || p2Name;
+      parentingCase.parent1Address = p1Plan?.streetAddress || '';
+      parentingCase.parent1City = p1Plan?.city || '';
+      parentingCase.parent1State = p1Plan?.state || '';
+      parentingCase.parent1ZipCode = p1Plan?.zipCode || '';
+      parentingCase.parent2Address = parent2Plan?.streetAddress || '';
+      parentingCase.parent2City = parent2Plan?.city || '';
+      parentingCase.parent2State = parent2Plan?.state || '';
+      parentingCase.parent2ZipCode = parent2Plan?.zipCode || '';
       if (parent2Plan) parentingCase.parent2PlanId = parent2Plan._id;
       await Plan.updateOne(
         { caseId: invitation.caseId, userID: parentingCase.parent1Uid },

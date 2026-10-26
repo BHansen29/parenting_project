@@ -8,9 +8,11 @@ import InviteModal from '../components/common/InviteModal';
 import { useForm } from '../hooks/useForm';
 import { auth } from '../lib/firebase';
 import { buildApiUrl } from '../lib/apiClient';
+import { FormTemplatePrintDocument, collectAnswers, loadTemplate } from './FormDesigner';
 import shareCareLogo from '../assets/logos/ShareCare_Symmetrical Diamond Logo (1120 x 310 px).png';
 import './Page.css';
 import './Review.css';
+import './FormDesigner.css';
 
 
 // Section titles and routes
@@ -160,9 +162,9 @@ function addCustomSectionResponses(grouped, plan) {
 }
 
 /* Displays children's names */
-function addStateSectionResponses(grouped, state) {
-  const savedTaxExemptions = state.plan?.taxExemptions ?? state.taxExemptions;
-  const childNames = (state.plan?.children ?? []).map((child, index) => {
+function addStateSectionResponses(grouped, plan) {
+  const savedTaxExemptions = plan.taxExemptions ?? {};
+  const childNames = (plan.children ?? []).map((child, index) => {
     const name = [child.fName ?? child.firstName, child.lName ?? child.lastName]
       .filter(Boolean)
       .join(' ')
@@ -172,18 +174,17 @@ function addStateSectionResponses(grouped, state) {
 
   /* Adds gettings started and tax exemption responses to the grouped responses object for display in the review page. */
   const gettingStarted = [
-    ['firstName', 'Your first name', state.parents?.firstName],
-    ['lastName', 'Your last name', state.parents?.lastName],
-    ['age', 'Your age', state.parents?.age],
-    ['phone', 'Your phone number', state.parents?.phone],
-    ['streetAddress', 'Street address', state.parents?.streetAddress],
-    ['addressLine2', 'Address line 2', state.parents?.addressLine2],
-    ['city', 'City', state.parents?.city],
-    ['state', 'State', state.parents?.state],
-    ['zipCode', 'ZIP code', state.parents?.zipCode],
-    ['collaborationMode', 'Plan collaboration mode', state.plan?.collaborationMode],
-    ['userRole', 'Case filing status', state.plan?.userRole],
-    ['residentialParent', 'Residential parent', state.plan?.residentialParent],
+    ['firstName', 'Your first name', plan.parentFName],
+    ['lastName', 'Your last name', plan.parentLName],
+    ['age', 'Your age', plan.parentAge],
+    ['phone', 'Your phone number', plan.phoneNumber],
+    ['streetAddress', 'Street address', plan.streetAddress],
+    ['addressLine2', 'Address line 2', plan.addressLine2],
+    ['city', 'City', plan.city],
+    ['state', 'State', plan.state],
+    ['zipCode', 'ZIP code', plan.zipCode],
+    ['userRole', 'Case filing status', plan.userRole],
+    ['residentialParent', 'Residential parent', plan.residentialParent],
     ['children', 'Children', childNames],
   ];
   const taxExemptions = [
@@ -268,8 +269,8 @@ function SectionBlock({ sectionKey, responses, onEdit, isOpen, onToggle }) {
 }
 
 
-function PrintablePlan({ groupedResponses, sectionKeys, state }) {
-  const parentName = [state.parents?.firstName, state.parents?.lastName]
+function PrintablePlan({ groupedResponses, sectionKeys, plan }) {
+  const parentName = [plan.parentFName, plan.parentLName]
     .filter(Boolean)
     .join(' ');
 
@@ -279,7 +280,7 @@ function PrintablePlan({ groupedResponses, sectionKeys, state }) {
         <img src={shareCareLogo} alt="ShareCare" className="review__print-logo" />
         <div>
           <h1>Parenting Plan Questionnaire Responses</h1>
-          <p>{parentName || 'Parent'}{state.plan?.name ? ` · ${state.plan.name}` : ''}</p>
+          <p>{parentName || 'Parent'}{plan.name ? ` · ${plan.name}` : ''}</p>
           <p>Generated {new Date().toLocaleDateString()}</p>
         </div>
       </header>
@@ -324,19 +325,76 @@ function PrintablePlan({ groupedResponses, sectionKeys, state }) {
 export default function Review() {
   const navigate = useNavigate();
   const { state, dispatch } = useForm();
+  const [storedPlan, setStoredPlan] = useState(null);
+  const planId = state.plan?._id;
+
+  useEffect(() => {
+    if (!planId) {
+      setStoredPlan(null);
+      return undefined;
+    }
+
+    let isActive = true;
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) return;
+      user.getIdToken()
+        .then((idToken) => fetch(buildApiUrl(`api/plan/${planId}`), {
+          headers: { Authorization: 'Bearer ' + idToken },
+        }))
+        .then((response) => {
+          if (!response.ok) throw new Error('Failed to load the saved plan');
+          return response.json();
+        })
+        .then((plan) => {
+          if (isActive) setStoredPlan(plan);
+        })
+        .catch((error) => {
+          if (isActive) {
+            setStoredPlan(null);
+            console.error(error.message);
+          }
+        });
+    });
+
+    return () => {
+      isActive = false;
+      unsubscribe();
+    };
+  }, [planId]);
+
+  const reviewPlan = storedPlan || {};
 
   // collaborationMode drives invite button behaviour — mirrors Dashboard logic:
   //   'locked-individual' — safety concern; invite button hidden entirely
   //   'individual'        — user chose solo; show switch prompt before opening invite
   //   'collaborative'     — user chose collaborative; invite button opens modal directly
   //   ''                  — not yet set; treat same as individual (no invite)
-  const collaborationMode = state.collaborationMode ?? '';
-  const isSharedPlan = state.plan?.isShared === true;
+  const collaborationMode = reviewPlan.collaborationMode ?? '';
+  const isSharedPlan = reviewPlan.isShared === true;
 
   const [questionsByKey, setQuestionsByKey] = useState({});
-  const groupedResponses = groupResponsesBySection(state.plan?.answers || [], questionsByKey);
-  addCustomSectionResponses(groupedResponses, state.plan);
-  addStateSectionResponses(groupedResponses, state);
+  const groupedResponses = groupResponsesBySection(reviewPlan.answers || [], questionsByKey);
+  addCustomSectionResponses(groupedResponses, reviewPlan);
+  addStateSectionResponses(groupedResponses, reviewPlan);
+  const designerState = {
+    plan: reviewPlan,
+    parents: {
+      firstName: reviewPlan.parentFName,
+      lastName: reviewPlan.parentLName,
+      age: reviewPlan.parentAge,
+      phone: reviewPlan.phoneNumber,
+      streetAddress: reviewPlan.streetAddress,
+      addressLine2: reviewPlan.addressLine2,
+      city: reviewPlan.city,
+      state: reviewPlan.state,
+      zipCode: reviewPlan.zipCode,
+    },
+    timeAndCommunication: reviewPlan.parentingTimeAndCommunication,
+    taxExemptions: reviewPlan.taxExemptions,
+  };
+  const reviewAnswersByKey = Object.fromEntries(
+    collectAnswers(designerState, questionsByKey).map((response) => [response.qKey, response]),
+  );
   const knownSectionKeys = Object.keys(SECTION_META);
 
   const [openSections, setOpenSections] = useState(() =>
@@ -349,7 +407,7 @@ export default function Review() {
   const [isPrinting, setIsPrinting] = useState(false);
   
 
-  const caseId = state.plan?.caseId;
+  const caseId = reviewPlan.caseId;
 
   useEffect(() => {
     if (!caseId) return undefined;
@@ -360,7 +418,7 @@ export default function Review() {
 
       user.getIdToken()
         .then((idToken) => fetch(buildApiUrl(`api/v1/cases/${caseId}/status`), {
-          headers: { Authorization: `Bearer ${idToken}` },
+          headers: { Authorization: 'Bearer ' + idToken },
         }))
         .then((res) => res.ok ? res.json() : null)
         .then((data) => {
@@ -555,10 +613,10 @@ export default function Review() {
         />
       </div>
       {isPrinting && (
-        <PrintablePlan
-          groupedResponses={groupedResponses}
-          sectionKeys={knownSectionKeys}
-          state={state}
+        <FormTemplatePrintDocument
+          template={loadTemplate('review')}
+          answersByKey={reviewAnswersByKey}
+          questions={questionsByKey}
         />
       )}
     </>

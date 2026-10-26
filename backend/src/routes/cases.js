@@ -99,22 +99,36 @@ router.get('/:caseId/status', verifyToken, async (req, res) => {
 
     // Gets parents names for comparison tool understanding
     const [plan1, plan2, parent1, parent2] = await Promise.all([
-      parentingCase.parent1PlanId ? Plan.findById(parentingCase.parent1PlanId, 'parentFName') : null,
-      parentingCase.parent2PlanId ? Plan.findById(parentingCase.parent2PlanId, 'parentFName') : null,
+      parentingCase.parent1PlanId ? Plan.findById(parentingCase.parent1PlanId, 'parentFName parentLName streetAddress city state zipCode children') : null,
+      parentingCase.parent2PlanId ? Plan.findById(parentingCase.parent2PlanId, 'parentFName parentLName streetAddress city state zipCode children') : null,
       User.findOne({ firebaseUid: parentingCase.parent1Uid }, 'name email'),
       parentingCase.parent2Uid
         ? User.findOne({ firebaseUid: parentingCase.parent2Uid }, 'name email')
         : null,
     ]);
-    const firstName = (plan, user, fallback) =>
-      plan?.parentFName?.trim() || getFirstName(user).split(/\s+/)[0] || fallback;
+    const displayName = (storedName, plan, user, fallback) =>
+      [plan?.parentFName, plan?.parentLName].filter(Boolean).join(' ').trim()
+      || storedName?.trim()
+      || getFirstName(user).trim()
+      || fallback;
 
     res.status(200).json({
       caseId: parentingCase._id,
       status: parentingCase.status,
       isParent1: parentingCase.parent1Uid === req.user.uid,
-      parent1Name: firstName(plan1, parent1, 'Parent 1'),
-      parent2Name: parent2 ? firstName(plan2, parent2, 'Co-parent') : 'Co-parent',
+      parent1Name: displayName(parentingCase.parent1Name, plan1, parent1, 'Parent 1'),
+      parent2Name: parentingCase.parent2Uid
+        ? displayName(parentingCase.parent2Name, plan2, parent2, 'Co-parent')
+        : 'Co-parent',
+      parent1Address: parentingCase.parent1Address || plan1?.streetAddress || '',
+      parent1City: parentingCase.parent1City || plan1?.city || '',
+      parent1State: parentingCase.parent1State || plan1?.state || '',
+      parent1ZipCode: parentingCase.parent1ZipCode || plan1?.zipCode || '',
+      parent2Address: parentingCase.parent2Address || plan2?.streetAddress || '',
+      parent2City: parentingCase.parent2City || plan2?.city || '',
+      parent2State: parentingCase.parent2State || plan2?.state || '',
+      parent2ZipCode: parentingCase.parent2ZipCode || plan2?.zipCode || '',
+      children: plan1?.children?.length ? plan1.children : (plan2?.children || []),
       sharedAnswers: fromMergedAnswerEntries(parentingCase.mergedAnswers),
     });
   } catch (error) {
