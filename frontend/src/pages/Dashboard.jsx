@@ -139,6 +139,7 @@ export default function Dashboard() {
           } else {
             const plan = await response.json()
             setPlans(prev => [...prev, plan]);
+            dispatch({ type: 'RESET' });
             dispatch({ type: 'UPDATE_SECTION', section: 'plan', payload: plan });
             dispatch({ type: 'UPDATE_SECTION', section: 'collaborationMode', payload: '' });
             if (plan.caseId) setActiveCaseId(plan.caseId);
@@ -366,6 +367,7 @@ export default function Dashboard() {
                         <button
                           className="plan-card__open-btn"
                           onClick={() => {
+                            dispatch({ type: 'RESET' });
                             dispatch({ type: 'UPDATE_SECTION', section: "plan", payload: plan });
                             dispatch({ type: 'UPDATE_SECTION', section: "collaborationMode", payload: plan.collaborationMode ?? '' });
                             dispatch({ type: 'UPDATE_SECTION', section: "timeAndCommunication", payload: plan.parentingTimeAndCommunication ?? {} });
@@ -413,6 +415,7 @@ export default function Dashboard() {
                         <button
                           className="plan-card__open-btn"
                           onClick={() => {
+                            dispatch({ type: 'RESET' });
                             // Replace plan in context with the selected plan
                             dispatch({ type: 'UPDATE_SECTION', section: "plan", payload: plan });
                             dispatch({ type: 'UPDATE_SECTION', section: "collaborationMode", payload: plan.collaborationMode ?? '' });
