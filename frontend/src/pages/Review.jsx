@@ -161,6 +161,7 @@ function addCustomSectionResponses(grouped, plan) {
 
 /* Displays children's names */
 function addStateSectionResponses(grouped, state) {
+  const savedTaxExemptions = state.plan?.taxExemptions ?? state.taxExemptions;
   const childNames = (state.plan?.children ?? []).map((child, index) => {
     const name = [child.fName ?? child.firstName, child.lName ?? child.lastName]
       .filter(Boolean)
@@ -186,8 +187,8 @@ function addStateSectionResponses(grouped, state) {
     ['children', 'Children', childNames],
   ];
   const taxExemptions = [
-    ['parentRole', 'Parental role', state.taxExemptions?.parentRole],
-    ['claimingChildren', 'Children claimed for tax exemptions', state.taxExemptions?.claimingChildren],
+    ['parentRole', 'Parental role', savedTaxExemptions?.parentRole],
+    ['claimingChildren', 'Children claimed for tax exemptions', savedTaxExemptions?.claimingChildren],
   ];
 
   [
@@ -204,7 +205,11 @@ function addStateSectionResponses(grouped, state) {
       }));
 
     if (responses.length > 0) {
-      grouped[section] = [...(grouped[section] ?? []), ...responses];
+      const responseKeys = new Set(responses.map((response) => response.qKey));
+      grouped[section] = [
+        ...(grouped[section] ?? []).filter((response) => !responseKeys.has(response.qKey)),
+        ...responses,
+      ];
     }
   });
 }

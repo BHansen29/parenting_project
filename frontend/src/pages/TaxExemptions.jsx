@@ -351,7 +351,8 @@ export default function TaxExemptions() {
         body: JSON.stringify({ section: 'taxExemptions', answers: state.taxExemptions }),
       });
       if (!response.ok) throw new Error('Failed to save tax exemption answers');
-      dispatch({ type: 'UPDATE_SECTION', section: 'plan', payload: await response.json() });
+      const savedPlan = await response.json();
+      dispatch({ type: 'UPDATE_SECTION', section: 'plan', payload: savedPlan });
       navigate('/review');
     } catch (error) {
       console.error(error.message);
