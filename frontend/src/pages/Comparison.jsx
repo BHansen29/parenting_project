@@ -4,7 +4,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { buildApiUrl } from '../lib/apiClient';
 import { CUSTOM_COMPARISON_QUESTIONS } from '../lib/comparisonQuestionDefinitions';
-import { FormTemplatePrintDocument, loadTemplate } from './FormDesigner';
+import { answerText, FormTemplatePrintDocument, loadTemplate } from './FormDesigner';
 import { CheckCircle, AlertTriangle, Users, ArrowLeft, Printer } from 'lucide-react';
 import './Comparison.css';
 import './FormDesigner.css';
@@ -26,6 +26,19 @@ const SCHEDULE_TYPES = {
   'parentingTimeAndCommunication.holidaySchedule': 'calendar',
   'parentingTimeAndCommunication.schoolSchedule': 'calendar',
 };
+const COMPARISON_ONLY_EXCLUDED_KEYS = new Set(['getting-started.children']);
+const PRINT_ONLY_PERSONAL_INFO_KEYS = [
+  'case.parent1Name',
+  'case.parent2Name',
+  'case.parent1Address',
+  'case.parent1City',
+  'case.parent1State',
+  'case.parent1ZipCode',
+  'case.parent2Address',
+  'case.parent2City',
+  'case.parent2State',
+  'case.parent2ZipCode',
+];
 
 function formatTime(time) {
   if (!time) return '';
@@ -219,7 +232,15 @@ export default function Comparison() {
         });
         const mergedAnswers = statusData.sharedAnswers;
         const mergedAnswerMap = Array.isArray(mergedAnswers)
-          ? Object.fromEntries(mergedAnswers.map(({ qKey, answer }) => [qKey, answer]))
+          ? Object.fromEntries(
+            mergedAnswers
+              .filter(({ qKey }) => (
+                qKey &&
+                !qKey.startsWith('case.') &&
+                !COMPARISON_ONLY_EXCLUDED_KEYS.has(qKey)
+              ))
+              .map(({ qKey, answer }) => [qKey, answer]),
+          )
           : mergedAnswers || {};
         setSharedAnswers({
           ...mergedAnswerMap,
@@ -308,6 +329,9 @@ export default function Comparison() {
       if (val === 'parent2') return answerOwner === 'parent1' ? 'Just my co-parent' : 'Just me';
     }
     if (Array.isArray(val)) return val.map((value) => formatAnswer(value, answerOwner, questionKey)).join(', ');
+    if (questionMap[questionKey]?.childAnswers) {
+      return answerText(val, questionMap[questionKey]);
+    }
     if (val && typeof val === 'object') return JSON.stringify(val);
     const option = questionMap[questionKey]?.options?.find((item) => item.value === val);
     if (option?.label) return option.label;
@@ -425,8 +449,23 @@ export default function Comparison() {
 
   // ── final comparison view ─────────────────────────────────────────────────
   if (['resolved', 'needs_discussion', 'resolutions_reviewed'].includes(caseStatus)) {
-    const sharedItems = Object.entries(sharedAnswers).map(([qKey, answer]) => ({ qKey, answer }));
-    const printItems = sharedItems.map((item) => {
+    const sharedItems = Object.entries(sharedAnswers)
+      .filter(([qKey]) => (
+        !qKey.startsWith('case.') &&
+        !COMPARISON_ONLY_EXCLUDED_KEYS.has(qKey)
+      ))
+      .map(([qKey, answer]) => ({ qKey, answer }));
+    const printItems = [
+      ...sharedItems,
+      ...(Array.isArray(sharedAnswers['getting-started.children'])
+        && sharedAnswers['getting-started.children'].length
+        ? [{ qKey: 'getting-started.children', answer: sharedAnswers['getting-started.children'] }]
+        : []),
+      ...PRINT_ONLY_PERSONAL_INFO_KEYS
+        .filter((qKey) => sharedAnswers[qKey] !== undefined && sharedAnswers[qKey] !== '')
+        .map((qKey) => ({ qKey, answer: sharedAnswers[qKey] })),
+    ].map(({ qKey, answer }) => {
+      const item = { qKey, answer };
       if (!SCHEDULE_KEYS.has(item.qKey)) return item;
       const difference = diff.find((entry) => entry.questionKey === item.qKey);
       return {
@@ -567,6 +606,7 @@ export default function Comparison() {
               ? { ...question, comparisonSchedule: qKey.endsWith('.parentingSchedule') ? 'regular' : 'calendar' }
               : question,
           ]))}
+          needsDiscussionKeys={needsDiscussionKeys}
         />
       )}
       </>

@@ -80,7 +80,7 @@ function canonicalScheduleKey(qKey) {
   return SCHEDULE_QKEYS[field] || qKey;
 }
 
-function answerText(answer, question) {
+export function answerText(answer, question) {
   if (answer === null || answer === undefined || answer === '') return 'Not answered';
   if (question?.childDetails) {
     return formatChildDetails(answer);
@@ -629,7 +629,12 @@ export function loadTemplate(format) {
   }
 }
 
-export function FormTemplatePrintDocument({ template, answersByKey, questions }) {
+export function FormTemplatePrintDocument({
+  template,
+  answersByKey,
+  questions,
+  needsDiscussionKeys,
+}) {
   return (
     <div className="form-designer__template-print form-designer__canvas form-designer__canvas--blank">
       <div className="form-designer__print-title">{template.title}</div>
@@ -653,6 +658,9 @@ export function FormTemplatePrintDocument({ template, answersByKey, questions })
         if (!response || !hasAnswer(response.answer)) return null;
         return (
           <div className="form-designer__block form-designer__block--answer" key={block.id}>
+            {needsDiscussionKeys?.has(block.qKey) && (
+              <div className="form-designer__discussion-notice">Needs discussion</div>
+            )}
             <div className="form-designer__print-text">{block.questionText}</div>
             <div className="form-designer__answer-value">
               {renderScheduleAnswer(block.qKey, response.answer, question)

@@ -66,4 +66,18 @@ export const CUSTOM_COMPARISON_QUESTIONS = {
   'informationSharing.schoolActivities': {
     qText: "Do you agree to these default rights? If not, provide what rights you would like or not like your co-parent to have."
   },
+  'taxExemptions.parentRole': {
+    qText: 'Your parental role',
+    options: [
+      { value: 'residential', label: 'I am the residential parent' },
+      { value: 'nonresidential', label: 'I am the non-residential parent' },
+    ],
+  },
+  'taxExemptions.claimingChildren': {
+    qText: 'Which children will you claim as tax exemptions?',
+  },
+  'taxExemptions.childAnswers': {
+    qText: 'Tax exemption arrangements for each child',
+    childAnswers: true,
+  },
 };
