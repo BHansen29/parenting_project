@@ -36,7 +36,7 @@ export default function LandingPage() {
             <img src={logo} alt="ShareCare" className="landing-header__logo" />
           </div>
           <div className="landing-header__actions">
-            <button className="landing-header__link">How it works</button>
+            <button onClick={() => navigate('/how-it-works')} className="landing-header__link">How it works</button>
             <button onClick={handleSignIn} className="landing-header__sign-in">Sign In</button>
             <button onClick={handleGetStarted} className="landing-header__cta">
               Get Started

@@ -283,7 +283,7 @@
 }
 
 .comparison__calendar-answer {
-  color: #fff;
+  color: #111827;
 }
 
 .comparison__calendar-answer--parent1 {
@@ -388,9 +388,12 @@
 }
 
 .comparison__day-slot {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   padding: 6px 4px;
   border-radius: 6px;
-  color: #fff;
+  color: #111827;
   font-size: 10px;
   line-height: 1.25;
   text-align: center;
@@ -402,6 +405,11 @@
 
 .comparison__day-slot--parent2 {
   background: #f37b35;
+}
+
+.comparison__day-slot strong,
+.comparison__calendar-answer strong {
+  font-weight: 700;
 }
 
 .comparison__schedule-day {
@@ -588,4 +596,8 @@
   color: #075985;
   font-size: 14px;
   line-height: 1.8;
+}
+@media print {
+  html, body { width: 100% !important; max-width: 100% !important; overflow: visible !important; }
+  .comparison { display: none !important; }
 }

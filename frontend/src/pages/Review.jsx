@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
 import { CheckCircle, Download, UserPlus, Pencil, ChevronDown, ChevronUp } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/card';
@@ -8,8 +8,11 @@ import InviteModal from '../components/common/InviteModal';
 import { useForm } from '../hooks/useForm';
 import { auth } from '../lib/firebase';
 import { buildApiUrl } from '../lib/apiClient';
+import { fetchStandardTemplate, FormTemplatePrintDocument, collectAnswers, standardTemplate } from './FormDesigner';
+import shareCareLogo from '../assets/logos/ShareCare_Symmetrical Diamond Logo (1120 x 310 px).png';
 import './Page.css';
 import './Review.css';
+import './FormDesigner.css';
 
 
 // Section titles and routes
@@ -159,8 +162,9 @@ function addCustomSectionResponses(grouped, plan) {
 }
 
 /* Displays children's names */
-function addStateSectionResponses(grouped, state) {
-  const childNames = (state.plan?.children ?? []).map((child, index) => {
+function addStateSectionResponses(grouped, plan) {
+  const savedTaxExemptions = plan.taxExemptions ?? {};
+  const childNames = (plan.children ?? []).map((child, index) => {
     const name = [child.fName ?? child.firstName, child.lName ?? child.lastName]
       .filter(Boolean)
       .join(' ')
@@ -170,23 +174,22 @@ function addStateSectionResponses(grouped, state) {
 
   /* Adds gettings started and tax exemption responses to the grouped responses object for display in the review page. */
   const gettingStarted = [
-    ['firstName', 'Your first name', state.parents?.firstName],
-    ['lastName', 'Your last name', state.parents?.lastName],
-    ['age', 'Your age', state.parents?.age],
-    ['phone', 'Your phone number', state.parents?.phone],
-    ['streetAddress', 'Street address', state.parents?.streetAddress],
-    ['addressLine2', 'Address line 2', state.parents?.addressLine2],
-    ['city', 'City', state.parents?.city],
-    ['state', 'State', state.parents?.state],
-    ['zipCode', 'ZIP code', state.parents?.zipCode],
-    ['collaborationMode', 'Plan collaboration mode', state.plan?.collaborationMode],
-    ['userRole', 'Case filing status', state.plan?.userRole],
-    ['residentialParent', 'Residential parent', state.plan?.residentialParent],
+    ['firstName', 'Your first name', plan.parentFName],
+    ['lastName', 'Your last name', plan.parentLName],
+    ['age', 'Your age', plan.parentAge],
+    ['phone', 'Your phone number', plan.phoneNumber],
+    ['streetAddress', 'Street address', plan.streetAddress],
+    ['addressLine2', 'Address line 2', plan.addressLine2],
+    ['city', 'City', plan.city],
+    ['state', 'State', plan.state],
+    ['zipCode', 'ZIP code', plan.zipCode],
+    ['userRole', 'Case filing status', plan.userRole],
+    ['residentialParent', 'Residential parent', plan.residentialParent],
     ['children', 'Children', childNames],
   ];
   const taxExemptions = [
-    ['parentRole', 'Parental role', state.taxExemptions?.parentRole],
-    ['claimingChildren', 'Children claimed for tax exemptions', state.taxExemptions?.claimingChildren],
+    ['parentRole', 'Parental role', savedTaxExemptions?.parentRole],
+    ['claimingChildren', 'Children claimed for tax exemptions', savedTaxExemptions?.claimingChildren],
   ];
 
   [
@@ -203,7 +206,11 @@ function addStateSectionResponses(grouped, state) {
       }));
 
     if (responses.length > 0) {
-      grouped[section] = [...(grouped[section] ?? []), ...responses];
+      const responseKeys = new Set(responses.map((response) => response.qKey));
+      grouped[section] = [
+        ...(grouped[section] ?? []).filter((response) => !responseKeys.has(response.qKey)),
+        ...responses,
+      ];
     }
   });
 }
@@ -262,22 +269,137 @@ function SectionBlock({ sectionKey, responses, onEdit, isOpen, onToggle }) {
 }
 
 
+function PrintablePlan({ groupedResponses, sectionKeys, plan }) {
+  const parentName = [plan.parentFName, plan.parentLName]
+    .filter(Boolean)
+    .join(' ');
+
+  return (
+    <div className="review__print-document">
+      <header className="review__print-header">
+        <img src={shareCareLogo} alt="ShareCare" className="review__print-logo" />
+        <div>
+          <h1>Parenting Plan Questionnaire Responses</h1>
+          <p>{parentName || 'Parent'}{plan.name ? ` · ${plan.name}` : ''}</p>
+          <p>Generated {new Date().toLocaleDateString()}</p>
+        </div>
+      </header>
+
+      <div className="review__print-disclaimer">
+        This document contains the questionnaire responses entered in ShareCare. It is a draft
+        and is not legal advice or a court-approved parenting plan.
+      </div>
+
+      {sectionKeys.map((sectionKey) => {
+        const meta = SECTION_META[sectionKey] || {
+          label: sectionKey.replaceAll('_', ' '),
+        };
+        const responses = groupedResponses[sectionKey] ?? [];
+
+        return (
+          <section className="review__print-section" key={sectionKey}>
+            <h2>{meta.label}</h2>
+            {responses.length > 0 ? (
+              <dl>
+                {responses.map((response, index) => (
+                  <div className="review__print-answer" key={response.qKey || index}>
+                    <dt>{response.question?.qText || response.label}</dt>
+                    <dd>
+                      <span className="review__print-answer-label">Answer</span>
+                      {formatAnswer(response.answer, response.question)}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            ) : (
+              <p className="review__print-empty">No answers recorded for this section.</p>
+            )}
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
+
 export default function Review() {
   const navigate = useNavigate();
   const { state, dispatch } = useForm();
+  const [storedPlan, setStoredPlan] = useState(null);
+  const planId = state.plan?._id;
+
+  useEffect(() => {
+    if (!planId) {
+      setStoredPlan(null);
+      return undefined;
+    }
+
+    let isActive = true;
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) return;
+      user.getIdToken()
+        .then((idToken) => fetch(buildApiUrl(`api/plan/${planId}`), {
+          headers: { Authorization: 'Bearer ' + idToken },
+        }))
+        .then((response) => {
+          if (!response.ok) throw new Error('Failed to load the saved plan');
+          return response.json();
+        })
+        .then((plan) => {
+          if (isActive) setStoredPlan(plan);
+        })
+        .catch((error) => {
+          if (isActive) {
+            setStoredPlan(null);
+            console.error(error.message);
+          }
+        });
+    });
+
+    return () => {
+      isActive = false;
+      unsubscribe();
+    };
+  }, [planId]);
+
+  const reviewPlan = storedPlan || state.plan || {};
 
   // collaborationMode drives invite button behaviour — mirrors Dashboard logic:
   //   'locked-individual' — safety concern; invite button hidden entirely
   //   'individual'        — user chose solo; show switch prompt before opening invite
   //   'collaborative'     — user chose collaborative; invite button opens modal directly
   //   ''                  — not yet set; treat same as individual (no invite)
-  const collaborationMode = state.collaborationMode ?? '';
-  const isSharedPlan = state.plan?.isShared === true;
+  const collaborationMode = reviewPlan.collaborationMode ?? '';
+  const isSharedPlan = reviewPlan.isShared === true;
 
   const [questionsByKey, setQuestionsByKey] = useState({});
-  const groupedResponses = groupResponsesBySection(state.plan?.answers || [], questionsByKey);
-  addCustomSectionResponses(groupedResponses, state.plan);
-  addStateSectionResponses(groupedResponses, state);
+  const groupedResponses = groupResponsesBySection(reviewPlan.answers || [], questionsByKey);
+  addCustomSectionResponses(groupedResponses, reviewPlan);
+  addStateSectionResponses(groupedResponses, reviewPlan);
+  const designerState = {
+    plan: reviewPlan,
+    parents: {
+      firstName: reviewPlan.parentFName,
+      lastName: reviewPlan.parentLName,
+      age: reviewPlan.parentAge,
+      phone: reviewPlan.phoneNumber,
+      streetAddress: reviewPlan.streetAddress,
+      addressLine2: reviewPlan.addressLine2,
+      city: reviewPlan.city,
+      state: reviewPlan.state,
+      zipCode: reviewPlan.zipCode,
+    },
+    timeAndCommunication: {
+      ...(reviewPlan.timeAndCommunication || {}),
+      ...(reviewPlan.parentingTime || {}),
+      ...(reviewPlan.parentingTimeAndCommunication || {}),
+    },
+    taxExemptions: reviewPlan.taxExemptions,
+    flags: state.flags,
+  };
+  const reviewAnswersByKey = Object.fromEntries(
+    collectAnswers(designerState, questionsByKey).map((response) => [response.qKey, response]),
+  );
   const knownSectionKeys = Object.keys(SECTION_META);
 
   const [openSections, setOpenSections] = useState(() =>
@@ -287,9 +409,45 @@ export default function Review() {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [showSwitchPrompt, setShowSwitchPrompt] = useState(false);
   const [caseStatus, setCaseStatus] = useState(null);
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [standardReviewTemplate, setStandardReviewTemplate] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   
 
-  const caseId = state.plan?.caseId;
+  const caseId = reviewPlan.caseId;
+
+  useEffect(() => {
+    let active = true;
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user || !active) return;
+      try {
+        const idToken = await user.getIdToken();
+        const response = await fetch(buildApiUrl('/api/auth/me'), {
+          headers: { Authorization: `Bearer ${idToken}` },
+        });
+        if (!response.ok) throw new Error('Failed to load user role');
+        const data = await response.json();
+        if (active) setIsAdmin(data.role === 'admin');
+      } catch (error) {
+        if (active) {
+          setIsAdmin(false);
+          console.error(error.message);
+        }
+      }
+    });
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    fetchStandardTemplate('review')
+      .then((template) => {
+        if (template?.blocks) setStandardReviewTemplate(template);
+      })
+      .catch((error) => console.error(error.message));
+  }, []);
 
   useEffect(() => {
     if (!caseId) return undefined;
@@ -300,7 +458,7 @@ export default function Review() {
 
       user.getIdToken()
         .then((idToken) => fetch(buildApiUrl(`api/v1/cases/${caseId}/status`), {
-          headers: { Authorization: `Bearer ${idToken}` },
+          headers: { Authorization: 'Bearer ' + idToken },
         }))
         .then((res) => res.ok ? res.json() : null)
         .then((data) => {
@@ -365,10 +523,23 @@ export default function Review() {
   };
 
   const showInviteUI = collaborationMode !== 'locked-individual' && !isSharedPlan;
+  useEffect(() => {
+    if (!isPrinting) return undefined;
+
+    const printTimer = setTimeout(() => {
+      window.print();
+      setIsPrinting(false);
+    }, 0);
+
+    return () => clearTimeout(printTimer);
+  }, [isPrinting]);
+
+  const handleDownload = () => setIsPrinting(true);
 
   return (
-    <div className="page-container">
-      <div className="page-content">
+    <>
+      <div className="page-container">
+        <div className="page-content">
 
         {/* Switch-to-collaborative confirmation prompt */}
         {showSwitchPrompt && (
@@ -435,6 +606,11 @@ export default function Review() {
 
             <div className="review__actions">
               <div className="review__action-buttons">
+                {isAdmin && (
+                  <Link className="review__btn-invite" to="/form-designer">
+                    Customize PDF Form
+                  </Link>
+                )}
 
                 {/* Invite button — hidden for locked-individual (safety concern) users */}
                 {showInviteUI && (
@@ -449,7 +625,7 @@ export default function Review() {
                   </button>
                 )}
 
-                <button className="review__btn-download">
+                <button className="review__btn-download" onClick={handleDownload}>
                   <Download size={16} />
                   Download PDF
                 </button>
@@ -468,15 +644,23 @@ export default function Review() {
 
           </CardContent>
         </Card>
-      </div>
+        </div>
 
-      {/* caseId lets the modal send a real invite linked to this shared case */}
-      <InviteModal
-        isOpen={inviteOpen}
-        onClose={() => setInviteOpen(false)}
-        caseId={caseId}
-        onInviteSent={() => setCaseStatus('pending_invite')}
-      />
-    </div>
+        {/* caseId lets the modal send a real invite linked to this shared case */}
+        <InviteModal
+          isOpen={inviteOpen}
+          onClose={() => setInviteOpen(false)}
+          caseId={caseId}
+          onInviteSent={() => setCaseStatus('pending_invite')}
+        />
+      </div>
+      {isPrinting && (
+        <FormTemplatePrintDocument
+          template={standardReviewTemplate || standardTemplate('review', reviewAnswersByKey, questionsByKey)}
+          answersByKey={reviewAnswersByKey}
+          questions={questionsByKey}
+        />
+      )}
+    </>
   );
 }

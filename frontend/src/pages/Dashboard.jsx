@@ -411,7 +411,17 @@ export default function Dashboard() {
                             dispatch({ type: 'UPDATE_SECTION', section: "timeAndCommunication", payload: plan.parentingTimeAndCommunication ?? {} });
                             dispatch({ type: 'UPDATE_SECTION', section: "informationSharing", payload: plan.informationSharing ?? {} });
                             dispatch({ type: 'UPDATE_SECTION', section: "taxExemptions", payload: plan.taxExemptions ?? {} });
-                            dispatch({ type: 'UPDATE_SECTION', section: "parents", payload: {firstName: plan.parentFName, lastName: plan.parentLName, phone: plan.phone, address: plan.address} });
+                            dispatch({ type: 'UPDATE_SECTION', section: "parents", payload: {
+                              firstName: plan.parentFName,
+                              lastName: plan.parentLName,
+                              age: plan.parentAge,
+                              phone: plan.phoneNumber ?? plan.phone,
+                              streetAddress: plan.streetAddress,
+                              addressLine2: plan.addressLine2,
+                              city: plan.city,
+                              state: plan.state,
+                              zipCode: plan.zipCode,
+                            } });
                             dispatch({ type: 'UPDATE_SECTION', section: "parentingGuideInfo", payload: {} });
                             if (plan.caseId) setActiveCaseId(plan.caseId);
                             user.getIdToken().then((idToken) =>
@@ -463,7 +473,17 @@ export default function Dashboard() {
                             // Clear stale question state from a previous session so the new plan starts fresh
                             dispatch({ type: 'UPDATE_SECTION', section: "question", payload: {} });
                             dispatch({ type: 'UPDATE_SECTION', section: "parentingGuideInfo", payload: {} });
-                            dispatch({ type: 'UPDATE_SECTION', section: "parents", payload: {firstName: plan.parentFName, lastName: plan.parentLName, phone: plan.phoneNumber, address: plan.address} });
+                            dispatch({ type: 'UPDATE_SECTION', section: "parents", payload: {
+                              firstName: plan.parentFName,
+                              lastName: plan.parentLName,
+                              age: plan.parentAge,
+                              phone: plan.phoneNumber ?? plan.phone,
+                              streetAddress: plan.streetAddress,
+                              addressLine2: plan.addressLine2,
+                              city: plan.city,
+                              state: plan.state,
+                              zipCode: plan.zipCode,
+                            } });
                             if (plan.caseId) setActiveCaseId(plan.caseId);
                             navigate('/getting-started')
                           }}

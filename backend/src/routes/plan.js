@@ -62,7 +62,16 @@ router.post('/', verifyToken, async (req, res) => {
     } else {
       // Primary parent starting a new plan: auto-create a fresh Case.
       try {
-        const newCase = await Case.create({ parent1Uid: userID, parent1PlanId: plan._id });
+        const parent1Name = [plan.parentFName, plan.parentLName].filter(Boolean).join(' ');
+        const newCase = await Case.create({
+          parent1Uid: userID,
+          parent1PlanId: plan._id,
+          ...(parent1Name ? { parent1Name } : {}),
+          parent1Address: plan.streetAddress || '',
+          parent1City: plan.city || '',
+          parent1State: plan.state || '',
+          parent1ZipCode: plan.zipCode || '',
+        });
         plan.caseId = newCase._id;
         await plan.save();
       } catch (caseErr) {
@@ -292,6 +301,25 @@ router.post('/:planId/information', verifyToken, async (req, res) => {
     plan.residentialParent = residentialParent;
     //Save the plan and write back to DB
     await plan.save();
+    if (plan.caseId && typeof Case.findById === 'function') {
+      const parentingCase = await Case.findById(plan.caseId);
+      if (parentingCase) {
+        const parentName = [plan.parentFName, plan.parentLName].filter(Boolean).join(' ');
+        if (parentingCase.parent1Uid === req.user.uid) parentingCase.parent1Name = parentName;
+        if (parentingCase.parent2Uid === req.user.uid) parentingCase.parent2Name = parentName;
+        const addressFields = {
+          Address: plan.streetAddress || '',
+          City: plan.city || '',
+          State: plan.state || '',
+          ZipCode: plan.zipCode || '',
+        };
+        const prefix = parentingCase.parent1Uid === req.user.uid ? 'parent1' : 'parent2';
+        Object.entries(addressFields).forEach(([field, value]) => {
+          parentingCase[`${prefix}${field}`] = value;
+        });
+        await parentingCase.save();
+      }
+    }
     res.status(201).json(plan);
   } catch (error) {
     console.error(error);
