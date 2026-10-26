@@ -4,7 +4,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { buildApiUrl } from '../lib/apiClient';
 import { CUSTOM_COMPARISON_QUESTIONS } from '../lib/comparisonQuestionDefinitions';
-import { answerText, FormTemplatePrintDocument, loadTemplate } from './FormDesigner';
+import { answerText, fetchStandardTemplate, FormTemplatePrintDocument, loadTemplate } from './FormDesigner';
 import { CheckCircle, AlertTriangle, Users, ArrowLeft, Printer } from 'lucide-react';
 import './Comparison.css';
 import './FormDesigner.css';
@@ -190,6 +190,7 @@ export default function Comparison() {
   // qKeys P2 flagged that P1 kept (still need discussion)
   const [needsDiscussionKeys, setNeedsDiscussionKeys] = useState(new Set());
   const [restartStatus, setRestartStatus] = useState('idle');
+  const [standardComparisonTemplate, setStandardComparisonTemplate] = useState(null);
   const [isPrinting, setIsPrinting] = useState(false);
 
   useEffect(() => {
@@ -203,6 +204,14 @@ export default function Comparison() {
 
   const parent1Name = isParent1 ? 'Your' : "Co-parent's";
   const parent2Name = isParent1 ? "Co-parent's" : 'Your';
+
+  useEffect(() => {
+    fetchStandardTemplate('comparison')
+      .then((template) => {
+        if (template?.blocks) setStandardComparisonTemplate(template);
+      })
+      .catch((error) => console.error(error.message));
+  }, []);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
@@ -595,7 +604,7 @@ export default function Comparison() {
       </div>
       {isPrinting && (
         <FormTemplatePrintDocument
-          template={loadTemplate('comparison')}
+          template={standardComparisonTemplate || loadTemplate('comparison')}
           answersByKey={Object.fromEntries(printItems.map((item) => [
             item.qKey,
             { ...item, question: questionMap[item.qKey] },

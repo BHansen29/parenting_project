@@ -8,7 +8,7 @@ import InviteModal from '../components/common/InviteModal';
 import { useForm } from '../hooks/useForm';
 import { auth } from '../lib/firebase';
 import { buildApiUrl } from '../lib/apiClient';
-import { FormTemplatePrintDocument, collectAnswers, loadTemplate } from './FormDesigner';
+import { fetchStandardTemplate, FormTemplatePrintDocument, collectAnswers, standardTemplate } from './FormDesigner';
 import shareCareLogo from '../assets/logos/ShareCare_Symmetrical Diamond Logo (1120 x 310 px).png';
 import './Page.css';
 import './Review.css';
@@ -410,9 +410,44 @@ export default function Review() {
   const [showSwitchPrompt, setShowSwitchPrompt] = useState(false);
   const [caseStatus, setCaseStatus] = useState(null);
   const [isPrinting, setIsPrinting] = useState(false);
+  const [standardReviewTemplate, setStandardReviewTemplate] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   
 
   const caseId = reviewPlan.caseId;
+
+  useEffect(() => {
+    let active = true;
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user || !active) return;
+      try {
+        const idToken = await user.getIdToken();
+        const response = await fetch(buildApiUrl('/api/auth/me'), {
+          headers: { Authorization: `Bearer ${idToken}` },
+        });
+        if (!response.ok) throw new Error('Failed to load user role');
+        const data = await response.json();
+        if (active) setIsAdmin(data.role === 'admin');
+      } catch (error) {
+        if (active) {
+          setIsAdmin(false);
+          console.error(error.message);
+        }
+      }
+    });
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    fetchStandardTemplate('review')
+      .then((template) => {
+        if (template?.blocks) setStandardReviewTemplate(template);
+      })
+      .catch((error) => console.error(error.message));
+  }, []);
 
   useEffect(() => {
     if (!caseId) return undefined;
@@ -571,9 +606,11 @@ export default function Review() {
 
             <div className="review__actions">
               <div className="review__action-buttons">
-                <Link className="review__btn-invite" to="/form-designer">
-                  Customize PDF Form
-                </Link>
+                {isAdmin && (
+                  <Link className="review__btn-invite" to="/form-designer">
+                    Customize PDF Form
+                  </Link>
+                )}
 
                 {/* Invite button — hidden for locked-individual (safety concern) users */}
                 {showInviteUI && (
@@ -619,7 +656,7 @@ export default function Review() {
       </div>
       {isPrinting && (
         <FormTemplatePrintDocument
-          template={loadTemplate('review')}
+          template={standardReviewTemplate || standardTemplate('review', reviewAnswersByKey, questionsByKey)}
           answersByKey={reviewAnswersByKey}
           questions={questionsByKey}
         />

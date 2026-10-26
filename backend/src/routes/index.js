@@ -12,6 +12,8 @@ const caseRoutes = require('./cases');
 const invitationRoutes = require('./invitations');
 const { getFirebaseAuth } = require('../config/firebaseAdmin');
 const Plan = require('../models/Plan');
+const StandardFormTemplate = require('../models/StandardFormTemplate');
+const verifyToken = require('../middleware/verifyToken');
 
 const requireDatabaseConnection = (req, res, next) => {
   if (mongoose.connection.readyState !== 1) {
@@ -22,6 +24,44 @@ const requireDatabaseConnection = (req, res, next) => {
 
   return next();
 };
+
+const requireAdmin = async (req, res, next) => {
+  const user = await User.findOne({ firebaseUid: req.user.uid }).select('role');
+  if (!user || user.role !== 'admin') {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+  req.dbUser = user;
+  return next();
+};
+
+router.get('/auth/me', verifyToken, requireDatabaseConnection, async (req, res) => {
+  const user = await User.findOne({ firebaseUid: req.user.uid }).select('role');
+  return res.json({ role: user?.role || 'user' });
+});
+
+router.get('/form-templates/:format', verifyToken, requireDatabaseConnection, async (req, res) => {
+  if (!['review', 'comparison'].includes(req.params.format)) {
+    return res.status(400).json({ error: 'Invalid form template format' });
+  }
+  const template = await StandardFormTemplate.findOne({ format: req.params.format }).lean();
+  return res.json(template);
+});
+
+router.put('/form-templates/:format', verifyToken, requireDatabaseConnection, requireAdmin, async (req, res) => {
+  if (!['review', 'comparison'].includes(req.params.format)) {
+    return res.status(400).json({ error: 'Invalid form template format' });
+  }
+  const { title, layout, blocks } = req.body;
+  if (typeof title !== 'string' || !Array.isArray(blocks)) {
+    return res.status(400).json({ error: 'Invalid form template' });
+  }
+  const template = await StandardFormTemplate.findOneAndUpdate(
+    { format: req.params.format },
+    { title, layout: layout === 'blank' ? layout : 'blank', blocks, updatedBy: req.dbUser._id },
+    { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true },
+  );
+  return res.json(template);
+});
 
 
 // GET /api/health - Check if server and database are working

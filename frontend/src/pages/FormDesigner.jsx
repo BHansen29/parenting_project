@@ -677,6 +677,45 @@ export function loadTemplate(format) {
   }
 }
 
+export function standardTemplate(format, answersByKey, questions) {
+  const blocks = [
+    { id: 'intro', type: 'heading', text: 'Questionnaire Responses' },
+    ...Object.values(answersByKey)
+      .filter((response) => response?.qKey)
+      .map((response) => ({
+        id: `answer-${response.qKey}`,
+        type: 'answer',
+        qKey: response.qKey,
+        questionText: response.label
+          || questions[response.qKey]?.qText
+          || response.question?.qText
+          || response.qKey,
+      })),
+  ];
+
+  return {
+    title: TEMPLATE_FORMATS[format].title,
+    layout: 'blank',
+    blocks,
+  };
+}
+
+export async function fetchStandardTemplate(format) {
+  const user = auth.currentUser || await new Promise((resolve) => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      unsubscribe();
+      resolve(currentUser);
+    });
+  });
+  if (!user) return null;
+  const idToken = await user.getIdToken();
+  const response = await fetch(buildApiUrl(`/api/form-templates/${format}`), {
+    headers: { Authorization: `Bearer ${idToken}` },
+  });
+  if (!response.ok) throw new Error('Failed to load standard form template');
+  return response.json();
+}
+
 export function FormTemplatePrintDocument({
   template,
   answersByKey,
@@ -731,6 +770,7 @@ export default function FormDesigner() {
   const [template, setTemplate] = useState(() => loadTemplate('review'));
   const [caseParentNames, setCaseParentNames] = useState({});
   const [isPrinting, setIsPrinting] = useState(false);
+  const [standardStatus, setStandardStatus] = useState('');
   const [seededFormats, setSeededFormats] = useState(() => ({
     review: Boolean(localStorage.getItem(templateStorageKey('review')) || localStorage.getItem(STORAGE_KEY)),
     comparison: Boolean(localStorage.getItem(templateStorageKey('comparison'))),
@@ -937,6 +977,31 @@ export default function FormDesigner() {
     blocks: current.blocks.filter((block) => block.id !== id),
   }));
 
+  const setAsStandard = async () => {
+    setStandardStatus('saving');
+    try {
+      const user = auth.currentUser;
+      if (!user) throw new Error('You must be signed in to publish a standard template');
+      const idToken = await user.getIdToken();
+      const response = await fetch(buildApiUrl(`/api/form-templates/${selectedFormat}`), {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify(template),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to publish standard template');
+      }
+      setStandardStatus('saved');
+    } catch (error) {
+      console.error(error.message);
+      setStandardStatus('error');
+    }
+  };
+
   return (
     <>
     <div className="page-container form-designer">
@@ -957,6 +1022,11 @@ export default function FormDesigner() {
           <button className="form-designer__print" onClick={() => setIsPrinting(true)}>
             <Printer size={16} /> Preview / Print
           </button>
+          <button className="form-designer__print" onClick={setAsStandard} disabled={standardStatus === 'saving'}>
+            {standardStatus === 'saving' ? 'Publishing...' : 'Set as standard'}
+          </button>
+          {standardStatus === 'saved' && <span className="form-designer__status">Standard saved</span>}
+          {standardStatus === 'error' && <span className="form-designer__status form-designer__status--error">Unable to publish standard</span>}
         </div>
 
         <div className="form-designer__workspace">
