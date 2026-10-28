@@ -221,7 +221,8 @@ function addStateSectionResponses(grouped, plan) {
 }
 
 
-function SectionBlock({ sectionKey, responses, onEdit, isOpen, onToggle }) {
+function SectionBlock({ sectionKey, responses, onEdit, onEditQuestion, isOpen, onToggle }) {
+  const [isEditingQuestions, setIsEditingQuestions] = useState(false);
   const meta = SECTION_META[sectionKey] || {
     label: sectionKey.replaceAll('_', ' '),
     route: '/',
@@ -242,11 +243,19 @@ function SectionBlock({ sectionKey, responses, onEdit, isOpen, onToggle }) {
           <div className="review__section-header-right">
             <button
               className="review__edit-btn"
-              onClick={(e) => { e.stopPropagation(); onEdit(meta.route); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (sectionKey === 'parental-rights') {
+                  setIsEditingQuestions((editing) => !editing);
+                } else {
+                  onEdit(meta.route);
+                }
+              }}
               aria-label={`Edit ${meta.label}`}
+              aria-pressed={sectionKey === 'parental-rights' ? isEditingQuestions : undefined}
             >
               <Pencil size={14} />
-              Edit
+              {sectionKey === 'parental-rights' && isEditingQuestions ? 'Done' : 'Edit'}
             </button>
             {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
           </div>
@@ -255,12 +264,29 @@ function SectionBlock({ sectionKey, responses, onEdit, isOpen, onToggle }) {
 
       {isOpen && (
         <CardContent className="review__section-card-content">
+          {sectionKey === 'parental-rights' && isEditingQuestions && (
+            <p className="review__question-edit-hint">
+              Click a question below to edit it.
+            </p>
+          )}
           {hasAnswers ? (
             <ul className="review__answer-list">
               {responses.map((r, i) => (
                 <li key={r.qKey || i} className="review__answer-item">
-                  <span className="review__answer-key">{r.label}</span>
-                  <span className="review__answer-value">{formatAnswer(r.answer, r.question)}</span>
+                  {sectionKey === 'parental-rights' && isEditingQuestions ? (
+                    <button
+                      className="review__answer-key review__answer-question-btn"
+                      onClick={() => onEditQuestion(r.qKey)}
+                      aria-label={`Edit ${r.label}`}
+                    >
+                      {r.label}
+                    </button>
+                  ) : (
+                    <span className="review__answer-key">{r.label}</span>
+                  )}
+                  <span className="review__answer-value">
+                    {formatAnswer(r.answer, r.question)}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -499,6 +525,25 @@ export default function Review() {
 
   const handleEdit = (route) => navigate(route);
 
+  const handleEditQuestion = async (qKey) => {
+    try {
+      const question = questionsByKey[qKey];
+      if (question) {
+        dispatch({ type: 'UPDATE_SECTION', section: 'question', payload: question });
+        navigate('/parental-rights');
+        return;
+      }
+
+      const response = await fetch(buildApiUrl(`/api/logic-engine/question/${encodeURIComponent(qKey)}`));
+      if (!response.ok) throw new Error(`Failed to load question ${qKey}`);
+      const loadedQuestion = await response.json();
+      dispatch({ type: 'UPDATE_SECTION', section: 'question', payload: loadedQuestion });
+      navigate('/parental-rights');
+    } catch (error) {
+      console.error(error.message);
+    }
+  };
+
   const completedCount = knownSectionKeys.filter(
     (k) => groupedResponses[k]?.length > 0
   ).length;
@@ -596,6 +641,7 @@ export default function Review() {
                   sectionKey={key}
                   responses={groupedResponses[key] ?? []}
                   onEdit={handleEdit}
+                  onEditQuestion={handleEditQuestion}
                   isOpen={openSections[key]}
                   onToggle={() => toggleSection(key)}
                 />
