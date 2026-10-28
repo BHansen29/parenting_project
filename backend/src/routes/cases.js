@@ -32,7 +32,7 @@ const COMPARABLE_SECTION_FIELDS = {
   ],
   taxExemptions: [
     'parentRole',
-    'claimingChildren',
+    'childAnswers',
   ],
 };
 
@@ -277,8 +277,8 @@ router.get('/:caseId/plan-comparison', verifyToken, async (req, res) => {
       getComparisonConflictValues(),
     ]);
     const diff = computeDiff(
-      filterExcludedAnswers(toPlanAnswerMap(plan1), excludedQuestionKeys),
-      filterExcludedAnswers(toPlanAnswerMap(plan2), excludedQuestionKeys),
+      filterExcludedAnswers(toPlanAnswerMap(plan1, 'parent1'), excludedQuestionKeys),
+      filterExcludedAnswers(toPlanAnswerMap(plan2, 'parent2'), excludedQuestionKeys),
       conflictValuesByQuestion
     );
 

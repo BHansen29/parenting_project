@@ -109,6 +109,7 @@ export function answerText(answer, question) {
       const currentParent = details.userIsParent2 ? 'Parent 2' : 'Parent 1';
       const coParent = details.userIsParent2 ? 'Parent 1' : 'Parent 2';
       const explicitClaimant = details.claimantParent
+        || details.taxYearParent
         || (details.intent?.startsWith('parent1') ? 'parent1' : null)
         || (details.intent?.startsWith('parent2') ? 'parent2' : null);
       const claimantParent = explicitClaimant === 'parent1'
@@ -418,6 +419,14 @@ const customFieldLabels = {
 };
 
 const customOptionValues = {
+  agreeToTransportationPolicy: {
+    true: 'I agree to the standard transportation policy',
+    false: 'I do not agree with the standard transportation policy',
+  },
+  agreeToActivityPolicy: {
+    true: 'I agree to the standard activity policy',
+    false: 'I do not agree with the standard activity policy',
+  },
   communicationWithCoParentOnPhone: {
     yes: 'Yes',
     no: 'No',
@@ -510,7 +519,10 @@ export function collectAnswers(state, questions, caseParentNames = {}) {
       ) return;
       const valueMap = customOptionValues[key];
       const options = valueMap
-        ? Object.entries(valueMap).map(([value, label]) => ({ value, label }))
+        ? Object.entries(valueMap).map(([value, label]) => ({
+          value: value === 'true' ? true : value === 'false' ? false : value,
+          label,
+        }))
         : [];
       responses.push({
         qKey: `${questionSection}.${key}`,

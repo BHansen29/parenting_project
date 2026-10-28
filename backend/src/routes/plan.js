@@ -306,6 +306,7 @@ router.post('/:planId/information', verifyToken, async (req, res) => {
       plan.aggregateData = aggregateData;
     }
     plan.userRole = userRole;
+    plan.isParent2 = userRole === 'parent2/petitioner2/defendant';
     plan.residentialParent = residentialParent;
     //Save the plan and write back to DB
     await plan.save();

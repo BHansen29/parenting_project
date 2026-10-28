@@ -26,7 +26,10 @@ const SCHEDULE_TYPES = {
   'parentingTimeAndCommunication.holidaySchedule': 'calendar',
   'parentingTimeAndCommunication.schoolSchedule': 'calendar',
 };
-const COMPARISON_ONLY_EXCLUDED_KEYS = new Set(['getting-started.children']);
+const COMPARISON_ONLY_EXCLUDED_KEYS = new Set([
+  'getting-started.children',
+  'taxExemptions.claimingChildren',
+]);
 const PRINT_ONLY_PERSONAL_INFO_KEYS = [
   'case.parent1Name',
   'case.parent2Name',
@@ -297,6 +300,13 @@ export default function Comparison() {
           questions.forEach((q) => {
             if (q.qKey) map[q.qKey] = { ...map[q.qKey], ...q };
           });
+          if (map['taxExemptions.childAnswers']) {
+            map['taxExemptions.childAnswers'] = {
+              ...map['taxExemptions.childAnswers'],
+              qText: 'Tax exemption arrangements for each child',
+              childAnswers: true,
+            };
+          }
           map.school_address_parent = {
             ...map.school_address_parent,
             ...CUSTOM_COMPARISON_QUESTIONS.school_address_parent,
@@ -334,6 +344,15 @@ export default function Comparison() {
   const disagreed = diff.filter((d) => !d.agreement);
 
   const formatAnswer = (val, answerOwner, questionKey) => {
+    const annotateCurrentParent = (text) => {
+      if (typeof text !== 'string') return text;
+      const currentParent = isParent1 ? '2' : '1';
+      return text.replace(
+        new RegExp(`\\bParent ${currentParent}\\b(?! \\(you\\))`, 'g'),
+        `Parent ${currentParent} (you)`,
+      );
+    };
+
     if (val === null || val === undefined) return 'Not answered';
     if (questionKey === 'school_address_parent' && typeof val === 'string') {
       const schoolAddressLabels = {
@@ -342,7 +361,7 @@ export default function Comparison() {
         defaultToCoParent: "Default to my co-parent's address",
         needMoreInfo: 'I need more information',
       };
-      return schoolAddressLabels[val] || val;
+      return annotateCurrentParent(schoolAddressLabels[val] || val);
     }
     if (typeof val === 'string' && answerOwner) {
       if (['me', 'meOnly'].includes(val)) return 'Just me';
@@ -352,12 +371,12 @@ export default function Comparison() {
     }
     if (Array.isArray(val)) return val.map((value) => formatAnswer(value, answerOwner, questionKey)).join(', ');
     if (questionMap[questionKey]?.childAnswers) {
-      return answerText(val, questionMap[questionKey]);
+      return annotateCurrentParent(answerText(val, questionMap[questionKey]));
     }
-    if (val && typeof val === 'object') return JSON.stringify(val);
+    if (val && typeof val === 'object') return annotateCurrentParent(JSON.stringify(val));
     const option = questionMap[questionKey]?.options?.find((item) => item.value === val);
-    if (option?.label) return option.label;
-    return String(val);
+    if (option?.label) return annotateCurrentParent(option.label);
+    return annotateCurrentParent(String(val));
   };
 
   const renderAnswer = (value, answerOwner, questionKey, parent1Value, parent2Value) => (
@@ -453,7 +472,7 @@ export default function Comparison() {
       <div className="comparison comparison--centered">
         <AlertTriangle size={40} color="#f97316" />
         <p className="comparison__error">{error}</p>
-        <button className="comparison__back-btn" onClick={() => navigate('/dashboard')}>Back to Dashboard</button>
+        <button className="comparison__back-btn" onClick={() => navigate('/review')}>Back to Review</button>
       </div>
     );
   }
@@ -464,7 +483,7 @@ export default function Comparison() {
         <Users size={48} color="#14abdd" />
         <h2>Waiting for Co-parent</h2>
         <p>Your co-parent hasn't joined yet. Once they accept the invite, you'll see the comparison here.</p>
-        <button className="comparison__back-btn" onClick={() => navigate('/dashboard')}>Back to Dashboard</button>
+        <button className="comparison__back-btn" onClick={() => navigate('/review')}>Back to Review</button>
       </div>
     );
   }
@@ -513,8 +532,8 @@ export default function Comparison() {
       <>
       <div className="comparison">
         <div className="comparison__header">
-          <button className="comparison__nav-back" onClick={() => navigate('/dashboard')}>
-            <ArrowLeft size={18} /> Dashboard
+          <button className="comparison__nav-back" onClick={() => navigate('/review')}>
+            <ArrowLeft size={18} /> Review
           </button>
           <div>
             <h1 className="comparison__title">Final Parenting Plan Comparison</h1>
@@ -649,8 +668,8 @@ export default function Comparison() {
   return (
     <div className="comparison">
       <div className="comparison__header">
-        <button className="comparison__nav-back" onClick={() => navigate('/dashboard')}>
-          <ArrowLeft size={18} /> Dashboard
+        <button className="comparison__nav-back" onClick={() => navigate('/review')}>
+          <ArrowLeft size={18} /> Review
         </button>
         <div>
           <h1 className="comparison__title">Parenting Plan Comparison</h1>

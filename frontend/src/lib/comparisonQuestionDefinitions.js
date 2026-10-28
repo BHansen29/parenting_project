@@ -23,7 +23,7 @@ const schoolAddressOptions = [
 
 const policyAgreementOptions = [
   { value: true, label: 'I agree to the standard policy' },
-  { value: false, label: 'I do not agree to the standard policy' },
+  { value: false, label: 'I do not agree with the standard policy' },
 ];
 
 export const CUSTOM_COMPARISON_QUESTIONS = {

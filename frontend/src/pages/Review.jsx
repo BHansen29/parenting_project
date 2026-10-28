@@ -21,13 +21,23 @@ import './FormDesigner.css';
 const SECTION_META = {
   'getting-started': { label: 'Getting Started', route: '/getting-started' },
   'parental-rights': { label: 'Parental Rights', route: '/parental-rights' },
+  'health-insurance-coverage': { label: 'Health Insurance Questions', route: '/parental-rights' },
   'parenting-time-communication': { label: 'Parenting Time & Communication', route: '/parenting-time-communication' },
   'information-sharing': { label: 'Information Sharing', route: '/informationsharing' },
   'tax-exemptions': { label: 'Tax Exemptions', route: '/tax-exemptions' },
 };
 
 // Formats stored answer values using the question's human-readable option labels.
-function formatAnswer(answer, question) {
+function annotateParentReferences(text, isParent2) {
+  if (typeof text !== 'string') return text;
+  const currentParent = isParent2 ? '2' : '1';
+  return text.replace(
+    new RegExp(`\\bParent ${currentParent}\\b(?! \\(you\\))`, 'g'),
+    `Parent ${currentParent} (you)`,
+  );
+}
+
+function formatAnswer(answer, question, isParent2) {
   if (answer === null || answer === undefined || answer === '') {
     return <span className="review__empty">Not answered</span>;
   }
@@ -39,10 +49,10 @@ function formatAnswer(answer, question) {
   };
 
   if (question?.childAnswers) {
-    return answerText(answer, question);
+    return annotateParentReferences(answerText(answer, question), isParent2);
   }
-  if (Array.isArray(answer)) return answer.map(formatValue).join(', ');
-  return formatValue(answer);
+  if (Array.isArray(answer)) return annotateParentReferences(answerText(answer, question), isParent2);
+  return annotateParentReferences(formatValue(answer), isParent2);
 }
 
 // Groups the state.plan.children array by question section
@@ -109,6 +119,14 @@ const INFORMATION_SHARING_OPTIONS = [
 
 /* Parenting time & Information Sharing question options, translates stored values to human-readable labels for display in the review page */
 const CUSTOM_FIELD_OPTIONS = {
+  agreeToTransportationPolicy: [
+    { value: true, label: 'I agree to the standard transportation policy' },
+    { value: false, label: 'I do not agree with the standard transportation policy' },
+  ],
+  agreeToActivityPolicy: [
+    { value: true, label: 'I agree to the standard activity policy' },
+    { value: false, label: 'I do not agree with the standard activity policy' },
+  ],
   communicationWithCoParentOnPhone: [
     { value: 'yes', label: 'Yes' },
     { value: 'no', label: 'No' },
@@ -221,8 +239,9 @@ function addStateSectionResponses(grouped, plan) {
 }
 
 
-function SectionBlock({ sectionKey, responses, onEdit, onEditQuestion, isOpen, onToggle }) {
+function SectionBlock({ sectionKey, responses, onEdit, onEditQuestion, isOpen, onToggle, isParent2 }) {
   const [isEditingQuestions, setIsEditingQuestions] = useState(false);
+  const supportsQuestionEditing = ['parental-rights', 'health-insurance-coverage'].includes(sectionKey);
   const meta = SECTION_META[sectionKey] || {
     label: sectionKey.replaceAll('_', ' '),
     route: '/',
@@ -245,17 +264,17 @@ function SectionBlock({ sectionKey, responses, onEdit, onEditQuestion, isOpen, o
               className="review__edit-btn"
               onClick={(e) => {
                 e.stopPropagation();
-                if (sectionKey === 'parental-rights') {
+                if (supportsQuestionEditing) {
                   setIsEditingQuestions((editing) => !editing);
                 } else {
                   onEdit(meta.route);
                 }
               }}
               aria-label={`Edit ${meta.label}`}
-              aria-pressed={sectionKey === 'parental-rights' ? isEditingQuestions : undefined}
+              aria-pressed={supportsQuestionEditing ? isEditingQuestions : undefined}
             >
               <Pencil size={14} />
-              {sectionKey === 'parental-rights' && isEditingQuestions ? 'Done' : 'Edit'}
+              {supportsQuestionEditing && isEditingQuestions ? 'Done' : 'Edit'}
             </button>
             {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
           </div>
@@ -264,7 +283,7 @@ function SectionBlock({ sectionKey, responses, onEdit, onEditQuestion, isOpen, o
 
       {isOpen && (
         <CardContent className="review__section-card-content">
-          {sectionKey === 'parental-rights' && isEditingQuestions && (
+          {supportsQuestionEditing && isEditingQuestions && (
             <p className="review__question-edit-hint">
               Click a question below to edit it.
             </p>
@@ -273,7 +292,7 @@ function SectionBlock({ sectionKey, responses, onEdit, onEditQuestion, isOpen, o
             <ul className="review__answer-list">
               {responses.map((r, i) => (
                 <li key={r.qKey || i} className="review__answer-item">
-                  {sectionKey === 'parental-rights' && isEditingQuestions ? (
+                  {supportsQuestionEditing && isEditingQuestions ? (
                     <button
                       className="review__answer-key review__answer-question-btn"
                       onClick={() => onEditQuestion(r.qKey)}
@@ -285,7 +304,7 @@ function SectionBlock({ sectionKey, responses, onEdit, onEditQuestion, isOpen, o
                     <span className="review__answer-key">{r.label}</span>
                   )}
                   <span className="review__answer-value">
-                    {formatAnswer(r.answer, r.question)}
+                    {formatAnswer(r.answer, r.question, isParent2)}
                   </span>
                 </li>
               ))}
@@ -337,7 +356,7 @@ function PrintablePlan({ groupedResponses, sectionKeys, plan }) {
                     <dt>{response.question?.qText || response.label}</dt>
                     <dd>
                       <span className="review__print-answer-label">Answer</span>
-                      {formatAnswer(response.answer, response.question)}
+                      {formatAnswer(response.answer, response.question, plan.isParent2 === true)}
                     </dd>
                   </div>
                 ))}
@@ -640,6 +659,7 @@ export default function Review() {
                   key={key}
                   sectionKey={key}
                   responses={groupedResponses[key] ?? []}
+                  isParent2={reviewPlan.isParent2 === true}
                   onEdit={handleEdit}
                   onEditQuestion={handleEditQuestion}
                   isOpen={openSections[key]}

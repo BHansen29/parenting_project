@@ -76,6 +76,8 @@ function ChildTaxBlock({
 }) {
   const intent      = childData.intent ?? '';
   const taxYears    = childData.taxYears ?? '';
+  const taxYearsOpposite = taxYears === 'odd' ? 'even' : 'odd';
+  const taxYearParent = childData.taxYearParent ?? '';
   const customYears = childData.customYears ?? '';
   const coParentCustomYears = childData.coParentCustomYears ?? '';
 
@@ -84,10 +86,10 @@ function ChildTaxBlock({
   const showCustomYearInput      = showTaxYearQuestion && taxYears === 'custom';
   const showEveryYearDisclaimers = (intent === 'parent1EveryYear' || intent === 'parent2EveryYear' || intent === 'everyYear') && !!parentRole;
   const showSomeYearsDisclaimers = isSomeYears && !!taxYears && !!parentRole;
-  const claimantLabel = intent.startsWith('parent2') ? 'Your co-parent' : 'You';
-  const otherParentLabel = claimantLabel === 'You' ? 'your co-parent' : 'you';
-  const currentParentLabel = isParent2 ? 'Parent 2' : 'Parent 1';
-  const coParentLabel = isParent2 ? 'Parent 1' : 'Parent 2';
+  const displayParent1 = isParent2 ? 'Parent 1' : 'Parent 1 (you)';
+  const displayParent2 = isParent2 ? `Parent 2 (you)` : 'Parent 2';
+  const parent1Years = customYears;
+  const parent2Years = coParentCustomYears;
 
   const update = (payload) => onUpdate(childIndex, payload);
   const clearError = (field) => {
@@ -121,10 +123,9 @@ function ChildTaxBlock({
         <CardContent>
           <div className="radio-group">
             {[
-              { value: 'parent1EveryYear', label: 'Parent 1 will claim this child every year' },
-              { value: 'parent1SomeYears', label: 'Parent 1 will claim this child some years (alternating or specific years)' },
-              { value: 'parent2EveryYear', label: 'Parent 2 will claim this child every year' },
-              { value: 'parent2SomeYears', label: 'Parent 2 will claim this child some years (alternating or specific years)' },
+              { value: 'parent1EveryYear', label: `${displayParent1} will claim this child every year` },
+              { value: 'parent2EveryYear', label: `${displayParent2} will claim this child every year` },
+              { value: 'someYears', label: 'The parents will split claiming this child per year' },
             ].map(({ value, label }) => (
               <RadioButton
                 key={value}
@@ -155,7 +156,7 @@ function ChildTaxBlock({
 
           {showTaxYearQuestion && (
             <div className="child-tax-block__subanswer">
-              <p className="parent-label">Which tax years will {claimantLabel.toLowerCase()} claim {childName}?</p>
+              <p className="parent-label">State split years for {childName}</p>
               <div className="radio-group">
                 {TAX_YEAR_OPTIONS.map(({ value, label }) => (
                   <RadioButton
@@ -164,7 +165,7 @@ function ChildTaxBlock({
                     value={value}
                     checked={taxYears === value}
                     onChange={() => {
-                      update({ taxYears: value, customYears: '', coParentCustomYears: '' });
+                      update({ taxYears: value, taxYearParent: '', customYears: '', coParentCustomYears: '' });
                       clearError('taxYears');
                     }}
                     label={label}
@@ -175,35 +176,59 @@ function ChildTaxBlock({
                 <p className="text-input__error-message">{errors.taxYears}</p>
               )}
 
+              {(taxYears === 'odd' || taxYears === 'even') && (
+                <>
+                  <p className="parent-label">Which parent will get {childName} for these years?</p>
+                  <div className="radio-group">
+                    {[
+                      { value: 'parent1', label: displayParent1 },
+                      { value: 'parent2', label: displayParent2 },
+                    ].map(({ value, label }) => (
+                      <RadioButton
+                        key={value}
+                        name={`taxYearParent-${childIndex}`}
+                        value={value}
+                        checked={taxYearParent === value}
+                        onChange={() => {
+                          update({ taxYearParent: value });
+                          clearError('taxYearParent');
+                        }}
+                        label={`${label} will get ${childName} for ${taxYears}-numbered years (co-parent will claim the child in the ${taxYearsOpposite} years)`}
+                      />
+                    ))}
+                  </div>
+                  {errors.taxYearParent && (
+                    <p className="text-input__error-message">{errors.taxYearParent}</p>
+                  )}
+                </>
+              )}
+
               {showCustomYearInput && (
                 <div className="tax-custom-years">
                   <label className="parent-label" htmlFor={`customYears-${childIndex}`}>
-                    Enter the tax years {claimantLabel.toLowerCase()} ({claimantLabel === 'You' ? currentParentLabel : coParentLabel}) will claim (comma-separated)
+                    Enter the tax years {displayParent1} will claim (comma-separated)
                   </label>
                   <input
                     id={`customYears-${childIndex}`}
                     type="text"
                     className="tax-custom-years__input"
                     placeholder="e.g. 2025, 2027, 2029"
-                    value={customYears}
+                    value={parent1Years}
                     onChange={(e) => { update({ customYears: e.target.value }); clearError('customYears'); }}
                   />
                   {errors.customYears && (
                     <p className="text-input__error-message">{errors.customYears}</p>
                   )}
                   <label className="parent-label" htmlFor={`coParentCustomYears-${childIndex}`}>
-                    Enter the tax years {otherParentLabel} ({otherParentLabel === 'you' ? currentParentLabel : coParentLabel}) will claim (comma-separated)
+                    Enter the tax years {displayParent2} will claim (comma-separated)
                   </label>
                   <input
                     id={`coParentCustomYears-${childIndex}`}
                     type="text"
                     className="tax-custom-years__input"
                     placeholder="e.g. 2026, 2028, 2030"
-                    value={coParentCustomYears}
-                    onChange={(e) => {
-                      update({ coParentCustomYears: e.target.value });
-                      clearError('coParentCustomYears');
-                    }}
+                    value={parent2Years}
+                    onChange={(e) => { update({ coParentCustomYears: e.target.value }); clearError('coParentCustomYears'); }}
                   />
                   {errors.coParentCustomYears && (
                     <p className="text-input__error-message">{errors.coParentCustomYears}</p>
@@ -260,7 +285,9 @@ export default function TaxExemptions() {
   const formData         = state.taxExemptions ?? {};
   const errors           = formData.errors ?? {};
   const parentRole       = formData.parentRole ?? '';
-  const isParent2        = state.plan?.isParent2 === true;
+  const isParent2        = state.plan?.userRole
+    ? state.plan.userRole === 'parent2/petitioner2/defendant'
+    : state.plan?.isParent2 === true;
   const claimingChildren = formData.claimingChildren ?? [];
   const childAnswers     = formData.childAnswers ?? {};
 
@@ -337,6 +364,9 @@ export default function TaxExemptions() {
       if (!ans.intent) childErrors.intent = 'Please select an option for this child.';
       const someYears = ['parent1SomeYears', 'parent2SomeYears', 'someYears'].includes(ans.intent);
       if (someYears && !ans.taxYears) childErrors.taxYears = 'Please select which tax years.';
+      if (someYears && ['odd', 'even'].includes(ans.taxYears) && !ans.taxYearParent) {
+        childErrors.taxYearParent = 'Please select which parent will get the child for those years.';
+      }
       if (someYears && ans.taxYears === 'custom') {
         if (!ans.customYears?.trim()) {
           childErrors.customYears = 'Please enter the specific tax years.';
@@ -365,6 +395,7 @@ export default function TaxExemptions() {
         if (!ans.intent) return false;
         const someYears = ['parent1SomeYears', 'parent2SomeYears', 'someYears'].includes(ans.intent);
         if (someYears && !ans.taxYears) return false;
+        if (someYears && ['odd', 'even'].includes(ans.taxYears) && !ans.taxYearParent) return false;
         if (someYears && ans.taxYears === 'custom') {
           if (
             !ans.customYears?.trim()
