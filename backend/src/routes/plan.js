@@ -4,6 +4,8 @@ const Plan = require('../models/Plan');
 const Case = require('../models/Case');
 const Question = require('../models/Question');
 const User = require('../models/User');
+const NextQuestionRule = require('../models/NextQuestionRule');
+const questionLogicHandler = require('../lib/question-logic-handler');
 const verifyToken = require('../middleware/verifyToken');
 const { getFirstName } = require('../utils/nameUtils');
 
@@ -244,12 +246,41 @@ router.get('/prevQuestion/:qkey/:planId', verifyToken, async (req, res) => {
     if (!plan || plan.userID !== req.user.uid) {
       return res.status(403).json({ error: 'Forbidden' });
     }
-    let index = plan.answers.findIndex(userAnswer => userAnswer.qKey === qKey)
-    if (index < 0) {
-      // if index < 0, that means we are on a question we haven't answered yet, thus prev question will be most recent one answered
-      index = plan.answers.length
+    const answersByKey = Object.fromEntries(
+      plan.answers.map(({ qKey: answerKey, answer }) => [answerKey, answer]),
+    );
+    const answeredKeys = new Set(plan.answers.map(({ qKey: answerKey }) => answerKey));
+    const activePath = [];
+    let currentKey = 'allocation_parental_rights';
+
+    while (currentKey && !activePath.includes(currentKey)) {
+      activePath.push(currentKey);
+      if (currentKey === qKey) break;
+
+      const currentAnswer = answersByKey[currentKey];
+      if (currentAnswer === undefined) break;
+
+      const rule = await NextQuestionRule.findOne({ qKey: currentKey });
+      if (!rule) break;
+      currentKey = rule.isDefault
+        ? rule.goToDefault
+        : rule.nextQuestions.find((nextRule) =>
+          questionLogicHandler.evaluate(currentAnswer, nextRule.operator, nextRule.value)
+        )?.goTo;
     }
-    const prevQuestion = (index - 1) >= 0 ? await Question.findOne({qKey: plan.answers[index - 1].qKey}) : "none"
+
+    let previousKey = activePath[activePath.indexOf(qKey) - 1];
+    if (!previousKey) {
+      const currentIndex = plan.answers.findIndex(({ qKey: answerKey }) => answerKey === qKey);
+      previousKey = currentIndex > 0 ? plan.answers[currentIndex - 1].qKey : undefined;
+    }
+    if (!previousKey && qKey !== activePath[activePath.length - 1]) {
+      previousKey = [...answeredKeys].pop();
+    }
+
+    const prevQuestion = previousKey
+      ? await Question.findOne({ qKey: previousKey })
+      : "none";
     return res.status(200).json(prevQuestion)
   } catch (error) {
     console.error(error);
