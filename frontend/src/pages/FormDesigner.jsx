@@ -90,6 +90,12 @@ export function answerText(answer, question) {
       everyYear: 'Claim every year',
       someYears: 'Claim some years',
       defer: 'Defer to co-parent',
+      parent1EveryYear: 'Parent 1 will claim every year',
+      parent1SomeYears: 'Parent 1',
+      parent2EveryYear: 'Parent 2 will claim every year',
+      parent2SomeYears: 'Parent 2',
+      parent1: 'Parent 1',
+      parent2: 'Parent 2',
     };
     const yearLabels = {
       odd: 'Odd-numbered tax years',
@@ -100,10 +106,26 @@ export function answerText(answer, question) {
     const lines = Object.entries(answer).flatMap(([child, details]) => {
       if (!details || typeof details !== 'object') return [`${child}: ${details}`];
       const arrangement = intentLabels[details.intent] || details.intent || 'No arrangement entered';
+      const currentParent = details.userIsParent2 ? 'Parent 2' : 'Parent 1';
+      const coParent = details.userIsParent2 ? 'Parent 1' : 'Parent 2';
+      const explicitClaimant = details.claimantParent
+        || (details.intent?.startsWith('parent1') ? 'parent1' : null)
+        || (details.intent?.startsWith('parent2') ? 'parent2' : null);
+      const claimantParent = explicitClaimant === 'parent1'
+        ? 'Parent 1'
+        : explicitClaimant === 'parent2'
+          ? 'Parent 2'
+          : currentParent;
+      const otherParentNumber = claimantParent === 'Parent 1' ? 'Parent 2' : 'Parent 1';
       const years = details.taxYears === 'custom'
-        ? details.customYears
+        ? `${claimantParent} years: ${details.customYears || 'Not entered'}; ${otherParentNumber} years: ${details.coParentCustomYears || 'Not entered'}`
+        : details.taxYears === 'odd'
+          ? `${claimantParent} years: Odd-numbered tax years; ${otherParentNumber} years: Even-numbered tax years`
+          : details.taxYears === 'even'
+            ? `${claimantParent} years: Even-numbered tax years; ${otherParentNumber} years: Odd-numbered tax years`
         : yearLabels[details.taxYears] || details.taxYears;
-      return [`${child}: ${[arrangement, years].filter(Boolean).join(' — ')}`];
+      const isSomeYearsArrangement = ['parent1SomeYears', 'parent2SomeYears', 'someYears'].includes(details.intent);
+      return [`${child}: ${[isSomeYearsArrangement ? '' : arrangement, years].filter(Boolean).join(' — ')}`];
     });
     return lines.length ? lines.join('\n') : 'No child arrangements entered';
   }
@@ -348,7 +370,9 @@ function questionPageLabel(question) {
 
 function shouldShowQuestionLabel(question) {
   const section = String(question.section || String(question.qKey || '').split('.')[0]).toLowerCase();
-  return section === 'parental-rights' || section === 'health-insurance-coverage';
+  return section === 'parental-rights'
+    || section === 'health-insurance-coverage'
+    || section === 'informationsharing';
 }
 
 function questionLabel(question) {
@@ -572,12 +596,16 @@ export function collectAnswers(state, questions, caseParentNames = {}) {
   );
   addFields(state.taxExemptions, 'Tax Exemptions', {
     parentRole: 'Parental role',
-    claimingChildren: 'Children claimed for tax exemptions',
   }, 'taxExemptions');
   if (state.taxExemptions?.childAnswers && Object.keys(state.taxExemptions.childAnswers).length) {
     responses.push({
       qKey: 'taxExemptions.childAnswers',
-      answer: state.taxExemptions.childAnswers,
+      answer: Object.fromEntries(
+        Object.entries(state.taxExemptions.childAnswers).map(([name, details]) => [
+          name,
+          { ...details, userIsParent2: state.plan?.isParent2 === true },
+        ]),
+      ),
       isFlagged: isAnswerFlagged('taxExemptions.childAnswers', flags),
       section: 'Tax Exemptions',
       label: 'Tax exemption arrangements for each child',
@@ -721,6 +749,7 @@ export function FormTemplatePrintDocument({
   answersByKey,
   questions,
   needsDiscussionKeys,
+  parentNames = { parent1: 'Parent 1', parent2: 'Parent 2' },
 }) {
   return (
     <div className="form-designer__template-print form-designer__canvas form-designer__canvas--blank">
@@ -752,10 +781,24 @@ export function FormTemplatePrintDocument({
               <div className="form-designer__discussion-notice">Needs discussion</div>
             )}
             <div className="form-designer__print-text">{block.questionText}</div>
-            <div className="form-designer__answer-value">
-              {renderScheduleAnswer(block.qKey, response.answer, question)
-                || answerText(response.answer, question)}
-            </div>
+            {needsDiscussionKeys?.has(block.qKey) && response.parentAnswers ? (
+              <div className="form-designer__discussion-answers">
+                {['parent1', 'parent2'].map((parent) => (
+                  <div className="form-designer__discussion-answer" key={parent}>
+                    <strong>{parentNames[parent]}'s answer</strong>
+                    <div className="form-designer__answer-value">
+                      {renderScheduleAnswer(block.qKey, response.parentAnswers[parent], question)
+                        || answerText(response.parentAnswers[parent], question)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="form-designer__answer-value">
+                {renderScheduleAnswer(block.qKey, response.answer, question)
+                  || answerText(response.answer, question)}
+              </div>
+            )}
           </div>
         );
       })}

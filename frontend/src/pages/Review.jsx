@@ -8,7 +8,7 @@ import InviteModal from '../components/common/InviteModal';
 import { useForm } from '../hooks/useForm';
 import { auth } from '../lib/firebase';
 import { buildApiUrl } from '../lib/apiClient';
-import { fetchStandardTemplate, FormTemplatePrintDocument, collectAnswers, standardTemplate } from './FormDesigner';
+import { answerText, fetchStandardTemplate, FormTemplatePrintDocument, collectAnswers, standardTemplate } from './FormDesigner';
 import shareCareLogo from '../assets/logos/ShareCare_Symmetrical Diamond Logo (1120 x 310 px).png';
 import './Page.css';
 import './Review.css';
@@ -38,6 +38,9 @@ function formatAnswer(answer, question) {
     return option?.label || String(value);
   };
 
+  if (question?.childAnswers) {
+    return answerText(answer, question);
+  }
   if (Array.isArray(answer)) return answer.map(formatValue).join(', ');
   return formatValue(answer);
 }
@@ -189,7 +192,7 @@ function addStateSectionResponses(grouped, plan) {
   ];
   const taxExemptions = [
     ['parentRole', 'Parental role', savedTaxExemptions?.parentRole],
-    ['claimingChildren', 'Children claimed for tax exemptions', savedTaxExemptions?.claimingChildren],
+    ['childAnswers', 'Tax exemption arrangements for each child', savedTaxExemptions?.childAnswers],
   ];
 
   [
@@ -202,7 +205,9 @@ function addStateSectionResponses(grouped, plan) {
         qKey: `${section}.${key}`,
         label,
         answer,
-        question: { options: STATE_FIELD_OPTIONS[key] ?? [] },
+        question: key === 'childAnswers'
+          ? { childAnswers: true }
+          : { options: STATE_FIELD_OPTIONS[key] ?? [] },
       }));
 
     if (responses.length > 0) {

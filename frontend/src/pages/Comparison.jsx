@@ -297,6 +297,10 @@ export default function Comparison() {
           questions.forEach((q) => {
             if (q.qKey) map[q.qKey] = { ...map[q.qKey], ...q };
           });
+          map.school_address_parent = {
+            ...map.school_address_parent,
+            ...CUSTOM_COMPARISON_QUESTIONS.school_address_parent,
+          };
           setQuestionMap(map);
         }
 
@@ -331,6 +335,15 @@ export default function Comparison() {
 
   const formatAnswer = (val, answerOwner, questionKey) => {
     if (val === null || val === undefined) return 'Not answered';
+    if (questionKey === 'school_address_parent' && typeof val === 'string') {
+      const schoolAddressLabels = {
+        me: 'Just my address',
+        coParent: "Just my co-parent's address",
+        defaultToCoParent: "Default to my co-parent's address",
+        needMoreInfo: 'I need more information',
+      };
+      return schoolAddressLabels[val] || val;
+    }
     if (typeof val === 'string' && answerOwner) {
       if (['me', 'meOnly'].includes(val)) return 'Just me';
       if (['coParent', 'coParentOnly'].includes(val)) return 'Just my co-parent';
@@ -475,8 +488,17 @@ export default function Comparison() {
         .map((qKey) => ({ qKey, answer: sharedAnswers[qKey] })),
     ].map(({ qKey, answer }) => {
       const item = { qKey, answer };
-      if (!SCHEDULE_KEYS.has(item.qKey)) return item;
       const difference = diff.find((entry) => entry.questionKey === item.qKey);
+      if (needsDiscussionKeys.has(item.qKey)) {
+        return {
+          ...item,
+          parentAnswers: {
+            parent1: difference?.parent1Answer,
+            parent2: difference?.parent2Answer,
+          },
+        };
+      }
+      if (!SCHEDULE_KEYS.has(item.qKey)) return item;
       return {
         ...item,
         answer: {
@@ -616,6 +638,7 @@ export default function Comparison() {
               : question,
           ]))}
           needsDiscussionKeys={needsDiscussionKeys}
+          parentNames={parentNames}
         />
       )}
       </>

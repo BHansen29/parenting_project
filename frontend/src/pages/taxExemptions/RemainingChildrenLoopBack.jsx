@@ -73,6 +73,15 @@ export default function RemainingChildrenLoopBack({
             <ClaimEveryYearDisclaimers parentRole={parentRole} />
           )}
 
+          {/* → defer: show defer disclaimers */}
+          {intent === 'defer' && parentRole && (
+            <DeferDisclaimers parentRole={parentRole} />
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
           {/* → some years: show tax year question + optional custom input + disclaimers */}
           {intent === 'someYears' && (
             <>
@@ -115,13 +124,3 @@ export default function RemainingChildrenLoopBack({
               )}
             </>
           )}
-
-          {/* → defer: show defer disclaimers */}
-          {intent === 'defer' && parentRole && (
-            <DeferDisclaimers parentRole={parentRole} />
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
