@@ -4,8 +4,6 @@ const Plan = require('../models/Plan');
 const Case = require('../models/Case');
 const Question = require('../models/Question');
 const User = require('../models/User');
-const NextQuestionRule = require('../models/NextQuestionRule');
-const questionLogicHandler = require('../lib/question-logic-handler');
 const verifyToken = require('../middleware/verifyToken');
 const { getFirstName } = require('../utils/nameUtils');
 
@@ -189,10 +187,10 @@ router.post('/:planId/answer', verifyToken, async (req, res) => {
     const {qKey, answer} = req.body
     const index = plan.answers.findIndex(userAnswer => userAnswer.qKey === qKey)
     const oldAnswer = plan.answers[index]?.answer
-    if (!oldAnswer) {
+    if (index === -1) {
       // case for first question answered in plan
       plan.answers.push({qKey: qKey, answer: answer})
-    } else if (oldAnswer !== answer) {
+    } else if (JSON.stringify(oldAnswer) !== JSON.stringify(answer)) {
       // case for changing exsisting response
       plan.answers[index] = {qKey: qKey, answer: answer}
     } else {
@@ -246,37 +244,12 @@ router.get('/prevQuestion/:qkey/:planId', verifyToken, async (req, res) => {
     if (!plan || plan.userID !== req.user.uid) {
       return res.status(403).json({ error: 'Forbidden' });
     }
-    const answersByKey = Object.fromEntries(
-      plan.answers.map(({ qKey: answerKey, answer }) => [answerKey, answer]),
-    );
-    const answeredKeys = new Set(plan.answers.map(({ qKey: answerKey }) => answerKey));
-    const activePath = [];
-    let currentKey = 'allocation_parental_rights';
-
-    while (currentKey && !activePath.includes(currentKey)) {
-      activePath.push(currentKey);
-      if (currentKey === qKey) break;
-
-      const currentAnswer = answersByKey[currentKey];
-      if (currentAnswer === undefined) break;
-
-      const rule = await NextQuestionRule.findOne({ qKey: currentKey });
-      if (!rule) break;
-      currentKey = rule.isDefault
-        ? rule.goToDefault
-        : rule.nextQuestions.find((nextRule) =>
-          questionLogicHandler.evaluate(currentAnswer, nextRule.operator, nextRule.value)
-        )?.goTo;
+    let index = plan.answers.findIndex(userAnswer => userAnswer.qKey === qKey)
+    if (index < 0) {
+      // If the current question has not been answered yet, use the most recent answer.
+      index = plan.answers.length
     }
-
-    let previousKey = activePath[activePath.indexOf(qKey) - 1];
-    if (!previousKey) {
-      const currentIndex = plan.answers.findIndex(({ qKey: answerKey }) => answerKey === qKey);
-      previousKey = currentIndex > 0 ? plan.answers[currentIndex - 1].qKey : undefined;
-    }
-    if (!previousKey && qKey !== activePath[activePath.length - 1]) {
-      previousKey = [...answeredKeys].pop();
-    }
+    const previousKey = index > 0 ? plan.answers[index - 1].qKey : undefined;
 
     const prevQuestion = previousKey
       ? await Question.findOne({ qKey: previousKey })

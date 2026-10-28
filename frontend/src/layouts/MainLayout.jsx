@@ -171,6 +171,13 @@ export default function Layout({ children }) {
             section: "plan",
             payload: data
           })
+          dispatch({
+            type: 'UPDATE_SECTION',
+            section: 'parental_rights',
+            payload: {
+              responses: (data.answers ?? []).map(({ qKey, answer }) => ({ qKey, answer })),
+            },
+          })
         })
       })
     })

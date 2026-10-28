@@ -730,6 +730,13 @@ export default function Review() {
           template={standardReviewTemplate || standardTemplate('review', reviewAnswersByKey, questionsByKey)}
           answersByKey={reviewAnswersByKey}
           questions={questionsByKey}
+          answeringParent={
+            reviewPlan.userRole === 'parent2/petitioner2/defendant'
+              ? 'parent2'
+              : reviewPlan.userRole === 'parent1/petitioner1/plaintiff'
+                ? 'parent1'
+                : null
+          }
         />
       )}
     </>

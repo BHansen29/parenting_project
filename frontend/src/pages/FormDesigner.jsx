@@ -80,7 +80,7 @@ function canonicalScheduleKey(qKey) {
   return SCHEDULE_QKEYS[field] || qKey;
 }
 
-export function answerText(answer, question) {
+export function answerText(answer, question, answeringParent) {
   if (answer === null || answer === undefined || answer === '') return 'Not answered';
   if (question?.childDetails) {
     return formatChildDetails(answer);
@@ -133,7 +133,17 @@ export function answerText(answer, question) {
   if (question?.scheduleType) {
     return formatSchedule(answer, question.scheduleType);
   }
-  const value = (item) => question?.options?.find((option) => option.value === item)?.label || String(item);
+  const value = (item) => {
+    const label = question?.options?.find((option) => option.value === item)?.label || String(item);
+    if (!answeringParent) return label;
+    const parent = answeringParent === 'parent2' ? 'Parent 2' : 'Parent 1';
+    const coParent = answeringParent === 'parent2' ? 'Parent 1' : 'Parent 2';
+    return label
+      .replace(/\bJust me\b/g, parent)
+      .replace(/\bJust my co-parent(?:'s)?\b/g, coParent)
+      .replace(/\bmy co-parent\b/gi, coParent)
+      .replace(/\bme\b/gi, parent);
+  };
   return Array.isArray(answer) ? answer.map(value).join(', ') : value(answer);
 }
 
@@ -762,6 +772,7 @@ export function FormTemplatePrintDocument({
   questions,
   needsDiscussionKeys,
   parentNames = { parent1: 'Parent 1', parent2: 'Parent 2' },
+  answeringParent = null,
 }) {
   return (
     <div className="form-designer__template-print form-designer__canvas form-designer__canvas--blank">
@@ -800,7 +811,7 @@ export function FormTemplatePrintDocument({
                     <strong>{parentNames[parent]}'s answer</strong>
                     <div className="form-designer__answer-value">
                       {renderScheduleAnswer(block.qKey, response.parentAnswers[parent], question)
-                        || answerText(response.parentAnswers[parent], question)}
+                        || answerText(response.parentAnswers[parent], question, parent)}
                     </div>
                   </div>
                 ))}
@@ -808,7 +819,7 @@ export function FormTemplatePrintDocument({
             ) : (
               <div className="form-designer__answer-value">
                 {renderScheduleAnswer(block.qKey, response.answer, question)
-                  || answerText(response.answer, question)}
+                  || answerText(response.answer, question, response.answerOwner || answeringParent)}
               </div>
             )}
           </div>
@@ -1216,6 +1227,13 @@ export default function FormDesigner() {
         template={template}
         answersByKey={currentAnswersByKey}
         questions={questions}
+        answeringParent={
+          state.plan?.userRole === 'parent2/petitioner2/defendant'
+            ? 'parent2'
+            : ['parent1/petitioner1/plaintiff'].includes(state.plan?.userRole)
+              ? 'parent1'
+              : null
+        }
       />
     )}
     </>
