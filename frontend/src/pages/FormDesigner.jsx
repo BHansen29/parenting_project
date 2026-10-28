@@ -843,11 +843,14 @@ export default function FormDesigner() {
   }));
   const [draggedToken, setDraggedToken] = useState(null);
   const [selectedPalettePage, setSelectedPalettePage] = useState('Getting Started');
+  const [questionSearch, setQuestionSearch] = useState('');
+  const [canvasPage, setCanvasPage] = useState(0);
 
   const changeFormat = (event) => {
     const format = event.target.value;
     setSelectedFormat(format);
     setTemplate(loadTemplate(format));
+    setCanvasPage(0);
     setSeededFormats((current) => ({
       ...current,
       [format]: Boolean(localStorage.getItem(templateStorageKey(format))),
@@ -970,15 +973,24 @@ export default function FormDesigner() {
     )),
     [questions, template.blocks],
   );
+  const filteredQuestions = useMemo(() => {
+    const search = questionSearch.trim().toLowerCase();
+    if (!search) return availableQuestions;
+    return availableQuestions.filter((question) => [
+      questionLabel(question),
+      questionDisplayText(question),
+      question.qKey,
+    ].some((value) => String(value || '').toLowerCase().includes(search)));
+  }, [availableQuestions, questionSearch]);
   const questionGroups = useMemo(() => {
     const groups = new Map();
-    availableQuestions.forEach((question) => {
+    filteredQuestions.forEach((question) => {
       const label = questionPageLabel(question);
       if (!groups.has(label)) groups.set(label, []);
       groups.get(label).push(question);
     });
     return [...groups.entries()];
-  }, [availableQuestions]);
+  }, [filteredQuestions]);
   const palettePages = useMemo(
     () => [...questionGroups.map(([page]) => page), 'Personal info'],
     [questionGroups],
@@ -1043,6 +1055,33 @@ export default function FormDesigner() {
     blocks: current.blocks.filter((block) => block.id !== id),
   }));
 
+  const canvasPages = useMemo(() => {
+    const pages = [[]];
+    let answerCount = 0;
+
+    template.blocks.forEach((block, index) => {
+      if (block.type === 'answer') {
+        const pageIndex = Math.floor(answerCount / 5);
+        while (pages.length <= pageIndex) pages.push([]);
+        pages[pageIndex].push({ block, index });
+        answerCount += 1;
+        return;
+      }
+
+      const currentPage = Math.max(0, Math.ceil(answerCount / 5) - 1);
+      while (pages.length <= currentPage) pages.push([]);
+      pages[currentPage].push({ block, index });
+    });
+
+    return pages;
+  }, [template.blocks]);
+
+  useEffect(() => {
+    setCanvasPage((current) => Math.min(current, Math.max(0, canvasPages.length - 1)));
+  }, [canvasPages.length]);
+
+  const visibleCanvasBlocks = canvasPages[canvasPage] ?? [];
+
   const setAsStandard = async () => {
     setStandardStatus('saving');
     try {
@@ -1100,6 +1139,15 @@ export default function FormDesigner() {
             <h2>Document text</h2>
             <button onClick={addHeading}><Plus size={15} /> Add section heading</button>
             <button onClick={addText}><Plus size={15} /> Add question text</button>
+            <label className="form-designer__question-search">
+              Search questions
+              <input
+                type="search"
+                value={questionSearch}
+                onChange={(event) => setQuestionSearch(event.target.value)}
+                placeholder="Search labels or question text"
+              />
+            </label>
             <h2>Pages</h2>
             <div className="form-designer__page-tabs" role="tablist" aria-label="Question pages">
               {palettePages.map((page) => (
@@ -1137,6 +1185,9 @@ export default function FormDesigner() {
             )}
             {availableQuestions.length === 0 && selectedPalettePage !== 'Personal info' && (
               <p className="form-designer__empty">All questions are placed.</p>
+            )}
+            {availableQuestions.length > 0 && filteredQuestions.length === 0 && (
+              <p className="form-designer__empty">No questions match your search.</p>
             )}
             {selectedPalettePage === 'Personal info' && (
               <>
@@ -1177,8 +1228,25 @@ export default function FormDesigner() {
               onChange={(event) => setTemplate((current) => ({ ...current, title: event.target.value }))}
               aria-label="Document title"
             />
+            <div className="form-designer__canvas-pagination" aria-label="Document pages">
+              <button
+                type="button"
+                onClick={() => setCanvasPage((current) => Math.max(0, current - 1))}
+                disabled={canvasPage === 0}
+              >
+                Previous
+              </button>
+              <span>Page {canvasPage + 1} of {canvasPages.length}</span>
+              <button
+                type="button"
+                onClick={() => setCanvasPage((current) => Math.min(canvasPages.length - 1, current + 1))}
+                disabled={canvasPage === canvasPages.length - 1}
+              >
+                Next
+              </button>
+            </div>
             <div className="form-designer__print-title">{template.title}</div>
-            {template.blocks.map((block, index) => (
+            {visibleCanvasBlocks.map(({ block, index }) => (
               <div
                 className={`form-designer__block form-designer__block--${block.type}${
                   block.type === 'answer' && !hasAnswer(currentAnswersByKey[block.qKey]?.answer)
