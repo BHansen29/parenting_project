@@ -193,9 +193,6 @@ router.post('/:planId/answer', verifyToken, async (req, res) => {
     } else if (oldAnswer !== answer) {
       // case for changing exsisting response
       plan.answers[index] = {qKey: qKey, answer: answer}
-      // this chops off everything after the new answer since our "path" through the decision tree may be different
-      // TODO: maybe update so that it only chops off questions if they aren't defaultNextQuestions?
-      plan.answers.splice(index + 1)
     } else {
       // no change to question required since answer matches
       return res.status(200).json(plan)
