@@ -468,7 +468,6 @@ export default function Review() {
   const [caseStatus, setCaseStatus] = useState(null);
   const [isPrinting, setIsPrinting] = useState(false);
   const [standardReviewTemplate, setStandardReviewTemplate] = useState(null);
-  const [isAdmin, setIsAdmin] = useState(false);
   
 
   const caseId = reviewPlan.caseId;
@@ -484,10 +483,8 @@ export default function Review() {
         });
         if (!response.ok) throw new Error('Failed to load user role');
         const data = await response.json();
-        if (active) setIsAdmin(data.role === 'admin');
       } catch (error) {
         if (active) {
-          setIsAdmin(false);
           console.error(error.message);
         }
       }
@@ -685,12 +682,6 @@ export default function Review() {
 
             <div className="review__actions">
               <div className="review__action-buttons">
-                {isAdmin && (
-                  <Link className="review__btn-invite" to="/form-designer">
-                    Customize PDF Form
-                  </Link>
-                )}
-
                 {/* Invite button — hidden for locked-individual (safety concern) users */}
                 {showInviteUI && (
                   <button

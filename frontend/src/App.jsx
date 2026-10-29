@@ -80,9 +80,7 @@ function App() {
               </MainLayout>
             } />
             <Route path="/form-designer" element={
-              <MainLayout>
-                <FormDesigner />
-              </MainLayout>
+              <FormDesigner />
             } />
             
             {/* Static pages */}

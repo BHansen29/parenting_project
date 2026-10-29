@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowDown, ArrowUp, GripVertical, Plus, Printer, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowLeft, ArrowUp, GripVertical, Plus, Printer, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useForm } from '../hooks/useForm';
 import { buildApiUrl } from '../lib/apiClient';
@@ -861,6 +862,7 @@ export function FormTemplatePrintDocument({
 
 export default function FormDesigner() {
   const { state } = useForm();
+  const navigate = useNavigate();
   const [questions, setQuestions] = useState({});
   const [selectedFormat, setSelectedFormat] = useState('review');
   const [template, setTemplate] = useState(() => loadTemplate('review'));
@@ -1146,6 +1148,9 @@ export default function FormDesigner() {
             <h1>Form Designer</h1>
             <p>Create a document, then add questions and answers from the palette.</p>
           </div>
+          <button className="form-designer__print" onClick={() => navigate('/admin')}>
+            <ArrowLeft size={16} /> Back to admin
+          </button>
           <label className="form-designer__scenario">
             PDF format
             <select value={selectedFormat} onChange={changeFormat}>
