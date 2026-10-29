@@ -181,6 +181,7 @@ export default function Comparison() {
   const [diff, setDiff] = useState([]);
   const [caseStatus, setCaseStatus] = useState('');
   const [isParent1, setIsParent1] = useState(false);
+  const [userRole, setUserRole] = useState('');
   const [parentNames, setParentNames] = useState({ parent1: 'Parent 1', parent2: 'Parent 2' });
   const [sharedAnswers, setSharedAnswers] = useState({});
   const [questionMap, setQuestionMap] = useState({});
@@ -238,6 +239,7 @@ export default function Comparison() {
         const parent1 = statusData.isParent1;
         setCaseStatus(status);
         setIsParent1(parent1);
+        setUserRole(statusData.userRole || '');
         setParentNames({
           parent1: statusData.parent1Name || 'Parent 1',
           parent2: statusData.parent2Name || 'Parent 2',
@@ -288,8 +290,8 @@ export default function Comparison() {
             Object.entries(CUSTOM_COMPARISON_QUESTIONS).map(([qKey, question]) => [
               qKey,
               SCHEDULE_TYPES[qKey]
-                ? { ...question, scheduleType: SCHEDULE_TYPES[qKey] }
-                : question,
+                ? { ...question, qKey, scheduleType: SCHEDULE_TYPES[qKey] }
+                : { ...question, qKey },
             ]),
           );
           map['getting-started.children'] = {
@@ -355,13 +357,18 @@ export default function Comparison() {
 
     if (val === null || val === undefined) return 'Not answered';
     if (questionKey === 'school_address_parent' && typeof val === 'string') {
+      const owner = answerOwner || (isParent1 ? 'parent1' : 'parent2');
+      const schoolAddressParentLabels = {
+        parent1: owner === 'parent1' ? 'Just my address' : "Just my co-parent's address",
+        parent2: owner === 'parent2' ? 'Just my address' : "Just my co-parent's address",
+      };
       const schoolAddressLabels = {
         me: 'Just my address',
         coParent: "Just my co-parent's address",
         defaultToCoParent: "Default to my co-parent's address",
         needMoreInfo: 'I need more information',
       };
-      return annotateCurrentParent(schoolAddressLabels[val] || val);
+      return annotateCurrentParent(schoolAddressLabels[val] || schoolAddressParentLabels[val] || val);
     }
     if (typeof val === 'string' && answerOwner) {
       if (['me', 'meOnly'].includes(val)) return 'Just me';
@@ -371,7 +378,10 @@ export default function Comparison() {
     }
     if (Array.isArray(val)) return val.map((value) => formatAnswer(value, answerOwner, questionKey)).join(', ');
     if (questionMap[questionKey]?.childAnswers) {
-      return annotateCurrentParent(answerText(val, questionMap[questionKey]));
+      const answeringParent = userRole === 'no_case'
+        ? 'no_case'
+        : answerOwner || (isParent1 ? 'parent1' : 'parent2');
+      return annotateCurrentParent(answerText(val, questionMap[questionKey], answeringParent, true));
     }
     if (val && typeof val === 'object') return annotateCurrentParent(JSON.stringify(val));
     const option = questionMap[questionKey]?.options?.find((item) => item.value === val);

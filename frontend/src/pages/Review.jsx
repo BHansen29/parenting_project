@@ -37,7 +37,7 @@ function annotateParentReferences(text, isParent2) {
   );
 }
 
-function formatAnswer(answer, question, isParent2) {
+function formatAnswer(answer, question, isParent2, userRole) {
   if (answer === null || answer === undefined || answer === '') {
     return <span className="review__empty">Not answered</span>;
   }
@@ -49,7 +49,8 @@ function formatAnswer(answer, question, isParent2) {
   };
 
   if (question?.childAnswers) {
-    return annotateParentReferences(answerText(answer, question), isParent2);
+    const answeringParent = isParent2 ? 'parent2' : 'parent1';
+    return annotateParentReferences(answerText(answer, question, answeringParent, true), isParent2);
   }
   if (Array.isArray(answer)) return annotateParentReferences(answerText(answer, question), isParent2);
   return annotateParentReferences(formatValue(answer), isParent2);
@@ -147,6 +148,12 @@ const CUSTOM_FIELD_OPTIONS = {
 };
 
 const STATE_FIELD_OPTIONS = {
+  userRole: [
+    { value: 'parent1/petitioner1/plaintiff', label: 'Yes, it was me' },
+    { value: 'parent2/petitioner2/defendant', label: 'No, my co-parent filed' },
+    { value: 'no_case', label: 'No case has been filed yet by either co-parent' },
+    { value: 'flagged', label: "I'm not sure" },
+  ],
   residentialParent: [
     { value: 'yes', label: 'Yes, I am the residential parent' },
     { value: 'no', label: 'No, I am not the residential parent' },
@@ -239,7 +246,7 @@ function addStateSectionResponses(grouped, plan) {
 }
 
 
-function SectionBlock({ sectionKey, responses, onEdit, onEditQuestion, isOpen, onToggle, isParent2 }) {
+function SectionBlock({ sectionKey, responses, onEdit, onEditQuestion, isOpen, onToggle, isParent2, userRole }) {
   const [isEditingQuestions, setIsEditingQuestions] = useState(false);
   const supportsQuestionEditing = ['parental-rights', 'health-insurance-coverage'].includes(sectionKey);
   const meta = SECTION_META[sectionKey] || {
@@ -304,7 +311,7 @@ function SectionBlock({ sectionKey, responses, onEdit, onEditQuestion, isOpen, o
                     <span className="review__answer-key">{r.label}</span>
                   )}
                   <span className="review__answer-value">
-                    {formatAnswer(r.answer, r.question, isParent2)}
+                    {formatAnswer(r.answer, r.question, isParent2, userRole)}
                   </span>
                 </li>
               ))}
@@ -356,7 +363,7 @@ function PrintablePlan({ groupedResponses, sectionKeys, plan }) {
                     <dt>{response.question?.qText || response.label}</dt>
                     <dd>
                       <span className="review__print-answer-label">Answer</span>
-                      {formatAnswer(response.answer, response.question, plan.isParent2 === true)}
+                      {formatAnswer(response.answer, response.question, plan.isParent2 === true, plan.userRole)}
                     </dd>
                   </div>
                 ))}
@@ -660,6 +667,7 @@ export default function Review() {
                   sectionKey={key}
                   responses={groupedResponses[key] ?? []}
                   isParent2={reviewPlan.isParent2 === true}
+                  userRole={reviewPlan.userRole}
                   onEdit={handleEdit}
                   onEditQuestion={handleEditQuestion}
                   isOpen={openSections[key]}
@@ -733,6 +741,8 @@ export default function Review() {
           answeringParent={
             reviewPlan.userRole === 'parent2/petitioner2/defendant'
               ? 'parent2'
+              : reviewPlan.userRole === 'no_case'
+                ? 'no_case'
               : reviewPlan.userRole === 'parent1/petitioner1/plaintiff'
                 ? 'parent1'
                 : null

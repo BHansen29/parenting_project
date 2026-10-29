@@ -80,22 +80,45 @@ function canonicalScheduleKey(qKey) {
   return SCHEDULE_QKEYS[field] || qKey;
 }
 
-export function answerText(answer, question, answeringParent) {
+export function answerText(answer, question, answeringParent, relativeLabels = false, pdfLabels = false) {
   if (answer === null || answer === undefined || answer === '') return 'Not answered';
   if (question?.childDetails) {
     return formatChildDetails(answer);
   }
+  if (pdfLabels && question?.qKey === 'school_address_parent' && typeof answer === 'string') {
+    const parentLabel = answeringParent === 'parent2'
+      ? 'Parent 2'
+      : answeringParent === 'no_case' ? 'Me' : 'Parent 1';
+    const coParentLabel = answeringParent === 'parent2'
+      ? 'Parent 1'
+      : answeringParent === 'no_case' ? 'Co-parent' : 'Parent 2';
+    const labels = {
+      me: `${parentLabel === 'Me' ? 'me' : `${parentLabel}'s`} address`,
+      coParent: `${coParentLabel === 'Co-parent' ? 'my co-parent\'s' : `${coParentLabel}'s`} address`,
+      defaultToCoParent: `Default to ${coParentLabel === 'Co-parent' ? 'my co-parent\'s' : `${coParentLabel}'s`} address`,
+      needMoreInfo: 'I need more information',
+      parent1: "Parent 1's address",
+      parent2: "Parent 2's address",
+    };
+    return labels[answer] || answer;
+  }
   if (question?.childAnswers) {
+    const parent1Label = relativeLabels
+      ? answeringParent === 'parent2' ? 'My co-parent' : 'I'
+      : answeringParent === 'no_case' ? 'I' : 'Parent 1';
+    const parent2Label = relativeLabels
+      ? answeringParent === 'parent2' ? 'I' : 'My co-parent'
+      : answeringParent === 'no_case' ? 'Co-parent' : 'Parent 2';
     const intentLabels = {
       everyYear: 'Claim every year',
       someYears: 'Claim some years',
       defer: 'Defer to co-parent',
-      parent1EveryYear: 'Parent 1 will claim every year',
-      parent1SomeYears: 'Parent 1',
-      parent2EveryYear: 'Parent 2 will claim every year',
-      parent2SomeYears: 'Parent 2',
-      parent1: 'Parent 1',
-      parent2: 'Parent 2',
+      parent1EveryYear: `${parent1Label} will claim every year`,
+      parent1SomeYears: parent1Label,
+      parent2EveryYear: `${parent2Label} will claim every year`,
+      parent2SomeYears: parent2Label,
+      parent1: parent1Label,
+      parent2: parent2Label,
     };
     const yearLabels = {
       odd: 'Odd-numbered tax years',
@@ -106,24 +129,25 @@ export function answerText(answer, question, answeringParent) {
     const lines = Object.entries(answer).flatMap(([child, details]) => {
       if (!details || typeof details !== 'object') return [`${child}: ${details}`];
       const arrangement = intentLabels[details.intent] || details.intent || 'No arrangement entered';
-      const currentParent = details.userIsParent2 ? 'Parent 2' : 'Parent 1';
-      const coParent = details.userIsParent2 ? 'Parent 1' : 'Parent 2';
+      const currentIsParent2 = details.userIsParent2 ?? answeringParent === 'parent2';
+      const currentParent = currentIsParent2 ? parent2Label : parent1Label;
+      const coParent = currentIsParent2 ? parent1Label : parent2Label;
       const explicitClaimant = details.claimantParent
         || details.taxYearParent
         || (details.intent?.startsWith('parent1') ? 'parent1' : null)
         || (details.intent?.startsWith('parent2') ? 'parent2' : null);
       const claimantParent = explicitClaimant === 'parent1'
-        ? 'Parent 1'
+        ? parent1Label
         : explicitClaimant === 'parent2'
-          ? 'Parent 2'
+          ? parent2Label
           : currentParent;
-      const otherParentNumber = claimantParent === 'Parent 1' ? 'Parent 2' : 'Parent 1';
+      const otherParentNumber = claimantParent === parent1Label ? parent2Label : parent1Label;
       const years = details.taxYears === 'custom'
-        ? `${claimantParent} years: ${details.customYears || 'Not entered'}; ${otherParentNumber} years: ${details.coParentCustomYears || 'Not entered'}`
+        ? `${claimantParent} will claim: ${details.customYears || 'Not entered'}; ${otherParentNumber} will claim: ${details.coParentCustomYears || 'Not entered'}`
         : details.taxYears === 'odd'
-          ? `${claimantParent} years: Odd-numbered tax years; ${otherParentNumber} years: Even-numbered tax years`
+          ? `${claimantParent} will claim: Odd-numbered tax years; ${otherParentNumber} will claim: Even-numbered tax years`
           : details.taxYears === 'even'
-            ? `${claimantParent} years: Even-numbered tax years; ${otherParentNumber} years: Odd-numbered tax years`
+            ? `${claimantParent} will claim: Even-numbered tax years; ${otherParentNumber} will claim: Odd-numbered tax years`
         : yearLabels[details.taxYears] || details.taxYears;
       const isSomeYearsArrangement = ['parent1SomeYears', 'parent2SomeYears', 'someYears'].includes(details.intent);
       return [`${child}: ${[isSomeYearsArrangement ? '' : arrangement, years].filter(Boolean).join(' — ')}`];
@@ -136,13 +160,19 @@ export function answerText(answer, question, answeringParent) {
   const value = (item) => {
     const label = question?.options?.find((option) => option.value === item)?.label || String(item);
     if (!answeringParent) return label;
-    const parent = answeringParent === 'parent2' ? 'Parent 2' : 'Parent 1';
-    const coParent = answeringParent === 'parent2' ? 'Parent 1' : 'Parent 2';
+    const parent = answeringParent === 'parent2' ? 'Parent 2'
+      : answeringParent === 'no_case' ? 'Myself' : 'Parent 1';
+    const coParent = answeringParent === 'parent2' ? 'Parent 1'
+      : answeringParent === 'no_case' ? 'Co-parent' : 'Parent 2';
     return label
+      .replace(/\bMe and my co-parent\b/g, `${parent} and ${coParent}`)
+      .replace(/\bMe and my coparent\b/g, `${parent} and ${coParent}`)
       .replace(/\bJust me\b/g, parent)
       .replace(/\bJust my co-parent(?:'s)?\b/g, coParent)
       .replace(/\bmy co-parent\b/gi, coParent)
-      .replace(/\bme\b/gi, parent);
+      .replace(/\bme\b/gi, parent)
+      .replace(/\bcoparent\b/gi, coParent)
+      .replace(/\bmine\b/gi, parent + "'s");
   };
   return Array.isArray(answer) ? answer.map(value).join(', ') : value(answer);
 }
@@ -811,7 +841,7 @@ export function FormTemplatePrintDocument({
                     <strong>{parentNames[parent]}'s answer</strong>
                     <div className="form-designer__answer-value">
                       {renderScheduleAnswer(block.qKey, response.parentAnswers[parent], question)
-                        || answerText(response.parentAnswers[parent], question, parent)}
+                        || answerText(response.parentAnswers[parent], question, parent, false, true)}
                     </div>
                   </div>
                 ))}
@@ -819,7 +849,7 @@ export function FormTemplatePrintDocument({
             ) : (
               <div className="form-designer__answer-value">
                 {renderScheduleAnswer(block.qKey, response.answer, question)
-                  || answerText(response.answer, question, response.answerOwner || answeringParent)}
+                  || answerText(response.answer, question, response.answerOwner || answeringParent, false, true)}
               </div>
             )}
           </div>
@@ -1298,9 +1328,11 @@ export default function FormDesigner() {
         answeringParent={
           state.plan?.userRole === 'parent2/petitioner2/defendant'
             ? 'parent2'
-            : ['parent1/petitioner1/plaintiff'].includes(state.plan?.userRole)
-              ? 'parent1'
-              : null
+            : state.plan?.userRole === 'no_case'
+              ? 'no_case'
+              : state.plan?.userRole === 'parent1/petitioner1/plaintiff'
+                ? 'parent1'
+                : null
         }
       />
     )}

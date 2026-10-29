@@ -86,8 +86,8 @@ function ChildTaxBlock({
   const showCustomYearInput      = showTaxYearQuestion && taxYears === 'custom';
   const showEveryYearDisclaimers = (intent === 'parent1EveryYear' || intent === 'parent2EveryYear' || intent === 'everyYear') && !!parentRole;
   const showSomeYearsDisclaimers = isSomeYears && !!taxYears && !!parentRole;
-  const displayParent1 = isParent2 ? 'Parent 1' : 'Parent 1 (you)';
-  const displayParent2 = isParent2 ? `Parent 2 (you)` : 'Parent 2';
+  const displayParent1 = isParent2 ? 'My co-parent' : 'I';
+  const displayParent2 = isParent2 ? 'I' : 'My co-parent';
   const parent1Years = customYears;
   const parent2Years = coParentCustomYears;
 
@@ -193,7 +193,7 @@ function ChildTaxBlock({
                           update({ taxYearParent: value });
                           clearError('taxYearParent');
                         }}
-                        label={`${label} will get ${childName} for ${taxYears}-numbered years (co-parent will claim the child in the ${taxYearsOpposite} years)`}
+                        label={`${label} will get ${childName} for ${taxYears}-numbered years (${label === 'I' ? 'my co-parent' : 'I'} will claim the child in the ${taxYearsOpposite} years)`}
                       />
                     ))}
                   </div>
