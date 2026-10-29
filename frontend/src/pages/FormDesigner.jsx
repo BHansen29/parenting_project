@@ -267,7 +267,8 @@ function formatSchedule(answer, scheduleType) {
 }
 
 function ScheduleCalendar({ schedule = {} }) {
-  const hasSlots = Object.values(schedule).some((slots) => Array.isArray(slots) && slots.length);
+  const safeSchedule = schedule && typeof schedule === 'object' ? schedule : {};
+  const hasSlots = Object.values(safeSchedule).some((slots) => Array.isArray(slots) && slots.length);
   if (!hasSlots) return <span>Not scheduled</span>;
 
   return (
@@ -281,7 +282,7 @@ function ScheduleCalendar({ schedule = {} }) {
           <span className="form-designer__schedule-week-label">Week {week + 1}</span>
           {WEEK_DAYS.map((day, dayOfWeek) => {
             const dayIndex = week * 7 + dayOfWeek;
-            const slots = Array.isArray(schedule[dayIndex]) ? schedule[dayIndex] : [];
+            const slots = Array.isArray(safeSchedule[dayIndex]) ? safeSchedule[dayIndex] : [];
             return (
               <div
                 className={`form-designer__schedule-day-cell${slots.length ? ' form-designer__schedule-day-cell--assigned' : ''}`}
@@ -804,12 +805,13 @@ export function FormTemplatePrintDocument({
   needsDiscussionKeys,
   parentNames = { parent1: 'Parent 1', parent2: 'Parent 2' },
   answeringParent = null,
+  showUnanswered = false,
 }) {
   return (
     <div className="form-designer__template-print form-designer__canvas form-designer__canvas--blank">
       <div className="form-designer__print-title">{template.title}</div>
       {template.blocks.map((block) => {
-        const response = answersByKey[block.qKey];
+        const response = answersByKey[block.qKey] || (showUnanswered ? { answer: null } : null);
         const question = questions[block.qKey] || response?.question;
         if (block.type === 'heading') {
           return (
@@ -825,7 +827,7 @@ export function FormTemplatePrintDocument({
             </div>
           );
         }
-        if (!response || !hasAnswer(response.answer)) return null;
+        if (!response || (!showUnanswered && !hasAnswer(response.answer))) return null;
         return (
           <div className="form-designer__block form-designer__block--answer" key={block.id}>
             {response.isFlagged && (
@@ -892,12 +894,16 @@ export default function FormDesigner() {
   useEffect(() => {
     if (!isPrinting) return undefined;
 
-    const printTimer = setTimeout(() => {
+    const handleAfterPrint = () => setIsPrinting(false);
+    window.addEventListener('afterprint', handleAfterPrint);
+    const printFrame = window.requestAnimationFrame(() => {
       window.print();
-      setIsPrinting(false);
-    }, 0);
+    });
 
-    return () => clearTimeout(printTimer);
+    return () => {
+      window.cancelAnimationFrame(printFrame);
+      window.removeEventListener('afterprint', handleAfterPrint);
+    };
   }, [isPrinting]);
 
   useEffect(() => {
@@ -1339,6 +1345,7 @@ export default function FormDesigner() {
                 ? 'parent1'
                 : null
         }
+        showUnanswered
       />
     )}
     </>
