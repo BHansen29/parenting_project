@@ -1,3 +1,4 @@
+import * as XLSX from 'xlsx';
 import { useEffect, useState } from 'react';
 import { buildApiUrl } from '../lib/apiClient';
 import { auth } from '../lib/firebase';
@@ -15,7 +16,12 @@ const fields = [
   { key: 'education', label: 'Education' }
 ];
 
-function summarizeUsers(users) {
+function formatExportValue(value) {
+  if (Array.isArray(value)) return value.join(', ');
+  return value ?? '';
+}
+
+export function summarizeUsers(users) {
   const ages = users
     .map((user) => user.parentAge === null || user.parentAge === undefined || user.parentAge === ''
       ? Number.NaN
@@ -64,6 +70,47 @@ function summarizeUsers(users) {
     parentAgeRespondents: ages.length,
     distributions
   };
+}
+
+export function exportAggregateData(users, summary) {
+  const summaryRows = [
+    ['Field', 'Choice', 'Count', 'Percentage'],
+    ['Overview', 'Plans represented', summary.planRecords, ''],
+    ['Overview', 'Average parent age', summary.averageParentAge ?? '', ''],
+    ['Overview', 'Parent age responses', summary.parentAgeRespondents, '']
+  ];
+
+  fields.forEach((field) => {
+    Object.entries(summary.distributions[field.key].choices).forEach(([value, choice]) => {
+      summaryRows.push([
+        field.label,
+        value,
+        choice.count,
+        `${choice.percentage}%`
+      ]);
+    });
+  });
+
+  const responseRows = users.map((user) => Object.fromEntries([
+    ['Parent age', formatExportValue(user.parentAge)],
+    ...fields.map((field) => [field.label, formatExportValue(user[field.key])])
+  ]));
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet(summaryRows), 'Summary');
+  XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(responseRows), 'Responses');
+
+  const workbookData = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+  const downloadUrl = URL.createObjectURL(new Blob([workbookData], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  }));
+  const link = document.createElement('a');
+  link.href = downloadUrl;
+  link.download = `aggregate-data-${new Date().toISOString().slice(0, 10)}.xlsx`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(downloadUrl);
 }
 
 function DistributionCard({ field, distribution }) {
@@ -135,7 +182,7 @@ const chartColors = [
   '#4f46e5'
 ];
 
-export default function UserData() {
+export default function UserData({ onDataLoaded }) {
   const [users, setUsers] = useState(null);
   const [error, setError] = useState('');
 
@@ -164,7 +211,10 @@ export default function UserData() {
           throw new Error('Aggregate user data response must be a list');
         }
 
-        if (isMounted) setUsers(data);
+        if (isMounted) {
+          setUsers(data);
+          onDataLoaded?.(data, summarizeUsers(data));
+        }
       } catch (fetchError) {
         if (isMounted) setError(fetchError.message);
       }
@@ -193,9 +243,11 @@ export default function UserData() {
   return (
     <main className="user-data">
       <header className="user-data__header">
-        <p className="user-data__eyebrow">Community overview</p>
-        <h1>Aggregate data dashboard</h1>
-        <p>Explore the demographics and preferences represented in parenting plans.</p>
+        <div>
+          <p className="user-data__eyebrow">Community overview</p>
+          <h1>Aggregate data dashboard</h1>
+          <p>Explore the demographics and preferences represented in parenting plans.</p>
+        </div>
       </header>
 
       <section className="user-data__metrics" aria-label="Summary statistics">

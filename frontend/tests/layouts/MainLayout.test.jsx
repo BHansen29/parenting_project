@@ -1,4 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { useEffect } from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { FormProvider } from '../../src/context/FormContext';
 import { NavigationProvider, useNavigation } from '../../src/context/NavigationContext';
@@ -56,6 +57,15 @@ beforeEach(() => {
 });
 
 const TestComponent = () => <div>Test Child Content</div>;
+const BackHandlerTestComponent = () => {
+  const { setOnBack } = useNavigation();
+
+  useEffect(() => {
+    setOnBack(() => mockNavigate('/parenting-time-communication'));
+  }, [setOnBack]);
+
+  return <div>Test Child Content</div>;
+};
 
 const renderWithProviders = (initialRoute = '/getting-started') => {
   return render(
@@ -182,6 +192,30 @@ describe('MainLayout', () => {
     await waitFor(() => {
       // prevQuestion returns section: 'getting-started'
       expect(mockNavigate).toHaveBeenCalledWith('/getting-started');
+    });
+  });
+
+  it('uses a section back handler instead of question history when one is registered', async () => {
+    render(
+      <MemoryRouter initialEntries={['/informationsharing']}>
+        <FormProvider>
+          <NavigationProvider>
+            <MainLayout>
+              <BackHandlerTestComponent />
+            </MainLayout>
+          </NavigationProvider>
+        </FormProvider>
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /back/i }));
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/parenting-time-communication');
+      expect(global.fetch).not.toHaveBeenCalledWith(
+        expect.stringContaining('prevQuestion'),
+        expect.anything(),
+      );
     });
   });
 

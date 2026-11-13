@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useLayoutEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from '../components/common/Sidebar';
 import Header from '../components/common/Header';
@@ -326,9 +326,9 @@ export default function Layout({ children }) {
     });
   };
 
-  const { onNext: pageOnNext, setOnNext, setOnBack } = useNavigation();
+  const { onNext: pageOnNext, onBack: pageOnBack, setOnNext, setOnBack } = useNavigation();
 
-    useEffect(() => {
+    useLayoutEffect(() => {
       setOnNext(null);
       setOnBack(null);
     }, [location.pathname, setOnNext, setOnBack]);
@@ -390,6 +390,15 @@ export default function Layout({ children }) {
     }
   };
 
+  const handleFooterBack = () => {
+    if (pageOnBack) {
+      pageOnBack();
+      return;
+    }
+
+    handleBack();
+  };
+
   return (
     <div className="layout">
       <Sidebar
@@ -424,7 +433,7 @@ export default function Layout({ children }) {
           showBackButton={!isFirstPage}
           showNextButton={!isLastPage}
           showSaveButton={shouldShowNavigation}
-          onBack={handleBack}
+          onBack={handleFooterBack}
           onNext={handleNext}
           onSave={handleSave}
           saved={saved}

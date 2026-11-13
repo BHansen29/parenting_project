@@ -13,6 +13,10 @@
 }
 
 .user-data__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
   margin-bottom: 1.75rem;
 }
 
@@ -32,7 +36,7 @@
   line-height: 1.2;
 }
 
-.user-data__header > p:last-child {
+.user-data__header > div > p:last-child {
   margin: 0.65rem 0 0;
   color: #64748b;
 }
@@ -234,6 +238,10 @@
 @media (max-width: 760px) {
   .user-data {
     padding-top: 2rem;
+  }
+
+  .user-data__header {
+    flex-direction: column;
   }
 
   .user-data__section-heading {
