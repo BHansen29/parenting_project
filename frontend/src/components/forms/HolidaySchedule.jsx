@@ -50,7 +50,7 @@ export default function HolidaySchedule({
   baseHolidays = HOLIDAYS,
   itemLabel = 'Holiday',
   ariaLabel = 'Holiday parenting schedule',
-  introText = 'Choose whether each holiday applies. The schedule details will appear after you select “Applies”.',
+  introText = 'Choose whether each holiday applies. The schedule details will appear after you select “Applies”. If a holiday does not apply, the weekly parenting schedule will be followed.',
   idPrefix = 'holiday',
   optionSets = {},
   timeDisabledItems = [],
