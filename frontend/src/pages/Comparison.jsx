@@ -502,6 +502,9 @@ export default function Comparison() {
 
   const agreed = diff.filter((d) => d.agreement);
   const disagreed = diff.filter((d) => !d.agreement);
+  const children = Array.isArray(sharedAnswers['getting-started.children'])
+    ? sharedAnswers['getting-started.children']
+    : [];
 
   const formatAnswer = (val, answerOwner, questionKey) => {
     const annotateCurrentParent = (text) => {
@@ -514,6 +517,15 @@ export default function Comparison() {
     };
 
     if (val === null || val === undefined) return 'Not answered';
+    if (val && typeof val === 'object' && !Array.isArray(val) && val.byChild) {
+      return Object.entries(val.byChild).map(([childId, childAnswer], index) => {
+        const child = children.find((item) => String(item?._id || item?.id) === childId);
+        const childName = child
+          ? [child.fName || child.firstName, child.lName || child.lastName].filter(Boolean).join(' ')
+          : `Child ${index + 1}`;
+        return `${childName}: ${formatAnswer(childAnswer, answerOwner, questionKey)}`;
+      }).join('\n');
+    }
     if (questionKey === 'school_address_parent' && typeof val === 'string') {
       const owner = answerOwner || (isParent1 ? 'parent1' : 'parent2');
       const schoolAddressParentLabels = {
@@ -855,6 +867,7 @@ export default function Comparison() {
           ]))}
           needsDiscussionKeys={needsDiscussionKeys}
           parentNames={parentNames}
+          children={children}
         />
       )}
       </>

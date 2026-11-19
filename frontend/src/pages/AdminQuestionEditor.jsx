@@ -32,11 +32,15 @@ const createDefaults = {
   qTitle: '',
   qIntro: '',
   qDisclaimer: '',
+  pdfHelpText1: '',
+  pdfHelpText2: '',
   qText: '',
   type: 'multiple choice',
   qIcon: 'scale-icon',
   section: 'parental-rights',
   appliesToGroup: '',
+  multipleChildren: false,
+  includeInComparison: true,
   options: []
 };
 
@@ -81,10 +85,14 @@ function normalizeQuestion(question) {
     qTitle: question.qTitle,
     qIntro: question.qIntro || '',
     qDisclaimer: question.qDisclaimer || '',
+    pdfHelpText1: question.pdfHelpText1 || '',
+    pdfHelpText2: question.pdfHelpText2 || '',
     qIcon: question.qIcon,
     qText: question.qText,
     section: question.section,
     appliesToGroup: question.appliesToGroup || '',
+    multipleChildren: question.multipleChildren === true,
+    includeInComparison: question.includeInComparison !== false,
     options: (question.options || []).map(({ value = '', label = '', description = '' }) => ({
       value,
       label,
@@ -208,6 +216,22 @@ function QuestionPreview({ question, onChange }) {
           rows={2}
           maxLength={5000}
         />
+        <EditorField
+          label="Final PDF help text 1"
+          value={question.pdfHelpText1 || ''}
+          onChange={(value) => onChange('pdfHelpText1', value)}
+          multiline
+          rows={2}
+          maxLength={5000}
+        />
+        <EditorField
+          label="Final PDF help text 2"
+          value={question.pdfHelpText2 || ''}
+          onChange={(value) => onChange('pdfHelpText2', value)}
+          multiline
+          rows={2}
+          maxLength={5000}
+        />
       </div>
 
       <details className="admin-editor__settings">
@@ -241,6 +265,22 @@ function QuestionPreview({ question, onChange }) {
               <option value="married">Married</option>
               <option value="not_married">Not married</option>
             </select>
+          </label>
+          <label className="admin-editor__field">
+            <span>Multiple children</span>
+            <input
+              type="checkbox"
+              checked={question.multipleChildren === true}
+              onChange={(event) => onChange('multipleChildren', event.target.checked)}
+            />
+          </label>
+          <label className="admin-editor__field">
+            <span>Do not include in comparison</span>
+            <input
+              type="checkbox"
+              checked={question.includeInComparison === false}
+              onChange={(event) => onChange('includeInComparison', !event.target.checked)}
+            />
           </label>
         </div>
       </details>

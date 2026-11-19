@@ -539,6 +539,12 @@
     border-color: #374151;
   }
 
+  .schedule-builder__help-text {
+    background-color: rgba(20, 171, 221, 0.1);
+    border-color: #14abdd;
+    color: #d1d5db;
+  }
+
   .schedule-builder__legend {
     background-color: #374151;
   }

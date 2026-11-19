@@ -79,6 +79,7 @@
     "qIntro": "Simplify by applying answers to all children",
     "qText": "The next few questions ask about who your children will live with and who will make the legal decisions for them. Will your answers apply to all of your children that you share with your co-parent?",
     "qTitle": "Applies to All Children?",
+    "multipleChildren": true,
     "section": "parental-rights",
     "type": "multiple choice",
     "updatedAt": "2026-09-09T16:02:20.505Z"

@@ -518,7 +518,9 @@ export default function ParentingTimeAndCommunication() {
                         <Card>
                             <CardContent>
                                 <div className="schedule-scope-controls">
-                                    <label htmlFor="schedule-scope">Who does this schedule apply to?</label>
+                                    <div className="schedule-scope-text">
+                                        Who does this schedule apply to?
+                                    </div>
                                     <select id="schedule-scope" value={scheduleScope} onChange={handleScheduleScopeChange}>
                                         <option value="all">All children</option>
                                         <option value="byChild">Set a different schedule for each child</option>
@@ -556,6 +558,7 @@ export default function ParentingTimeAndCommunication() {
                             </CardHeader>
                             <CardContent>
                                 <ScheduleBuilder
+                                    key={activeChildId}
                                     value={activeParentingSchedule}
                                     onChange={handleScheduleChange}
                                     parent1Label="You"
@@ -574,6 +577,7 @@ export default function ParentingTimeAndCommunication() {
                             </CardHeader>
                             <CardContent>
                                 <HolidaySchedule
+                                    key={`holiday-${activeChildId}`}
                                     value={activeHolidaySchedule}
                                     onChange={handleHolidayScheduleChange}
                                     errors={errors.holidaySchedule}
@@ -610,6 +614,7 @@ export default function ParentingTimeAndCommunication() {
                             </CardHeader>
                             <CardContent>
                                 <SchoolSchedule
+                                    key={`school-${activeChildId}`}
                                     value={activeSchoolSchedule}
                                     onChange={handleSchoolScheduleChange}
                                     errors={errors.schoolSchedule}

@@ -226,6 +226,7 @@
 .comparison__answer-value {
   font-size: 15px;
   color: #374151;
+  white-space: pre-line;
 }
 
 .comparison__schedule-list,

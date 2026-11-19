@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useNavigate } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
 import { CheckCircle, Download, UserPlus, Pencil, ChevronDown, ChevronUp, Flag } from 'lucide-react';
@@ -57,7 +58,7 @@ function annotateParentReferences(text, isParent2) {
   );
 }
 
-function formatAnswer(answer, question, isParent2, userRole) {
+function formatAnswer(answer, question, isParent2, userRole, children = []) {
   if (answer === null || answer === undefined || answer === '') {
     return <span className="review__empty">Not answered</span>;
   }
@@ -67,6 +68,25 @@ function formatAnswer(answer, question, isParent2, userRole) {
     if (value && typeof value === 'object') return JSON.stringify(value);
     return option?.label || String(value);
   };
+
+  if (answer && typeof answer === 'object' && !Array.isArray(answer) && answer.byChild) {
+    return (
+      <div className="review__child-answers">
+        {Object.entries(answer.byChild).map(([childId, childAnswer], index) => {
+          const child = children.find((item) => String(item?._id || item?.id) === childId);
+          const label = child
+            ? [child.fName || child.firstName, child.lName || child.lastName].filter(Boolean).join(' ')
+            : `Child ${index + 1}`;
+          return (
+            <div className="review__child-answer" key={childId}>
+              <strong>{label}:</strong>{' '}
+              {formatAnswer(childAnswer, question, isParent2, userRole, children)}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
 
   if (question?.childAnswers) {
     const answeringParent = isParent2 ? 'parent2' : 'parent1';
@@ -328,7 +348,7 @@ function addStateSectionResponses(grouped, plan) {
 }
 
 
-function SectionBlock({ sectionKey, responses, onEdit, onEditQuestion, isOpen, onToggle, isParent2, userRole }) {
+function SectionBlock({ sectionKey, responses, children, onEdit, onEditQuestion, isOpen, onToggle, isParent2, userRole }) {
   const [isEditingQuestions, setIsEditingQuestions] = useState(false);
   const supportsQuestionEditing = ['parental-rights', 'health-insurance-coverage'].includes(sectionKey);
   const meta = SECTION_META[sectionKey] || {
@@ -427,9 +447,9 @@ function SectionBlock({ sectionKey, responses, onEdit, onEditQuestion, isOpen, o
                       </span>
                     )}
                   </div>
-                  <span className="review__answer-value">
-                    {formatAnswer(r.answer, r.question, isParent2, userRole)}
-                  </span>
+                  <div className="review__answer-value">
+                    {formatAnswer(r.answer, r.question, isParent2, userRole, children)}
+                  </div>
                 </li>
               ))}
             </ul>
@@ -480,7 +500,7 @@ function PrintablePlan({ groupedResponses, sectionKeys, plan }) {
                     <dt>{response.question?.qText || response.label}</dt>
                     <dd>
                       <span className="review__print-answer-label">Answer</span>
-                      {formatAnswer(response.answer, response.question, plan.isParent2 === true, plan.userRole)}
+                      {formatAnswer(response.answer, response.question, plan.isParent2 === true, plan.userRole, plan.children)}
                     </dd>
                   </div>
                 ))}
@@ -791,6 +811,7 @@ export default function Review() {
                   key={key}
                   sectionKey={key}
                   responses={groupedResponses[key] ?? []}
+                  children={reviewPlan.children ?? []}
                   isParent2={reviewPlan.isParent2 === true}
                   userRole={reviewPlan.userRole}
                   onEdit={handleEdit}
@@ -853,20 +874,24 @@ export default function Review() {
         />
       </div>
       {isPrinting && (
-        <FormTemplatePrintDocument
-          template={standardReviewTemplate || standardTemplate('review', reviewAnswersByKey, questionsByKey)}
-          answersByKey={reviewAnswersByKey}
-          questions={questionsByKey}
-          answeringParent={
-            reviewPlan.userRole === 'parent2/petitioner2/defendant'
-              ? 'parent2'
-              : reviewPlan.userRole === 'no_case'
-                ? 'no_case'
-              : reviewPlan.userRole === 'parent1/petitioner1/plaintiff'
-                ? 'parent1'
-                : null
-          }
-        />
+        createPortal(
+          <FormTemplatePrintDocument
+            template={standardReviewTemplate || standardTemplate('review', reviewAnswersByKey, questionsByKey)}
+            answersByKey={reviewAnswersByKey}
+            questions={questionsByKey}
+            children={reviewPlan.children ?? []}
+            answeringParent={
+              reviewPlan.userRole === 'parent2/petitioner2/defendant'
+                ? 'parent2'
+                : reviewPlan.userRole === 'no_case'
+                  ? 'no_case'
+                : reviewPlan.userRole === 'parent1/petitioner1/plaintiff'
+                  ? 'parent1'
+                  : null
+            }
+          />,
+          document.body,
+        )
       )}
     </>
   );

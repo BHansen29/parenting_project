@@ -48,6 +48,14 @@ const questionSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  pdfHelpText1: {
+    type: String,
+    default: ''
+  },
+  pdfHelpText2: {
+    type: String,
+    default: ''
+  },
   qIcon: {
     type: String,
     required: true,
@@ -91,6 +99,10 @@ const questionSchema = new mongoose.Schema({
     type: String,
     enum: ['married', 'not_married', ''],
     default: ''
+  },
+  multipleChildren: {
+    type: Boolean,
+    default: false
   },
 
   // the followings field is dependant on the type of question

@@ -11,11 +11,15 @@ const editableQuestionFields = [
   'qTitle',
   'qIntro',
   'qDisclaimer',
+  'pdfHelpText1',
+  'pdfHelpText2',
   'qIcon',
   'qText',
   'section',
   'options',
   'appliesToGroup',
+  'multipleChildren',
+  'includeInComparison',
 ];
 const createQuestionFields = ['qKey', ...editableQuestionFields];
 const ruleFields = ['isDefault', 'goToDefault', 'nextQuestions', 'notApplicableGoTo'];
@@ -61,7 +65,7 @@ function questionSnapshot(question) {
 }
 
 function validateQuestionPayload(payload, allowedFields, { requireAll = false } = {}) {
-  const optionalFields = ['appliesToGroup'];
+  const optionalFields = ['appliesToGroup', 'multipleChildren', 'includeInComparison'];
   if (!isPlainObject(payload) ||
       (requireAll && allowedFields.some((field) =>
         !optionalFields.includes(field) && !Object.hasOwn(payload, field)
@@ -77,7 +81,7 @@ function validateQuestionPayload(payload, allowedFields, { requireAll = false } 
     return 'Question key must use lowercase letters, numbers, and underscores';
   }
 
-  const textFields = ['type', 'qTitle', 'qIntro', 'qDisclaimer', 'qIcon', 'qText', 'section'];
+  const textFields = ['type', 'qTitle', 'qIntro', 'qDisclaimer', 'pdfHelpText1', 'pdfHelpText2', 'qIcon', 'qText', 'section'];
   if (textFields.some((field) =>
     Object.hasOwn(payload, field) && typeof payload[field] !== 'string'
   )) {
@@ -91,6 +95,12 @@ function validateQuestionPayload(payload, allowedFields, { requireAll = false } 
     !['', 'married', 'not_married'].includes(payload.appliesToGroup)
   ) {
     return 'Question applicability must be married, not_married, or empty';
+  }
+  if (Object.hasOwn(payload, 'multipleChildren') && typeof payload.multipleChildren !== 'boolean') {
+    return 'multipleChildren must be a boolean';
+  }
+  if (Object.hasOwn(payload, 'includeInComparison') && typeof payload.includeInComparison !== 'boolean') {
+    return 'includeInComparison must be a boolean';
   }
 
   if (Object.hasOwn(payload, 'options')) {
@@ -204,7 +214,7 @@ router.get('/questions', async (req, res) => {
   try {
     const [allQuestions, rules] = await Promise.all([
       Question.find()
-        .select('type qTitle qIntro qDisclaimer qIcon qText qKey section options appliesToGroup createdAt isArchived')
+        .select('type qTitle qIntro qDisclaimer pdfHelpText1 pdfHelpText2 qIcon qText qKey section options appliesToGroup multipleChildren includeInComparison createdAt isArchived')
         .lean(),
       NextQuestionRule.find()
         .select('qKey isDefault goToDefault notApplicableGoTo nextQuestions')

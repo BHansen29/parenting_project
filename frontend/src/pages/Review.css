@@ -169,7 +169,7 @@
 }
 
 .review__answer-key {
-  color: #6b7280;
+  color: var(--question-text-color, var(--text-color, #374151));
   flex-shrink: 0;
   max-width: 55%;
   word-break: break-word;
@@ -181,6 +181,11 @@
   flex-wrap: wrap;
   gap: 0.45rem;
   max-width: 55%;
+}
+@media (prefers-color-scheme: dark) {
+  .review__answer-key {
+    color: var(--question-text-color, var(--text-color, #d1d5db));
+  }
 }
 
 .review__answer-question .review__answer-key {
@@ -202,9 +207,20 @@
 }
 
 .review__answer-value {
-  color: #6b7280;
+  color: inherit;
   font-weight: 500;
   flex: 1;
+  text-align: right;
+}
+
+.review__child-answers {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.review__child-answer {
+  display: block;
   min-width: 0;
   text-align: right;
   overflow-wrap: anywhere;
@@ -368,6 +384,14 @@
   body {
     background: #fff;
     color: #111827;
+  }
+
+  body > #root {
+    display: none !important;
+  }
+
+  body > .form-designer__template-print {
+    display: block !important;
   }
 
   .page-container {

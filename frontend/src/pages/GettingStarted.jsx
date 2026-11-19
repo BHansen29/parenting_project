@@ -137,6 +137,7 @@ export default function GettingStarted() {
   );
   const courtCustodyOrderIssued = plan.courtCustodyOrderIssued ?? '';
   const custodyGrantedTo = plan.custodyGrantedTo ?? '';
+  const residentialParent = plan.residentialParent ?? '';
   const parentingGuideInfo = state?.parentingGuideInfo ?? '';
   const errors = formData.errors ?? {};
 
@@ -145,6 +146,7 @@ export default function GettingStarted() {
   const [caseFilingError, setCaseFilingError] = useState('');
   const [courtOrderError, setCourtOrderError] = useState('');
   const [custodyGrantedError, setCustodyGrantedError] = useState('');
+  const [residentialParentError, setResidentialParentError] = useState('');
   const [parentingGuideError, setParentingGuideError] = useState('');
 
   const caseFilingFlag = useSectionFlag('caseFilingStatus');
@@ -168,6 +170,7 @@ export default function GettingStarted() {
     setCaseFilingError('');
     setCourtOrderError('');
     setCustodyGrantedError('');
+    setResidentialParentError('');
     setParentingGuideError('');
     setChildren(prev => prev.map(c => ({ ...c, errors: {} })));
   }, []);
@@ -218,6 +221,7 @@ export default function GettingStarted() {
     }
     if (section === 'plan' && field === 'currentCircumstance') setCurrentCircumstanceError('');
     if (section === 'plan' && field === 'caseFilingStatus') setCaseFilingError('');
+    if (section === 'plan' && field === 'residentialParent') setResidentialParentError('');
   };
 
   const handleCourtOrderChange = (value) => {

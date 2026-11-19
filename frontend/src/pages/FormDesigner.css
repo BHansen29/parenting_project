@@ -51,6 +51,13 @@ display: block; color: #425057; }
 }
 .form-designer__block label { display: block; margin: 0.2rem 0; font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; }
 .form-designer__answer-value { padding: 0.55rem; background: #f9fafb; color: #374151; border-radius: 4px; min-height: 1.2rem; white-space: pre-wrap; }
+.form-designer__pdf-help-text {
+  margin: 0.35rem 0;
+  color: #4b5563;
+  font-size: 9pt;
+  line-height: 1.35;
+  white-space: pre-wrap;
+}
 .form-designer__schedule-calendar { width: 100%; min-width: 590px; margin-top: 0.5rem; padding: 1rem; box-sizing: border-box; background: #fff; border: 1.5px solid #e5e7eb; border-radius: 10px; overflow-x: auto; }
 .form-designer__schedule-weekday-header, .form-designer__schedule-week-row { display: grid; grid-template-columns: 58px repeat(7, minmax(68px, 1fr)); gap: 4px; margin-bottom: 4px; }
 .form-designer__schedule-weekday-header span, .form-designer__schedule-week-label { display: flex; align-items: center; justify-content: center; padding: 4px 2px; color: #6b7280; font-size: 0.68rem; font-weight: 600; }
