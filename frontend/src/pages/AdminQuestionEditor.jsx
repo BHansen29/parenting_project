@@ -32,8 +32,6 @@ const createDefaults = {
   qTitle: '',
   qIntro: '',
   qDisclaimer: '',
-  pdfHelpText1: '',
-  pdfHelpText2: '',
   qText: '',
   type: 'multiple choice',
   qIcon: 'scale-icon',
@@ -85,8 +83,6 @@ function normalizeQuestion(question) {
     qTitle: question.qTitle,
     qIntro: question.qIntro || '',
     qDisclaimer: question.qDisclaimer || '',
-    pdfHelpText1: question.pdfHelpText1 || '',
-    pdfHelpText2: question.pdfHelpText2 || '',
     qIcon: question.qIcon,
     qText: question.qText,
     section: question.section,
@@ -212,22 +208,6 @@ function QuestionPreview({ question, onChange }) {
           label="Disclaimer"
           value={question.qDisclaimer || ''}
           onChange={(value) => onChange('qDisclaimer', value)}
-          multiline
-          rows={2}
-          maxLength={5000}
-        />
-        <EditorField
-          label="Final PDF help text 1"
-          value={question.pdfHelpText1 || ''}
-          onChange={(value) => onChange('pdfHelpText1', value)}
-          multiline
-          rows={2}
-          maxLength={5000}
-        />
-        <EditorField
-          label="Final PDF help text 2"
-          value={question.pdfHelpText2 || ''}
-          onChange={(value) => onChange('pdfHelpText2', value)}
           multiline
           rows={2}
           maxLength={5000}

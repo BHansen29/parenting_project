@@ -48,14 +48,6 @@ const questionSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
-  pdfHelpText1: {
-    type: String,
-    default: ''
-  },
-  pdfHelpText2: {
-    type: String,
-    default: ''
-  },
   qIcon: {
     type: String,
     required: true,

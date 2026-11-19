@@ -11,8 +11,6 @@ const editableQuestionFields = [
   'qTitle',
   'qIntro',
   'qDisclaimer',
-  'pdfHelpText1',
-  'pdfHelpText2',
   'qIcon',
   'qText',
   'section',
@@ -81,7 +79,7 @@ function validateQuestionPayload(payload, allowedFields, { requireAll = false } 
     return 'Question key must use lowercase letters, numbers, and underscores';
   }
 
-  const textFields = ['type', 'qTitle', 'qIntro', 'qDisclaimer', 'pdfHelpText1', 'pdfHelpText2', 'qIcon', 'qText', 'section'];
+  const textFields = ['type', 'qTitle', 'qIntro', 'qDisclaimer', 'qIcon', 'qText', 'section'];
   if (textFields.some((field) =>
     Object.hasOwn(payload, field) && typeof payload[field] !== 'string'
   )) {
@@ -214,7 +212,7 @@ router.get('/questions', async (req, res) => {
   try {
     const [allQuestions, rules] = await Promise.all([
       Question.find()
-        .select('type qTitle qIntro qDisclaimer pdfHelpText1 pdfHelpText2 qIcon qText qKey section options appliesToGroup multipleChildren includeInComparison createdAt isArchived')
+        .select('type qTitle qIntro qDisclaimer qIcon qText qKey section options appliesToGroup multipleChildren includeInComparison createdAt isArchived')
         .lean(),
       NextQuestionRule.find()
         .select('qKey isDefault goToDefault notApplicableGoTo nextQuestions')

@@ -922,12 +922,6 @@ export function FormTemplatePrintDocument({
               <div className="form-designer__discussion-notice">Needs discussion</div>
             )}
             <div className="form-designer__print-text">{block.questionText}</div>
-            {question?.pdfHelpText1 && (
-              <div className="form-designer__pdf-help-text">{question.pdfHelpText1}</div>
-            )}
-            {question?.pdfHelpText2 && (
-              <div className="form-designer__pdf-help-text">{question.pdfHelpText2}</div>
-            )}
             {needsDiscussionKeys?.has(block.qKey) && response.parentAnswers ? (
               <div className="form-designer__discussion-answers">
                 {['parent1', 'parent2'].map((parent) => (
