@@ -16,6 +16,93 @@ const fields = [
   { key: 'education', label: 'Education' }
 ];
 
+const choiceLabels = {
+  collaborationMode: {
+    'locked-individual': 'Locked-individual',
+    collaborative: 'Collaborative',
+    individual: "Individual"
+  },
+  gender: {
+    'female/feminine': 'Female/Feminine',
+    'male/masculine': 'Male/Masculine',
+    other: 'Other',
+    prefer_not_to_answer: 'Prefer not to answer'
+  },
+  background: {
+    'hispanic/latino': 'Hispanic/Latino',
+    mena: 'MENA',
+    other: 'Not Hispanic/Latino, not MENA',
+    prefer_not_to_answer: 'Prefer not to answer/Unknown ethnicity'
+  },
+  race: {
+    african: 'African',
+    black: 'Black or African American',
+    american_indian: 'American Indian or Alaska Native',
+    asian: 'Asian or Asian American',
+    middle_eastern: 'Middle Eastern or North African',
+    pacific_islander: 'Pacific Islander or Native Hawaiian',
+    white: 'White or European American',
+    'bi-racial': 'Bi-racial',
+    multi_racial: 'Multiple races/Multi-racial',
+    other: 'Race not listed/Other',
+    prefer_not_to_answer: 'Prefer not to answer'
+  },
+  income: {
+    under_5k: 'Below $4,999',
+    under_10k: '$5,000-$9,999',
+    under_20k: '$10,000-$19,999',
+    under_40k: '$20,000-$39,999',
+    under_60k: '$40,000-$59,999',
+    under_80k: '$60,000-$79,999',
+    under_90k: '$80,000-$89,999',
+    under_100k: '$90,000-$99,999',
+    over_100k: 'Over $100,000',
+    prefer_not_to_answer: 'Prefer not to answer'
+  },
+  household: {
+    '1': '1 person',
+    '2': '2 person',
+    '3': '3 person',
+    '4': '4 person',
+    '5': '5 person',
+    '6': '6 person',
+    '7': '7 person',
+    '8': '8 person',
+    '9': '9 person',
+    over_10: '10+ person',
+    prefer_not_to_answer: 'Prefer not to answer'
+  },
+  language: {
+    amharic: 'Amharic',
+    arabic: 'Arabic',
+    asian: 'Asian and Pacific Islander languages',
+    english: 'English',
+    french: 'French',
+    haitian: 'Haitian Creole',
+    nepali: 'Nepali',
+    somali: 'Somali',
+    spanish: 'Spanish',
+    pashto: 'Pashto',
+    other: 'Other languages',
+    prefer_not_to_answer: 'Prefer not to answer'
+  },
+  education: {
+    none: 'No degree or diploma earned/Less than high school diploma',
+    high_school: 'High school or General Education Development (GED)',
+    trade: 'Trade/Vocational/Technical Certification/Child Development Associate (CDA)',
+    some_college: 'Some college, no degree',
+    associate: "Associate's degree",
+    bachelor: "Bachelor's degree",
+    master: "Master's degree",
+    phd: 'Doctorate or Professional degree',
+    prefer_not_to_answer: 'Prefer not to answer'
+  }
+};
+
+function formatChoiceLabel(fieldKey, value) {
+  return choiceLabels[fieldKey]?.[value] ?? value;
+}
+
 function formatExportValue(value) {
   if (Array.isArray(value)) return value.join(', ');
   return value ?? '';
@@ -84,7 +171,7 @@ export function exportAggregateData(users, summary) {
     Object.entries(summary.distributions[field.key].choices).forEach(([value, choice]) => {
       summaryRows.push([
         field.label,
-        value,
+        formatChoiceLabel(field.key, value),
         choice.count,
         `${choice.percentage}%`
       ]);
@@ -157,7 +244,12 @@ function DistributionCard({ field, distribution }) {
                   style={{ backgroundColor: chartColors[index % chartColors.length] }}
                   aria-hidden="true"
                 />
-                <span className="user-data__legend-label" title={value}>{value}</span>
+                <span
+                  className="user-data__legend-label"
+                  title={formatChoiceLabel(field.key, value)}
+                >
+                  {formatChoiceLabel(field.key, value)}
+                </span>
                 <span className="user-data__legend-count">
                   {choice.count}
                   <span className="user-data__legend-percent">{choice.percentage}%</span>
