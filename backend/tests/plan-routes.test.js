@@ -8,10 +8,18 @@ const planRoutePath = path.join(__dirname, '..', 'src', 'routes', 'plan.js');
 const planModelPath = path.join(__dirname, '..', 'src', 'models', 'Plan.js');
 const caseModelPath = path.join(__dirname, '..', 'src', 'models', 'Case.js');
 const questionModelPath = path.join(__dirname, '..', 'src', 'models', 'Question.js');
+const nextQuestionRulePath = path.join(__dirname, '..', 'src', 'models', 'NextQuestionRule.js');
+const questionNavigationPath = path.join(__dirname, '..', 'src', 'lib', 'question-navigation.js');
 const verifyTokenPath = path.join(__dirname, '..', 'src', 'middleware', 'verifyToken.js');
 
 // Loads the real plan router while mocking auth and Mongoose models for testing.
-function loadPlanRouter({ authUid = 'user-1', Plan = {}, Case = {}, Question = {} } = {}) {
+function loadPlanRouter({
+  authUid = 'user-1',
+  Plan = {},
+  Case = {},
+  Question = {},
+  NextQuestionRule = {},
+} = {}) {
   const originals = new Map();
 
   function mockModule(modulePath, exports) {
@@ -29,11 +37,13 @@ function loadPlanRouter({ authUid = 'user-1', Plan = {}, Case = {}, Question = {
   mockModule(planModelPath, Plan);
   mockModule(caseModelPath, Case);
   mockModule(questionModelPath, Question);
+  mockModule(nextQuestionRulePath, NextQuestionRule);
   mockModule(verifyTokenPath, (req, res, next) => {
     req.user = { uid: authUid };
     next();
   });
 
+  delete require.cache[require.resolve(questionNavigationPath)];
   const resolvedRoute = require.resolve(planRoutePath);
   delete require.cache[resolvedRoute];
   const router = require(planRoutePath);
@@ -42,6 +52,7 @@ function loadPlanRouter({ authUid = 'user-1', Plan = {}, Case = {}, Question = {
     router,
     restore() {
       delete require.cache[resolvedRoute]; // deletes the fake data
+      delete require.cache[require.resolve(questionNavigationPath)];
       for (const [resolved, original] of originals.entries()) {
         if (original) {
           require.cache[resolved] = original;
@@ -131,7 +142,14 @@ test('POST /api/plan creates a plan for the authenticated user', async (t) => {
   // verify that all of the calls return the correct response
   assert.equal(response.status, 201);
   assert.deepEqual(createPayload, { userID: 'user-1' });
-  assert.deepEqual(casePayload, { parent1Uid: 'user-1', parent1PlanId: 'plan-1' });
+  assert.deepEqual(casePayload, {
+    parent1Uid: 'user-1',
+    parent1PlanId: 'plan-1',
+    parent1Address: '',
+    parent1City: '',
+    parent1State: '',
+    parent1ZipCode: '',
+  });
   assert.equal(createdPlan.caseId, 'case-1');
   assert.equal(saved, true);
   assert.equal(json.userID, 'user-1');
@@ -297,6 +315,67 @@ test('POST /api/plan/:planId/answer preserves later answers when an earlier answ
   assert.deepEqual(json.answers, plan.answers);
 });
 
+test('GET /api/plan/prevQuestion follows the active branch instead of answer save order', async (t) => {
+  const plan = {
+    userID: 'user-1',
+    currentCircumstance: 'married',
+    answers: [
+      { qKey: 'allocation_parental_rights', answer: 'not-married' },
+      { qKey: 'old_branch_question', answer: 'yes' },
+    ],
+  };
+  const questions = {
+    allocation_parental_rights: {
+      qKey: 'allocation_parental_rights',
+      section: 'parental-rights',
+    },
+    old_branch_question: {
+      qKey: 'old_branch_question',
+      section: 'parental-rights',
+    },
+    active_branch_question: {
+      qKey: 'active_branch_question',
+      section: 'parental-rights',
+    },
+  };
+  const rules = {
+    allocation_parental_rights: {
+      isDefault: false,
+      nextQuestions: [
+        { operator: 'eq', value: 'not-married', goTo: 'active_branch_question' },
+        { operator: 'eq', value: 'married', goTo: 'old_branch_question' },
+      ],
+    },
+  };
+  const server = await createTestServer({
+    Plan: {
+      async findById() {
+        return plan;
+      },
+    },
+    Question: {
+      async findOne({ qKey }) {
+        return questions[qKey] ?? null;
+      },
+    },
+    NextQuestionRule: {
+      async findOne({ qKey }) {
+        return rules[qKey] ?? null;
+      },
+    },
+  });
+
+  t.after(() => server.close());
+
+  const { response, json } = await requestJson(
+    server.baseUrl,
+    '/api/plan/prevQuestion/active_branch_question/plan-1',
+  );
+
+  assert.equal(response.status, 200);
+  assert.equal(json.qKey, 'allocation_parental_rights');
+});
+
 // Test 7: Update current question
 test('POST /api/plan/updateCurrent/:planId/:currQId updates the current question', async (t) => {
   let saved = false;
@@ -332,15 +411,19 @@ test('POST /api/plan/updateCurrent/:planId/:currQId updates the current question
   assert.deepEqual(json, { message: 'Plan updated successfully' });
 });
 
-// Test 8: Save contact information
-test('POST /api/plan/:planId/contact saves phone and address', async (t) => {
+// Test 8: Save parent contact information
+test('POST /api/plan/:planId/information saves parent contact information', async (t) => {
   let saved = false;
 
   const plan = {
     _id: 'plan-1',
     userID: 'user-1',
     phoneNumber: '',
-    address: '',
+    streetAddress: '',
+    addressLine2: '',
+    city: '',
+    state: '',
+    zipCode: '',
     async save() {
       saved = true;
     },
@@ -358,11 +441,17 @@ test('POST /api/plan/:planId/contact saves phone and address', async (t) => {
   t.after(() => server.close());
 
   const payload = {
+    parentFName: 'Sam',
+    parentLName: 'Parent',
     phone: '614-555-0101',
-    address: '123 Main St, Columbus, OH',
+    streetAddress: '123 Main St',
+    addressLine2: 'Apartment 2',
+    city: 'Columbus',
+    state: 'OH',
+    zipCode: '43215',
   };
 
-  const { response, json } = await requestJson(server.baseUrl, '/api/plan/plan-1/contact', {
+  const { response, json } = await requestJson(server.baseUrl, '/api/plan/plan-1/information', {
     method: 'POST',
     body: payload,
   });
@@ -370,9 +459,15 @@ test('POST /api/plan/:planId/contact saves phone and address', async (t) => {
   assert.equal(response.status, 201);
   assert.equal(saved, true);
   assert.equal(plan.phoneNumber, payload.phone);
-  assert.equal(plan.address, payload.address);
+  assert.equal(plan.parentFName, payload.parentFName);
+  assert.equal(plan.parentLName, payload.parentLName);
+  assert.equal(plan.streetAddress, payload.streetAddress);
+  assert.equal(plan.addressLine2, payload.addressLine2);
+  assert.equal(plan.city, payload.city);
+  assert.equal(plan.state, payload.state);
+  assert.equal(plan.zipCode, payload.zipCode);
   assert.equal(json.phoneNumber, payload.phone);
-  assert.equal(json.address, payload.address);
+  assert.equal(json.streetAddress, payload.streetAddress);
 });
 
 test('POST /api/plan/:planId/information saves aggregate demographic responses', async (t) => {

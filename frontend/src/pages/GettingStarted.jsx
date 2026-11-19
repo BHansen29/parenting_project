@@ -137,6 +137,7 @@ export default function GettingStarted() {
   );
   const courtCustodyOrderIssued = plan.courtCustodyOrderIssued ?? '';
   const custodyGrantedTo = plan.custodyGrantedTo ?? '';
+  const residentialParent = plan.residentialParent ?? '';
   const parentingGuideInfo = state?.parentingGuideInfo ?? '';
   const errors = formData.errors ?? {};
 
@@ -719,7 +720,6 @@ const handleChildChange = (childKey, field) => (value) => {
                 name="residentialParent"
                 value={residentialParent}
                 onChange={handleFormChange('plan', 'residentialParent')}
-                error={residentialParentError}
                 options={[
                   { value: 'yes',   label: 'Yes, I am the residential parent' },
                   { value: 'no',    label: 'No, I am not' }

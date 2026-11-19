@@ -6,6 +6,7 @@ const Question = require('../models/Question');
 const User = require('../models/User');
 const verifyToken = require('../middleware/verifyToken');
 const { getFirstName } = require('../utils/nameUtils');
+const { findPreviousQuestion } = require('../lib/question-navigation');
 
 function getCircumstanceGroup(currentCircumstance) {
   if (currentCircumstance === 'married') return 'married';
@@ -287,18 +288,12 @@ router.get('/prevQuestion/:qkey/:planId', verifyToken, async (req, res) => {
     if (!plan || plan.userID !== req.user.uid) {
       return res.status(403).json({ error: 'Forbidden' });
     }
-    let index = plan.answers.findIndex(userAnswer => userAnswer.qKey === qKey)
-    if (index < 0) {
-      // If the current question has not been answered yet, use the most recent answer.
-      index = plan.answers.length
-    }
-    const previousKey = index > 0 ? plan.answers[index - 1].qKey : undefined;
-
-    const prevQuestion = previousKey
-      ? await Question.findOne({ qKey: previousKey })
-      : "none";
-    return res.status(200).json(prevQuestion)
+    const previousQuestion = await findPreviousQuestion(plan, qKey);
+    return res.status(200).json(previousQuestion ?? 'none');
   } catch (error) {
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     console.error(error);
     res.status(500).json({ error: 'Internal server error' });
   }
