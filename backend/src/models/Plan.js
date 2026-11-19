@@ -197,6 +197,6 @@ const planSchema = new mongoose.Schema(
   },
   answers: [questionResponseSchema],
   children: [childSchema]
-})
+}, { timestamps: true });
 
 module.exports = mongoose.model('Plan', planSchema);

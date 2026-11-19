@@ -41,6 +41,49 @@
   color: #64748b;
 }
 
+.user-data__date-filters {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.user-data__date-filters label {
+  display: flex;
+  min-width: 150px;
+  flex-direction: column;
+  gap: 0.4rem;
+  color: #475569;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.user-data__date-filters input {
+  min-height: 2.5rem;
+  padding: 0.4rem 0.65rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  color: #172033;
+  background: #fff;
+  font: inherit;
+}
+
+.user-data__date-filters button {
+  min-height: 2.5rem;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  color: #334155;
+  background: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.user-data__date-filters button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .user-data__metrics {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

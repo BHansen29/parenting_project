@@ -117,6 +117,25 @@ function formatExportValue(value, fieldKey) {
   return value ?? '';
 }
 
+function getUtcDateKey(createdAt) {
+  if (!createdAt) return null;
+  const date = new Date(createdAt);
+  if (Number.isNaN(date.getTime())) return null;
+
+  return date.toISOString().slice(0, 10);
+}
+
+function filterUsersByDateRange(users, startDate, endDate) {
+  if (!startDate && !endDate) return users;
+
+  return users.filter((user) => {
+    const createdDate = getUtcDateKey(user.createdAt);
+    return createdDate !== null
+      && (!startDate || createdDate >= startDate)
+      && (!endDate || createdDate <= endDate);
+  });
+}
+
 export function summarizeUsers(users) {
   const ages = users
     .map((user) => user.parentAge === null || user.parentAge === undefined || user.parentAge === ''
@@ -188,6 +207,7 @@ export function exportAggregateData(users, summary) {
   });
 
   const responseRows = users.map((user) => Object.fromEntries([
+    ['Plan created (UTC)', user.createdAt ? new Date(user.createdAt).toISOString() : ''],
     ['Parent age', formatExportValue(user.parentAge)],
     ...fields.map((field) => [
       field.label,
@@ -288,6 +308,8 @@ const chartColors = [
 
 export default function UserData({ onDataLoaded }) {
   const [users, setUsers] = useState(null);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -342,7 +364,15 @@ export default function UserData({ onDataLoaded }) {
     return <main className="user-data" aria-busy="true"><p>Loading aggregate data...</p></main>;
   }
 
-  const summary = summarizeUsers(users);
+  const filteredUsers = filterUsersByDateRange(users, startDate, endDate);
+  const summary = summarizeUsers(filteredUsers);
+
+  const handleDateRangeChange = (nextStartDate, nextEndDate) => {
+    setStartDate(nextStartDate);
+    setEndDate(nextEndDate);
+    const nextUsers = filterUsersByDateRange(users, nextStartDate, nextEndDate);
+    onDataLoaded?.(nextUsers, summarizeUsers(nextUsers));
+  };
 
   return (
     <main className="user-data">
@@ -351,6 +381,33 @@ export default function UserData({ onDataLoaded }) {
           <p className="user-data__eyebrow">Community overview</p>
           <h1>Aggregate data dashboard</h1>
           <p>Explore the demographics and preferences represented in parenting plans.</p>
+        </div>
+        <div className="user-data__date-filters" role="group" aria-label="Filter by plan creation date">
+          <label>
+            <span>From (UTC)</span>
+            <input
+              type="date"
+              value={startDate}
+              max={endDate || undefined}
+              onChange={(event) => handleDateRangeChange(event.target.value, endDate)}
+            />
+          </label>
+          <label>
+            <span>Through (UTC)</span>
+            <input
+              type="date"
+              value={endDate}
+              min={startDate || undefined}
+              onChange={(event) => handleDateRangeChange(startDate, event.target.value)}
+            />
+          </label>
+          <button
+            type="button"
+            disabled={!startDate && !endDate}
+            onClick={() => handleDateRangeChange('', '')}
+          >
+            Clear dates
+          </button>
         </div>
       </header>
 
