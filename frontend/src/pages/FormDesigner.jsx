@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ArrowDown, ArrowLeft, ArrowUp, GripVertical, Plus, Printer, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -1423,7 +1424,7 @@ export default function FormDesigner() {
         </div>
       </div>
     </div>
-    {isPrinting && (
+    {isPrinting && createPortal(
       <FormTemplatePrintDocument
         template={template}
         answersByKey={currentAnswersByKey}
@@ -1439,7 +1440,8 @@ export default function FormDesigner() {
                 : null
         }
         showUnanswered
-      />
+      />,
+      document.body,
     )}
     </>
   );
