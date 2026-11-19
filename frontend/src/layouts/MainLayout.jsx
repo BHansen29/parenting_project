@@ -13,6 +13,7 @@ import { useNavigation } from '../context/NavigationContext';
 export default function Layout({ children }) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [navigationError, setNavigationError] = useState('');
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -358,6 +359,7 @@ export default function Layout({ children }) {
     useLayoutEffect(() => {
       setOnNext(null);
       setOnBack(null);
+      setNavigationError('');
     }, [location.pathname, setOnNext, setOnBack]);
 
   const handleNext = async () => {
@@ -382,6 +384,25 @@ export default function Layout({ children }) {
       return;
     }
     try {
+      setNavigationError('');
+      if (pageOnNext) {
+        const pageValidationResult = await pageOnNext();
+        if (pageValidationResult !== true) return;
+      }
+      const hasValidQuestionAnswer = q?.type === 'text input'
+          ? String(answer ?? '').trim().length > 0
+          : q?.options && q.options.findIndex(qAnswer => qAnswer.value === answer) >= 0;
+      if (pageOrder[currentPageIndex] !== '/getting-started' && !hasValidQuestionAnswer) {
+        setNavigationError('Please answer this question before continuing.');
+        return;
+      }
+      if (!user) {
+        throw new Error('Your sign-in is still loading. Please try again in a moment.');
+      }
+      if (!plan?._id) {
+        throw new Error('No plan is loaded. Return to the dashboard and reopen the plan.');
+      }
+
       const idToken = await user.getIdToken();
       const isGettingStarted = pageOrder[currentPageIndex] === '/getting-started';
       if (isGettingStarted) {
@@ -424,6 +445,9 @@ export default function Layout({ children }) {
       navigate(`/${data.section}`);
     } catch (e) {
       console.error('Could not navigate to the next question:', e);
+      setNavigationError(
+        e instanceof Error ? e.message : 'Could not move to the next question. Please try again.'
+      );
     }
   };
 
@@ -463,6 +487,11 @@ export default function Layout({ children }) {
         )}
 
         <main className="layout__content">
+          {navigationError && (
+            <p className="layout__navigation-error" role="alert">
+              {navigationError}
+            </p>
+          )}
           {children}
         </main>
 

@@ -241,10 +241,11 @@ router.get(
     try {
       const plans = await Plan.find(
         {},
-        'parentAge zipCode collaborationMode aggregateData'
+        'parentAge zipCode collaborationMode aggregateData createdAt'
       ).lean();
 
       res.json(plans.map((plan) => ({
+        createdAt: plan.createdAt ?? plan._id?.getTimestamp?.() ?? null,
         parentAge: plan.parentAge ?? null,
         zipCode: plan.zipCode ?? null,
         collaborationMode: plan.collaborationMode ?? null,
