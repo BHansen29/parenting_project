@@ -103,8 +103,17 @@ function formatChoiceLabel(fieldKey, value) {
   return choiceLabels[fieldKey]?.[value] ?? value;
 }
 
-function formatExportValue(value) {
-  if (Array.isArray(value)) return value.join(', ');
+function formatExportValue(value, fieldKey) {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => item === null || item === undefined
+        ? ''
+        : formatChoiceLabel(fieldKey, String(item)))
+      .join(', ');
+  }
+  if (fieldKey && value !== null && value !== undefined) {
+    return formatChoiceLabel(fieldKey, String(value));
+  }
   return value ?? '';
 }
 
@@ -180,7 +189,10 @@ export function exportAggregateData(users, summary) {
 
   const responseRows = users.map((user) => Object.fromEntries([
     ['Parent age', formatExportValue(user.parentAge)],
-    ...fields.map((field) => [field.label, formatExportValue(user[field.key])])
+    ...fields.map((field) => [
+      field.label,
+      formatExportValue(user[field.key], field.key)
+    ])
   ]));
 
   const workbook = XLSX.utils.book_new();
