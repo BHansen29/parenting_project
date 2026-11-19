@@ -8,6 +8,7 @@ import HolidaySchedule, { getHolidayNames } from '../components/forms/HolidaySch
 import PolicyAgreementQuestion from '../components/forms/PolicyAgreementQuestion';
 import RadioQuestion from '../components/forms/RadioQuestion';
 import ScheduleBuilder from '../components/forms/ScheduleBuilder';
+import { getIncompleteScheduleSlots } from '../components/forms/scheduleTemplates';
 import SchoolSchedule, { SCHOOL_BREAKS, SCHOOL_DAY_OPTIONS } from '../components/forms/SchoolSchedule';
 import SectionHeader from '../components/forms/SectionHeader';
 import { useNavigation } from '../context/NavigationContext';
@@ -231,6 +232,20 @@ export default function ParentingTimeAndCommunication() {
     const validateForm = () => {
         let isValid = true;
         const formErrors = {};
+
+        const schedulesToValidate = scheduleScope === 'later'
+            ? []
+            : scheduleScope === 'byChild'
+                ? Object.values(formData.parentingSchedulesByChild || {})
+                : [formData.parentingSchedule];
+        const incompleteScheduleCount = schedulesToValidate.reduce(
+            (count, schedule) => count + getIncompleteScheduleSlots(schedule).length,
+            0,
+        );
+        if (incompleteScheduleCount > 0) {
+            formErrors.parentingSchedule = 'Please enter a start and end time for every split visit in the parenting schedule before continuing.';
+            isValid = false;
+        }
 
         // Transportation: must agree OR provide description
         if (!formData.agreeToTransportationPolicy && !formData.transportationArrangementDescription?.trim()) {
