@@ -90,7 +90,13 @@ function toPlanAnswerMap(plan, parentRole) {
 
   const legacyUserRole = plan.userRole ?? '';
   const currentCircumstance = plan.currentCircumstance || (
-    ['married', 'never_married_seeking_custody', 'never_married_seeking_parenting_time']
+    [
+      'married',
+      'married_seeking_custody',
+      'married_seeking_parenting_time',
+      'never_married_seeking_custody',
+      'never_married_seeking_parenting_time',
+    ]
       .includes(legacyUserRole)
       ? legacyUserRole
       : ''

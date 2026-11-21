@@ -52,6 +52,8 @@ router.post('/nextQuestionWithContext', verifyToken, async (req, res) => {
     const currentCircumstance = plan.currentCircumstance || (
       [
         'married',
+        'married_seeking_custody',
+        'married_seeking_parenting_time',
         'never_married_seeking_custody',
         'never_married_seeking_parenting_time',
       ].includes(legacyCircumstance)

@@ -548,3 +548,37 @@ test('changing circumstance groups removes only answers that no longer apply', a
     ['not_married_question', 'shared_question'],
   );
 });
+
+test('changing between married circumstances preserves answers in the married group', async (t) => {
+  const plan = {
+    userID: 'user-1',
+    currentCircumstance: 'married_seeking_custody',
+    answers: [
+      { qKey: 'married_question', answer: 'yes' },
+      { qKey: 'not_married_question', answer: 'no' },
+      { qKey: 'shared_question', answer: 'yes' },
+    ],
+    async save() {},
+  };
+  const server = await createTestServer({
+    Plan: { findById: async () => plan },
+    Question: {
+      find: () => {
+        assert.fail('Answers should not be cleaned up when the group remains married');
+      },
+    },
+  });
+  t.after(() => server.close());
+
+  const result = await requestJson(server.baseUrl, '/api/plan/plan-1/information', {
+    method: 'POST',
+    body: { currentCircumstance: 'married_seeking_parenting_time' },
+  });
+
+  assert.equal(result.response.status, 201);
+  assert.equal(plan.currentCircumstance, 'married_seeking_parenting_time');
+  assert.deepEqual(
+    plan.answers.map(({ qKey }) => qKey),
+    ['married_question', 'not_married_question', 'shared_question'],
+  );
+});

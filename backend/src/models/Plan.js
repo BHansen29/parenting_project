@@ -134,6 +134,8 @@ const planSchema = new mongoose.Schema(
     type: String,
     enum: [
       'married',
+      'married_seeking_custody',
+      'married_seeking_parenting_time',
       'never_married_seeking_custody',
       'never_married_seeking_parenting_time',
       ''
