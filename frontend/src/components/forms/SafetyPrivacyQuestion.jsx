@@ -65,8 +65,7 @@ export default function SafetyPrivacyQuestion({ collaborationMode, onModeChange,
       </p>
 
       <Disclaimer variant="info">
-        Your address, contact information, and childcare preferences will be shared with your
-        co-parent if you select the collaborative mode.
+        Your address, contact information, and childcare preferences will be shared with your co-parent if you choose to collaborate with your co-parent.
       </Disclaimer>
 
       <div className="radio-group">
