@@ -34,7 +34,7 @@ const fillValidForm = async () => {
   await userEvent.type(document.querySelector('#firstParentLastName'), 'Doe')
   await userEvent.type(document.querySelector('#firstParentPhone'), '555-555-5555')
   await userEvent.type(document.querySelector('#firstParentAddress'), '123 Main St, Columbus, OH 43215')
-  await userEvent.click(document.querySelector('input[name="currentCircumstance"][value="married"]'))
+  await userEvent.click(document.querySelector('input[name="currentCircumstance"][value="married_seeking_custody"]'))
   await userEvent.click(document.querySelector('input[name="caseFilingStatus"][value="parent1/petitioner1/plaintiff"]'))
   await userEvent.click(document.querySelector('input[name="courtCustodyOrderIssued"][value="no"]'))
   await userEvent.type(document.querySelector('#child-1-firstName'), 'Alex')
@@ -63,6 +63,20 @@ describe('GettingStarted', () => {
   it('displays the page description', () => {
     renderWithRouter(<GettingStarted />)
     expect(screen.getByText(/Let's start by gathering some basic information/i)).toBeInTheDocument()
+  })
+
+  it('offers the four current circumstance choices', () => {
+    renderWithRouter(<GettingStarted />)
+
+    expect(
+      [...document.querySelectorAll('input[name="currentCircumstance"]')]
+        .map((input) => input.value),
+    ).toEqual([
+      'married_seeking_parenting_time',
+      'married_seeking_custody',
+      'never_married_seeking_custody',
+      'never_married_seeking_parenting_time',
+    ])
   })
 
   it('displays the required fields note', () => {

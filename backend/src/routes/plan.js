@@ -7,17 +7,7 @@ const User = require('../models/User');
 const verifyToken = require('../middleware/verifyToken');
 const { getFirstName } = require('../utils/nameUtils');
 const { findPreviousQuestion } = require('../lib/question-navigation');
-
-function getCircumstanceGroup(currentCircumstance) {
-  if (currentCircumstance === 'married') return 'married';
-  if ([
-    'never_married_seeking_custody',
-    'never_married_seeking_parenting_time',
-  ].includes(currentCircumstance)) {
-    return 'not_married';
-  }
-  return null;
-}
+const { getCircumstanceGroup } = require('../lib/circumstance-group');
 
 // POST /api/plan - Start a new plan
 // Optional body: { caseId } — when provided (co-parent accept flow), the new plan
@@ -67,7 +57,13 @@ router.post('/', verifyToken, async (req, res) => {
           };
           const legacyUserRole = p1Plan?.userRole ?? '';
           const parent1CurrentCircumstance = p1Plan?.currentCircumstance || (
-            ['married', 'never_married_seeking_custody', 'never_married_seeking_parenting_time']
+            [
+              'married',
+              'married_seeking_custody',
+              'married_seeking_parenting_time',
+              'never_married_seeking_custody',
+              'never_married_seeking_parenting_time',
+            ]
               .includes(legacyUserRole)
               ? legacyUserRole
               : ''

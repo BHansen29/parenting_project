@@ -31,6 +31,8 @@ export const CUSTOM_COMPARISON_QUESTIONS = {
     qText: 'Which situation fits your current circumstance?',
     options: [
       { value: 'married', label: 'I am going through the process of a divorce, dissolution of marriage, or legal separation.' },
+      { value: 'married_seeking_parenting_time', label: 'I am going through the process of a divorce, dissolution of marriage, or legal separation, and I want shared parenting time with my coparent.' },
+      { value: 'married_seeking_custody', label: 'I am going through the process of a divorce, dissolution of marriage, or legal separation, and I have or am seeking legal custody of our child(ren).' },
       { value: 'never_married_seeking_custody', label: 'I was never married to my co-parent, and I have or am seeking legal custody of our child(ren).' },
       { value: 'never_married_seeking_parenting_time', label: 'I was never married to my co-parent, and I want to establish parenting time with our child(ren).' },
     ],

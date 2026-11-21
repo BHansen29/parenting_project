@@ -21,7 +21,7 @@ function mockModule(modulePath, exports, originals) {
   };
 }
 
-test('context-aware navigation skips questions outside the married group', async (t) => {
+test('context-aware navigation uses the married group for both married circumstances', async (t) => {
   const originals = new Map();
   let currentCircumstance = 'married';
   const marriedQuestionRule = {
@@ -124,6 +124,16 @@ test('context-aware navigation skips questions outside the married group', async
   );
   assert.equal(legacyResponse.status, 200);
   assert.equal((await legacyResponse.json()).qKey, 'shared_question');
+
+  for (const circumstance of [
+    'married_seeking_custody',
+    'married_seeking_parenting_time',
+  ]) {
+    currentCircumstance = circumstance;
+    result = await resolveStartQuestion();
+    assert.equal(result.response.status, 200);
+    assert.equal(result.body.qKey, 'married_question');
+  }
 
   for (const circumstance of [
     'never_married_seeking_custody',

@@ -1,17 +1,7 @@
 const Question = require('../models/Question');
 const NextQuestionRule = require('../models/NextQuestionRule');
 const questionLogicHandler = require('./question-logic-handler');
-
-function getCircumstanceGroup(currentCircumstance) {
-  if (currentCircumstance === 'married') return 'married';
-  if ([
-    'never_married_seeking_custody',
-    'never_married_seeking_parenting_time',
-  ].includes(currentCircumstance)) {
-    return 'not_married';
-  }
-  return null;
-}
+const { getCircumstanceGroup } = require('./circumstance-group');
 
 function navigationError(message, statusCode) {
   const error = new Error(message);
@@ -79,6 +69,8 @@ async function findPreviousQuestion(plan, targetQKey) {
   const currentCircumstance = plan.currentCircumstance || (
     [
       'married',
+      'married_seeking_custody',
+      'married_seeking_parenting_time',
       'never_married_seeking_custody',
       'never_married_seeking_parenting_time',
     ].includes(plan.userRole)

@@ -119,12 +119,21 @@ export default function GettingStarted() {
   const aggregateData = plan.aggregateData ?? {};
   const collaborationMode = plan.collaborationMode ?? '';
   const legacyUserRole = plan.userRole ?? '';
-  const currentCircumstance = plan.currentCircumstance || (
-    ['married', 'never_married_seeking_custody', 'never_married_seeking_parenting_time']
+  const savedCurrentCircumstance = plan.currentCircumstance || (
+    [
+      'married',
+      'married_seeking_custody',
+      'married_seeking_parenting_time',
+      'never_married_seeking_custody',
+      'never_married_seeking_parenting_time',
+    ]
       .includes(legacyUserRole)
       ? legacyUserRole
       : ''
   );
+  const currentCircumstance = savedCurrentCircumstance === 'married'
+    ? ''
+    : savedCurrentCircumstance;
   const caseFilingStatus = plan.caseFilingStatus || (
     [
       'parent1/petitioner1/plaintiff',
@@ -787,7 +796,8 @@ const handleChildChange = (childKey, field) => (value) => {
                 onChange={handleFormChange('plan', 'currentCircumstance')}
                 error={currentCircumstanceError}
                 options={[
-                  { value: 'married', label: 'I am going through the process of a divorce, dissolution of marriage, or legal separation.' },
+                  { value: 'married_seeking_parenting_time', label: 'I am going through the process of a divorce, dissolution of marriage, or legal separation, and I want shared parenting time with my coparent.' },
+                  { value: 'married_seeking_custody', label: 'I am going through the process of a divorce, dissolution of marriage, or legal separation, and I have or am seeking legal custody of our child(ren).' },
                   { value: 'never_married_seeking_custody', label: 'I was never married to my co-parent, and I have or am seeking legal custody of our child(ren).'},
                   { value: 'never_married_seeking_parenting_time', label: 'I was never married to my co-parent, and I want to establish parenting time with our child(ren).' },
                 ]}
