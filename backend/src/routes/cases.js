@@ -151,8 +151,8 @@ router.get('/:caseId/status', verifyToken, async (req, res) => {
 
     // Gets parents names for comparison tool understanding
     const [plan1, plan2, parent1, parent2] = await Promise.all([
-      parentingCase.parent1PlanId ? Plan.findById(parentingCase.parent1PlanId, 'parentFName parentLName streetAddress city state zipCode children userRole') : null,
-      parentingCase.parent2PlanId ? Plan.findById(parentingCase.parent2PlanId, 'parentFName parentLName streetAddress city state zipCode children userRole') : null,
+      parentingCase.parent1PlanId ? Plan.findById(parentingCase.parent1PlanId, 'parentFName parentLName streetAddress city state zipCode children userRole currentCircumstance') : null,
+      parentingCase.parent2PlanId ? Plan.findById(parentingCase.parent2PlanId, 'parentFName parentLName streetAddress city state zipCode children userRole currentCircumstance') : null,
       User.findOne({ firebaseUid: parentingCase.parent1Uid }, 'name email'),
       parentingCase.parent2Uid
         ? User.findOne({ firebaseUid: parentingCase.parent2Uid }, 'name email')
@@ -169,6 +169,9 @@ router.get('/:caseId/status', verifyToken, async (req, res) => {
       status: parentingCase.status,
       isParent1: parentingCase.parent1Uid === req.user.uid,
       userRole: parentingCase.parent1Uid === req.user.uid ? plan1?.userRole : plan2?.userRole,
+      currentCircumstance: parentingCase.parent1Uid === req.user.uid
+        ? (plan1?.currentCircumstance || '')
+        : (plan2?.currentCircumstance || ''),
       parent1Name: displayName(parentingCase.parent1Name, plan1, parent1, 'Parent 1'),
       parent2Name: parentingCase.parent2Uid
         ? displayName(parentingCase.parent2Name, plan2, parent2, 'Co-parent')

@@ -11,7 +11,7 @@ const blockSchema = new mongoose.Schema({
 const standardFormTemplateSchema = new mongoose.Schema({
   format: {
     type: String,
-    enum: ['review', 'comparison'],
+    enum: ['form20', 'form21'],
     required: true,
     unique: true,
   },

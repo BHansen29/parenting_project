@@ -12,13 +12,13 @@ import './FormDesigner.css';
 
 const STORAGE_KEY = 'shareCareFormTemplate';
 const TEMPLATE_FORMATS = {
-  review: {
-    label: 'Review PDF',
-    title: 'Parenting Plan Questionnaire Responses',
+  form20: {
+    label: 'Form 20',
+    title: 'Ohio Form 20 Parenting Plan',
   },
-  comparison: {
-    label: 'Comparison PDF',
-    title: 'Merged Parenting Plan Responses',
+  form21: {
+    label: 'Form 21',
+    title: 'Ohio Form 21 Parenting Plan',
   },
 };
 const WEEK_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -841,8 +841,7 @@ function normalizeTemplate(saved, format) {
 export function loadTemplate(format) {
   try {
     const saved = JSON.parse(
-      localStorage.getItem(templateStorageKey(format)) ||
-      (format === 'review' ? localStorage.getItem(STORAGE_KEY) : null),
+      localStorage.getItem(templateStorageKey(format)),
     );
     return normalizeTemplate(saved, format);
   } catch {
@@ -871,6 +870,19 @@ export function standardTemplate(format, answersByKey, questions) {
     layout: 'blank',
     blocks,
   };
+}
+
+export function isMarriedSeekingParentingTime(circumstance) {
+  const value = typeof circumstance === 'object' && circumstance !== null
+    ? (circumstance.currentCircumstance
+      || circumstance['getting-started.currentCircumstance']
+      || circumstance.currentCircumstance)
+    : circumstance;
+  return value === 'married_seeking_parenting_time';
+}
+
+export function printTemplateFormat(defaultFormat, circumstance) {
+  return isMarriedSeekingParentingTime(circumstance) ? 'form20' : 'form21';
 }
 
 export async function fetchStandardTemplate(format) {
@@ -965,14 +977,14 @@ export default function FormDesigner() {
   const { state } = useForm();
   const navigate = useNavigate();
   const [questions, setQuestions] = useState({});
-  const [selectedFormat, setSelectedFormat] = useState('review');
-  const [template, setTemplate] = useState(() => loadTemplate('review'));
+  const [selectedFormat, setSelectedFormat] = useState('form20');
+  const [template, setTemplate] = useState(() => loadTemplate('form20'));
   const [caseParentNames, setCaseParentNames] = useState({});
   const [isPrinting, setIsPrinting] = useState(false);
   const [standardStatus, setStandardStatus] = useState('');
   const [seededFormats, setSeededFormats] = useState(() => ({
-    review: Boolean(localStorage.getItem(templateStorageKey('review')) || localStorage.getItem(STORAGE_KEY)),
-    comparison: Boolean(localStorage.getItem(templateStorageKey('comparison'))),
+    form20: Boolean(localStorage.getItem(templateStorageKey('form20'))),
+    form21: Boolean(localStorage.getItem(templateStorageKey('form21'))),
   }));
   const [draggedToken, setDraggedToken] = useState(null);
   const [selectedPalettePage, setSelectedPalettePage] = useState('Getting Started');
@@ -1085,9 +1097,6 @@ export default function FormDesigner() {
 
   useEffect(() => {
     localStorage.setItem(templateStorageKey(selectedFormat), JSON.stringify(template));
-    if (selectedFormat === 'review') {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(template));
-    }
   }, [selectedFormat, template]);
 
   const allAnswers = useMemo(

@@ -34,9 +34,11 @@ describe('FormDesigner', () => {
     renderWithRouter(<FormDesigner />)
 
     expect(screen.getByRole('heading', { name: 'Form Designer' })).toBeInTheDocument()
-    expect(screen.getByLabelText('Document title')).toHaveValue('Parenting Plan Questionnaire Responses')
-    expect(screen.getByRole('option', { name: 'Review PDF' })).toBeInTheDocument()
-    expect(screen.getByRole('option', { name: 'Comparison PDF' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Document title')).toHaveValue('Ohio Form 20 Parenting Plan')
+    expect(screen.getByRole('option', { name: 'Form 20' })).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: 'Form 21' })).toBeInTheDocument()
+    expect(screen.queryByRole('option', { name: 'Review PDF' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('option', { name: 'Comparison PDF' })).not.toBeInTheDocument()
     await waitFor(() => expect(fetch).toHaveBeenCalledWith(
       expect.stringContaining('/api/logic-engine/questions'),
     ))
@@ -48,8 +50,8 @@ describe('FormDesigner', () => {
     await userEvent.click(screen.getByRole('button', { name: /add section heading/i }))
     expect(screen.getAllByRole('textbox').length).toBeGreaterThan(1)
 
-    await userEvent.selectOptions(screen.getByLabelText('PDF format'), 'comparison')
-    expect(screen.getByLabelText('Document title')).toHaveValue('Merged Parenting Plan Responses')
+    await userEvent.selectOptions(screen.getByLabelText('PDF format'), 'form21')
+    expect(screen.getByLabelText('Document title')).toHaveValue('Ohio Form 21 Parenting Plan')
   })
 
   it('shows the question-pages palette', async () => {
@@ -60,7 +62,7 @@ describe('FormDesigner', () => {
   })
 
   it('shows readable Information Sharing question labels', async () => {
-    localStorage.setItem('shareCareFormTemplate:review', JSON.stringify({
+    localStorage.setItem('shareCareFormTemplate:form20', JSON.stringify({
       title: 'Comparison',
       blocks: [{ id: 'intro', type: 'heading', text: 'Questionnaire Responses' }],
     }))

@@ -4,7 +4,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { buildApiUrl } from '../lib/apiClient';
 import { CUSTOM_COMPARISON_QUESTIONS } from '../lib/comparisonQuestionDefinitions';
-import { answerText, fetchStandardTemplate, FormTemplatePrintDocument, loadTemplate } from './FormDesigner';
+import { answerText, fetchStandardTemplate, FormTemplatePrintDocument, loadTemplate, printTemplateFormat } from './FormDesigner';
 import { CheckCircle, AlertTriangle, Users, ArrowLeft, Printer, Calendar, Flag } from 'lucide-react';
 import './Comparison.css';
 import './FormDesigner.css';
@@ -330,7 +330,9 @@ export default function Comparison() {
   // qKeys P2 flagged that P1 kept (still need discussion)
   const [needsDiscussionKeys, setNeedsDiscussionKeys] = useState(new Set());
   const [restartStatus, setRestartStatus] = useState('idle');
-  const [standardComparisonTemplate, setStandardComparisonTemplate] = useState(null);
+  const [standardForm20Template, setStandardForm20Template] = useState(null);
+  const [standardForm21Template, setStandardForm21Template] = useState(null);
+  const [combinedCurrentCircumstance, setCombinedCurrentCircumstance] = useState('');
   const [isPrinting, setIsPrinting] = useState(false);
 
   const handleTabKeyDown = (event) => {
@@ -368,9 +370,14 @@ export default function Comparison() {
   const parent2Name = isParent1 ? "Co-parent's" : 'Your';
 
   useEffect(() => {
-    fetchStandardTemplate('comparison')
+    fetchStandardTemplate('form20')
       .then((template) => {
-        if (template?.blocks) setStandardComparisonTemplate(template);
+        if (template?.blocks) setStandardForm20Template(template);
+      })
+      .catch((error) => console.error(error.message));
+    fetchStandardTemplate('form21')
+      .then((template) => {
+        if (template?.blocks) setStandardForm21Template(template);
       })
       .catch((error) => console.error(error.message));
   }, []);
@@ -414,6 +421,9 @@ export default function Comparison() {
               .map(({ qKey, answer }) => [qKey, answer]),
           )
           : mergedAnswers || {};
+        setCombinedCurrentCircumstance(
+          mergedAnswerMap['getting-started.currentCircumstance'] || '',
+        );
         setSharedAnswers({
           ...mergedAnswerMap,
           'getting-started.children': statusData.children || [],
@@ -854,7 +864,11 @@ export default function Comparison() {
       </div>
       {isPrinting && (
         <FormTemplatePrintDocument
-          template={standardComparisonTemplate || loadTemplate('comparison')}
+          template={
+            printTemplateFormat('comparison', combinedCurrentCircumstance) === 'form20'
+              ? (standardForm20Template || loadTemplate('form20'))
+              : (standardForm21Template || loadTemplate('form21'))
+          }
           answersByKey={Object.fromEntries(printItems.map((item) => [
             item.qKey,
             { ...item, question: questionMap[item.qKey] },

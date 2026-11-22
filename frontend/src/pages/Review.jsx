@@ -10,7 +10,7 @@ import { useForm } from '../hooks/useForm';
 import useModalAccessibility from '../hooks/useModalAccessibility';
 import { auth } from '../lib/firebase';
 import { buildApiUrl } from '../lib/apiClient';
-import { answerText, fetchStandardTemplate, FormTemplatePrintDocument, collectAnswers, standardTemplate } from './FormDesigner';
+import { answerText, fetchStandardTemplate, FormTemplatePrintDocument, collectAnswers, loadTemplate, printTemplateFormat } from './FormDesigner';
 import shareCareLogo from '../assets/logos/ShareCare_Symmetrical Diamond Logo (1120 x 310 px).png';
 import './Page.css';
 import './Review.css';
@@ -614,7 +614,8 @@ export default function Review() {
   const switchModalAccessibility = useModalAccessibility(showSwitchPrompt, () => setShowSwitchPrompt(false));
   const [caseStatus, setCaseStatus] = useState(null);
   const [isPrinting, setIsPrinting] = useState(false);
-  const [standardReviewTemplate, setStandardReviewTemplate] = useState(null);
+  const [standardForm20Template, setStandardForm20Template] = useState(null);
+  const [standardForm21Template, setStandardForm21Template] = useState(null);
   
 
   const caseId = reviewPlan.caseId;
@@ -643,9 +644,14 @@ export default function Review() {
   }, []);
 
   useEffect(() => {
-    fetchStandardTemplate('review')
+    fetchStandardTemplate('form20')
       .then((template) => {
-        if (template?.blocks) setStandardReviewTemplate(template);
+        if (template?.blocks) setStandardForm20Template(template);
+      })
+      .catch((error) => console.error(error.message));
+    fetchStandardTemplate('form21')
+      .then((template) => {
+        if (template?.blocks) setStandardForm21Template(template);
       })
       .catch((error) => console.error(error.message));
   }, []);
@@ -884,7 +890,11 @@ export default function Review() {
       {isPrinting && (
         createPortal(
           <FormTemplatePrintDocument
-            template={standardReviewTemplate || standardTemplate('review', reviewAnswersByKey, questionsByKey)}
+            template={
+              printTemplateFormat('review', reviewPlan) === 'form20'
+                ? (standardForm20Template || loadTemplate('form20'))
+                : (standardForm21Template || loadTemplate('form21'))
+            }
             answersByKey={reviewAnswersByKey}
             questions={questionsByKey}
             children={reviewPlan.children ?? []}
