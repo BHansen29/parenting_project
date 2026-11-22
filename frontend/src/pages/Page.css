@@ -514,6 +514,24 @@
 }
 
 /* ── InformationSharing section headers ─────────────────────────────── */
+.child-support-content {
+  line-height: 1.6;
+}
+
+.child-support-content h3 {
+  margin: 1.25rem 0 0.5rem;
+  font-size: 1.125rem;
+}
+
+.child-support-content p {
+  margin: 0 0 0.75rem;
+}
+
+.child-support-content ul {
+  margin: 0.5rem 0 1rem;
+  padding-left: 1.5rem;
+}
+
 .info-section {
   margin-bottom: 2rem;
 }

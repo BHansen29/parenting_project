@@ -71,6 +71,16 @@ const LEGACY_RADIO_ANSWERS = new Set([
   'defer',
 ]);
 
+const MARRIED_CIRCUMSTANCES = new Set([
+  'married',
+  'married_seeking_custody',
+  'married_seeking_parenting_time',
+]);
+const NEVER_MARRIED_CIRCUMSTANCES = new Set([
+  'never_married_seeking_custody',
+  'never_married_seeking_parenting_time',
+]);
+
 const INFO_SECTIONS = [
   {
     key: 'medicalRecords',
@@ -121,6 +131,12 @@ export default function InformationSharing() {
 
   const formData = state.informationSharing ?? {};
   const errors   = state.informationSharing?.errors ?? {};
+  const currentCircumstance = state.plan?.currentCircumstance || state.plan?.userRole;
+  const childSupportType = MARRIED_CIRCUMSTANCES.has(currentCircumstance)
+    ? 'married'
+    : NEVER_MARRIED_CIRCUMSTANCES.has(currentCircumstance)
+      ? 'neverMarried'
+      : null;
 
   // ── Flag hooks ────────────────────────────────────────────────────────────
   const medicalRecordsFlag            = useSectionFlag('medicalRecords');
@@ -222,7 +238,7 @@ export default function InformationSharing() {
       <div className="page-content">
         <Card>
           <CardHeader>
-            <CardTitle>Information Sharing</CardTitle>
+            <CardTitle>Additional Information</CardTitle>
             <CardDescription>
               Determine who has access to medical, school, and activity information.
             </CardDescription>
@@ -231,6 +247,83 @@ export default function InformationSharing() {
             This tool is for informational purposes only. It does not provide legal advice about your rights or options available to you. Your responses do not create or establish any legal rights for either parent. This tool is intended to help co-parents think about important topics when making a shared parenting plan. Only a court can approve a parenting plan and make it legally binding. If you have any questions, please talk with a lawyer.
           </Disclaimer>
           <CardContent>
+            {childSupportType && (
+              <div className="info-section child-support-section">
+                <hr className="section-divider" />
+                <SectionHeader
+                  icon={<FileTextIcon />}
+                  iconClassName="info-icon"
+                  title="Child Support Calculation"
+                />
+                <div className="child-support-content">
+                  <p>
+                    Before the Court can finalize your {childSupportType === 'married' ? 'Shared Parenting Plan' : 'Parenting Plan'}, a completed Child Support Worksheet must be attached to your plan, as required by Ohio law.
+                  </p>
+                  <p>
+                    The worksheet is used to calculate how much child support one parent may be required to pay the other. The calculation considers information such as each parent's income, the number of children, health insurance costs, and parenting time.
+                  </p>
+                  <p>
+                    Your completed worksheet will determine the guideline child support amount (the amount calculated under Ohio's child support rules). The Court will use this information to decide the child support order included in your {childSupportType === 'married' ? 'Shared Parenting Plan' : 'Parenting Plan'}.
+                  </p>
+                  <h3>What does the Court require?</h3>
+                  <ul>
+                    {childSupportType === 'married' ? (
+                      <li>
+                        Complete the Child Support Worksheet found at the bottom of page 6 of the{' '}
+                        <a href="https://www.supremecourt.ohio.gov/docs/JCS/CFC/DRForms/Form20.pdf" target="_blank" rel="noopener noreferrer">
+                          Ohio Supreme Court Form 20
+                        </a>.
+                      </li>
+                    ) : (
+                      <li>
+                        Complete the appropriate Child Support Worksheet found on page 6 of the{' '}
+                        <a href="https://www.supremecourt.ohio.gov/docs/JCS/CFC/DRForms/Form21.pdf" target="_blank" rel="noopener noreferrer">
+                          Ohio Supreme Court Form 21
+                        </a>.
+                      </li>
+                    )}
+                    <li>Determine which parent will pay child support (the obligor) and which parent will receive it (the obligee).</li>
+                    <li>Identify the guideline child support amount and any requested changes to that amount.</li>
+                  </ul>
+                  <p>
+                    Your final {childSupportType === 'married' ? 'Shared Parenting Plan' : 'Parenting Plan'} must include the completed worksheet and the child support information required by the Court.
+                  </p>
+                  <p>
+                    Please note: The calculator provides an estimate of child support, not a final child support order. The Court makes the final decision about the amount of child support to be paid and to which parent.
+                  </p>
+                </div>
+              </div>
+            )}
+            {childSupportType && (
+              <div className="info-section child-support-section">
+                <hr className="section-divider" />
+                <SectionHeader
+                  icon={<FileTextIcon />}
+                  iconClassName="info-icon"
+                  title="Additional Resources"
+                />
+                <div className="child-support-content">
+                  <p>For more information about child support and how it is calculated in Ohio, visit:</p>
+                  <ul>
+                    <li>
+                      <a href="https://www.supremecourt.ohio.gov/docs/JCS/CFC/resources/DRBenchCards/2_childSupport.pdf" target="_blank" rel="noopener noreferrer">
+                        Ohio Child Support Information Guide
+                      </a>: Learn more about how child support works, how courts calculate support, and what factors may affect the amount.
+                    </li>
+                    <li>
+                      <a href="https://codes.ohio.gov/ohio-revised-code/chapter-3119" target="_blank" rel="noopener noreferrer">
+                        Ohio Child Support Laws (Ohio Revised Code, Chapter 3119)
+                      </a>: Review the Ohio laws that explain how child support is calculated and ordered.
+                    </li>
+                    <li>
+                      <a href="https://ohiochildsupportcalculator.ohio.gov/pages/calculator.html" target="_blank" rel="noopener noreferrer">
+                        Ohio Child Support Calculator
+                      </a>: Use Ohio's official calculator to estimate your child support obligation.
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            )}
             {INFO_SECTIONS.map(({ key, title, description, icon, iconClassName, question, placeholder, disclaimer, }) => (
               <div key={key} className="info-section">
                 <hr className="section-divider" />

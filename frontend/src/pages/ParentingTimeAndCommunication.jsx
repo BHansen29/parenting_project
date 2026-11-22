@@ -465,6 +465,7 @@ export default function ParentingTimeAndCommunication() {
                             policyItems={[
                                 'Absent other agreement of the parties included in the attached parenting time schedule, each parent shall be responsible for providing transportation for the child(ren) at the beginning of the parent\'s parenting time period.',
                                 'Each parent shall be responsible for providing transportation for the child(ren) to and from school during that parent\'s parenting time period.',
+                                'Additionally, while your child is staying with you, it is your job to make sure they get to and from school.'
                             ]}
                             checkboxId="agreeToTransportationPolicy"
                             checkboxLabel="I agree to the standard transportation policy"
