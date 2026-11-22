@@ -289,6 +289,13 @@ export default function Layout({ children }) {
       section: 'plan',
       payload: savedPlan,
     });
+
+    for (const [qKey, answer] of Object.entries(plan.gettingStartedAnswers || {})) {
+      await saveRequest(`api/plan/${plan._id}/answer`, {
+        qKey,
+        answer,
+      });
+    }
   }
 
   async function saveQuestionBeforeNavigation(idToken) {

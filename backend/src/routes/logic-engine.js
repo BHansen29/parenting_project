@@ -3,6 +3,7 @@ const router = express.Router();
 const Question = require('../models/Question');
 const NextQuestionRule = require('../models/NextQuestionRule');
 const Plan = require('../models/Plan');
+const { ensurePageManagedQuestions } = require('../data/pageManagedQuestions');
 const verifyToken = require('../middleware/verifyToken');
 const {
   findNextApplicableQuestion,
@@ -116,6 +117,7 @@ router.get('/next-question-rules', async (req, res) => {
 // GET /api/logic-engine/questions/:section - Get all questions from the section specified
 router.get('/questions/:section', async (req, res) => {
   try {
+    await ensurePageManagedQuestions(Question);
     const questions = await Question.find({
       section: req.params.section,
       isArchived: { $ne: true }

@@ -15,6 +15,8 @@ import { useNavigation } from '../context/NavigationContext';
 import { useForm } from '../hooks/useForm';
 import { useSectionFlag } from '../hooks/useSectionFlag';
 import Disclaimer from '../components/forms/Disclaimer';
+import SectionQuestionInputs from '../components/forms/SectionQuestionInputs';
+import useSectionQuestions from '../hooks/useSectionQuestions';
 import './Page.css';
 
 const childScheduleKey = (child, index) => child?._id || child?.id || `child-${index + 1}`;
@@ -25,6 +27,8 @@ export default function ParentingTimeAndCommunication() {
     const navigate = useNavigate();
     const { state, dispatch } = useForm();
     const { setOnNext, setOnBack } = useNavigation();
+    const sectionQuestions = useSectionQuestions('parenting-time-communication');
+    const managedQuestions = sectionQuestions.questionsByKey;
 
     const transportationAgreementFlag = useSectionFlag('transportationAgreement');
     const activitiesAndSchedulingFlag = useSectionFlag('activitiesAndScheduling');
@@ -411,12 +415,13 @@ export default function ParentingTimeAndCommunication() {
     };
 
     const handleNext = async () => {
-        if (!validateForm()) {
+        if (!validateForm() || !sectionQuestions.validate()) {
             setSubmitAttempted(true);
             return;
         }
 
         try {
+            await sectionQuestions.save();
             await saveAnswers();
             navigate('/informationsharing');
         } catch (error) {
@@ -431,7 +436,7 @@ export default function ParentingTimeAndCommunication() {
     useEffect(() => {
         setOnNext(handleNext);
         setOnBack(handleBack);
-    }, [state, communicationError, notifyError]);
+    }, [state, communicationError, notifyError, sectionQuestions, setOnNext, setOnBack]);
 
     return (
         <div className="page-container">
@@ -455,8 +460,8 @@ export default function ParentingTimeAndCommunication() {
                             <SectionHeader
                                 iconClassName="car-icon"
                                 icon={<Car size={25} />}
-                                title="Transportation Agreement"
-                                help="Standard transportation arrangements"
+                                title={managedQuestions.managed_transportation_agreement?.qTitle || "Transportation Agreement"}
+                                help={managedQuestions.managed_transportation_agreement?.qIntro || "Standard transportation arrangements"}
                                 flag={transportationAgreementFlag}
                             />
                         </section>
@@ -468,7 +473,7 @@ export default function ParentingTimeAndCommunication() {
                                 'Additionally, while your child is staying with you, it is your job to make sure they get to and from school.'
                             ]}
                             checkboxId="agreeToTransportationPolicy"
-                            checkboxLabel="I agree to the standard transportation policy"
+                            checkboxLabel={managedQuestions.managed_transportation_agreement?.qText || "I agree to the standard transportation policy"}
                             checked={formData.agreeToTransportationPolicy}
                             onCheckboxChange={handlePolicyChange('agreeToTransportationPolicy')}
                             requiredNote="You must either agree to the standard policy or describe your preferred arrangement"
@@ -480,8 +485,11 @@ export default function ParentingTimeAndCommunication() {
                                 placeholder: 'Describe how you would like transportation to be handled if you do not agree to the standard policy',
                                 error: errors.transportationArrangementDescription,
                             }}
-                            disclaimer="Legal Disclaimer: This tool does not give instructions or legal advice about your rights or choices. If you have questions, please consult with a lawyer."
-                            disclaimerVariant="info"
+                            disclaimers={[{
+                                disclaimer: managedQuestions.managed_transportation_agreement?.qDisclaimer ||
+                                    'Legal Disclaimer: This tool does not give instructions or legal advice about your rights or choices. If you have questions, please consult with a lawyer.',
+                                disclaimerVariant: 'info'
+                            }]}
                         />
 
                         <hr className="section-divider" />
@@ -489,8 +497,8 @@ export default function ParentingTimeAndCommunication() {
                             <SectionHeader
                                 iconClassName="car-icon"
                                 icon={<Calendar size={25} />}
-                                title="Activities & Scheduling"
-                                help="Supporting your children's activities"
+                                title={managedQuestions.managed_activity_agreement?.qTitle || "Activities & Scheduling"}
+                                help={managedQuestions.managed_activity_agreement?.qIntro || "Supporting your children's activities"}
                                 flag={activitiesAndSchedulingFlag}
                             />
                         </section>
@@ -504,7 +512,7 @@ export default function ParentingTimeAndCommunication() {
                                 'Absent other agreement by the parents, it is the responsibility of the parent in possession of the child(ren) to provide transportation to an activity.',
                             ]}
                             checkboxId="agreeToActivityPolicy"
-                            checkboxLabel="I agree to the standard activity policy"
+                            checkboxLabel={managedQuestions.managed_activity_agreement?.qText || "I agree to the standard activity policy"}
                             checked={formData.agreeToActivityPolicy}
                             onCheckboxChange={handlePolicyChange('agreeToActivityPolicy')}
                             textInput={{
@@ -515,8 +523,11 @@ export default function ParentingTimeAndCommunication() {
                                 placeholder: 'Describe how you would like activities and scheduling to be handled if you do not agree to the standard policy',
                                 error: errors.activityPolicyDescription,
                             }}
-                            disclaimer="Legal Disclaimer: This tool does not give instructions or legal advice about your rights or choices. If you have questions, please consult with a lawyer."
-                            disclaimerVariant="info"
+                            disclaimers={[{
+                                disclaimer: managedQuestions.managed_activity_agreement?.qDisclaimer ||
+                                    'Legal Disclaimer: This tool does not give instructions or legal advice about your rights or choices. If you have questions, please consult with a lawyer.',
+                                disclaimerVariant: 'info'
+                            }]}
                         />
 
                         <hr className="section-divider" />
@@ -602,15 +613,21 @@ export default function ParentingTimeAndCommunication() {
                         </Card>
 
                         <RadioQuestion
-                            question="Are there any adults at holiday gatherings you do not want your child to be around?"
+                            question={managedQuestions.managed_holiday_gathering_adults?.qText || "Are there any adults at holiday gatherings you do not want your child to be around?"}
+                            help={managedQuestions.managed_holiday_gathering_adults?.qIntro}
                             name="holidayGatheringAdults"
                             value={formData.holidayGatheringAdults}
                             onChange={handleChange('holidayGatheringAdults')}
                             error={errors.holidayGatheringAdults}
-                            options={[
+                            options={managedQuestions.managed_holiday_gathering_adults?.options?.length
+                              ? managedQuestions.managed_holiday_gathering_adults.options
+                              : [
                                 { value: 'yes', label: 'Yes' },
                                 { value: 'no', label: 'No' },
-                            ]}
+                              ]}
+                            disclaimers={managedQuestions.managed_holiday_gathering_adults?.qDisclaimer
+                              ? [{ disclaimer: managedQuestions.managed_holiday_gathering_adults.qDisclaimer }]
+                              : undefined}
                             conditionalInput={{
                                 triggerValue: 'yes',
                                 id: 'holidayGatheringAdultsDetails',
@@ -651,19 +668,22 @@ export default function ParentingTimeAndCommunication() {
                             />
                         </section>
                         <RadioQuestion
-                            question="If your child is with you, are they allowed to talk to your co-parent on the phone?"
+                            question={managedQuestions.managed_parenting_phone_communication?.qText || "If your child is with you, are they allowed to talk to your co-parent on the phone?"}
+                            help={managedQuestions.managed_parenting_phone_communication?.qIntro}
                             name="communicationWithCoParentOnPhone"
                             value={formData.communicationWithCoParentOnPhone}
                             onChange={handleChange('communicationWithCoParentOnPhone')}
                             flag={communicationWithCoParentOnPhoneFlag}
                             error={communicationError}
-                            options={[
+                            options={managedQuestions.managed_parenting_phone_communication?.options?.length
+                              ? managedQuestions.managed_parenting_phone_communication.options
+                              : [
                                 { value: 'yes',                  label: 'Yes' },
                                 { value: 'no',                   label: 'No' },
                                 { value: 'sometimes',            label: 'Sometimes (please describe)' },
                                 { value: 'needMoreInfo',         label: 'I need more information' },
                                 { value: 'defaultToCoParentChoice', label: "Default to my co-parent's choice" },
-                            ]}
+                              ]}
                             conditionalInput={{
                                 triggerValue: 'sometimes',
                                 id: 'communicationWithCoParentOnPhoneDescription',
@@ -673,23 +693,29 @@ export default function ParentingTimeAndCommunication() {
                                 placeholder: 'Describe when your child can talk to your co-parent on the phone',
                                 error: errors.communicationWithCoParentOnPhoneDescription,
                             }}
-                            disclaimer="Legal Disclaimer: This tool does not give instructions or legal advice about your rights or choices. If you have questions, please consult with a lawyer."
-                            disclaimerVariant="info"
+                            disclaimers={[{
+                                disclaimer: managedQuestions.managed_parenting_phone_communication?.qDisclaimer ||
+                                    'Legal Disclaimer: This tool does not give instructions or legal advice about your rights or choices. If you have questions, please consult with a lawyer.',
+                                disclaimerVariant: 'info'
+                            }]}
                         />
                         <RadioQuestion
-                            question="Should your co-parent be told if your children get sick or injured?"
+                            question={managedQuestions.managed_parenting_event_notifications?.qText || "Should your co-parent be told if your children get sick or injured?"}
+                            help={managedQuestions.managed_parenting_event_notifications?.qIntro}
                             name="notifyCoParentOfChildRelatedEvents"
                             value={formData.notifyCoParentOfChildRelatedEvents}
                             onChange={handleChange('notifyCoParentOfChildRelatedEvents')}
                             flag={notifyCoParentOfChildRelatedEventsFlag}
                             error={notifyError}
-                            options={[
+                            options={managedQuestions.managed_parenting_event_notifications?.options?.length
+                              ? managedQuestions.managed_parenting_event_notifications.options
+                              : [
                                 { value: 'yes',                  label: 'Yes' },
                                 { value: 'no',                   label: 'No' },
                                 { value: 'sometimes',            label: 'Sometimes (please describe)' },
                                 { value: 'needMoreInfo',         label: 'I need more information' },
                                 { value: 'defaultToCoParentChoice', label: "Default to my co-parent's choice" },
-                            ]}
+                              ]}
                             conditionalInput={{
                                 triggerValue: 'sometimes',
                                 id: 'notifyCoParentOfChildRelatedEventsDescription',
@@ -699,8 +725,20 @@ export default function ParentingTimeAndCommunication() {
                                 placeholder: 'Describe when you would notify your co-parent if your child gets sick or injured',
                                 error: errors.notifyCoParentOfChildRelatedEventsDescription,
                             }}
-                            disclaimer="Legal Disclaimer: This tool does not give instructions or legal advice about your rights or choices. If you have questions, please consult with a lawyer."
-                            disclaimerVariant="info"
+                            disclaimers={[{
+                                disclaimer: managedQuestions.managed_parenting_event_notifications?.qDisclaimer ||
+                                    'Legal Disclaimer: This tool does not give instructions or legal advice about your rights or choices. If you have questions, please consult with a lawyer.',
+                                disclaimerVariant: 'info'
+                            }]}
+                        />
+                        <SectionQuestionInputs
+                            questions={sectionQuestions.additionalQuestions}
+                            answers={sectionQuestions.answers}
+                            errors={sectionQuestions.errors}
+                            loadError={sectionQuestions.loadError}
+                            saveError={sectionQuestions.saveError}
+                            loading={!sectionQuestions.loaded}
+                            onChange={sectionQuestions.setAnswer}
                         />
                     </CardContent>
                 </Card>

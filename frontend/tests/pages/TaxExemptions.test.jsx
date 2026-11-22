@@ -1,6 +1,6 @@
 import { screen, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { vi } from 'vitest'
+import { afterEach, vi } from 'vitest'
 import TaxExemptions from '../../src/pages/TaxExemptions'
 import { renderWithRouter } from '../../src/utils/renderWithRouter'
 
@@ -33,7 +33,13 @@ describe('TaxExemptions', () => {
   beforeEach(() => {
     mockNavigate.mockReset()
     localStorage.clear()
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [],
+    }))
   })
+
+  afterEach(() => vi.unstubAllGlobals())
 
   // ─── Render ───────────────────────────────────────────────────────────────
 

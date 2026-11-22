@@ -46,6 +46,21 @@
 }
 .how-it-works__sign-in:hover,
 .how-it-works__footer button:hover { color: #159cc4; background: none; border-color: transparent; }
+.how-it-works__language-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid #087da2;
+  border-radius: 50px;
+  background: transparent;
+  color: #087da2;
+  font: inherit;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.how-it-works__language-toggle:hover { background: #e0f2fe; color: #075f7b; border-color: #075f7b; }
+.how-it-works__language-short { display: none; }
 .how-it-works__header-cta {
   background: #087da2;
   color: #fff;
@@ -153,6 +168,16 @@
     color: #d1d5db;
   }
 
+  .how-it-works__language-toggle {
+    border-color: #67d5f3;
+    color: #67d5f3;
+  }
+
+  .how-it-works__language-toggle:hover {
+    background: #164e63;
+    color: #e0f2fe;
+  }
+
   .how-it-works__sign-in:hover,
   .how-it-works__footer button:hover {
     color: #67d5f3;
@@ -225,8 +250,12 @@
 
 @media (max-width: 540px) {
   .how-it-works__header { padding: 0 1rem; }
-  .how-it-works__header-actions { gap: 0.45rem; }
+  .how-it-works__header-actions { gap: 0.35rem; }
   .how-it-works__sign-in { display: none; }
+  .how-it-works__language-long { display: none; }
+  .how-it-works__language-short { display: inline; }
+  .how-it-works__language-toggle { padding: 0.5rem 0.65rem; }
+  .how-it-works__header-cta { padding: 0.6rem 0.8rem; }
   .how-it-works__hero { padding: 4rem 1.25rem 5rem; }
   .how-it-works__steps { padding-left: 1.25rem; padding-right: 1.25rem; }
   .how-it-works__support { padding-left: 1.25rem; padding-right: 1.25rem; }

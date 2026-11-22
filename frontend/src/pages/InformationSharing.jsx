@@ -11,6 +11,8 @@ import SectionHeader from '../components/forms/SectionHeader';
 import RadioQuestion from '../components/forms/RadioQuestion';
 import Disclaimer from '../components/forms/Disclaimer';
 import TextInput from '../components/forms/TextInput';
+import SectionQuestionInputs from '../components/forms/SectionQuestionInputs';
+import useSectionQuestions from '../hooks/useSectionQuestions';
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
 const HeartIcon = () => (
@@ -128,6 +130,7 @@ export default function InformationSharing() {
   const navigate = useNavigate();
   const { state, dispatch } = useForm();
   const { setOnNext, setOnBack } = useNavigation();
+  const sectionQuestions = useSectionQuestions('informationsharing');
 
   const formData = state.informationSharing ?? {};
   const errors   = state.informationSharing?.errors ?? {};
@@ -186,7 +189,7 @@ export default function InformationSharing() {
   }, [state]);
 
   const handleNext = useCallback(async () => {
-    if (!validateForm()) return;
+    if (!validateForm() || !sectionQuestions.validate()) return;
 
     try {
       const user = auth.currentUser;
@@ -196,6 +199,7 @@ export default function InformationSharing() {
       }
 
       const idToken = await user.getIdToken();
+      await sectionQuestions.save();
       const response = await fetch(buildApiUrl(`api/plan/${state.plan._id}/sections`), {
         method: 'POST',
         headers: {
@@ -213,9 +217,10 @@ export default function InformationSharing() {
       dispatch({ type: 'UPDATE_SECTION', section: 'plan', payload: plan });
     } catch (error) {
       console.error(error.message);
+      return;
     }
     navigate('/tax-exemptions');
-  }, [dispatch, navigate, state, validateForm]);
+  }, [dispatch, navigate, sectionQuestions, state, validateForm]);
 
   const handleBack = useCallback(() => {
     dispatch({
@@ -324,15 +329,17 @@ export default function InformationSharing() {
                 </div>
               </div>
             )}
-            {INFO_SECTIONS.map(({ key, title, description, icon, iconClassName, question, placeholder, disclaimer, }) => (
+            {INFO_SECTIONS.map(({ key, title, description, icon, iconClassName, question, placeholder, disclaimer, }) => {
+              const managedQuestion = sectionQuestions.questionsByKey[`managed_information_${key === 'medicalRecords' ? 'medical' : key === 'schoolContact' ? 'school_contact' : 'school_activities'}`];
+              return (
               <div key={key} className="info-section">
                 <hr className="section-divider" />
 
                 <SectionHeader
                   icon={icon}
                   iconClassName={iconClassName}
-                  title={title}
-                  help={description.split('\n').map((line, index) => (
+                  title={managedQuestion?.qTitle || title}
+                  help={(managedQuestion?.qIntro || description).split('\n').map((line, index) => (
                     <Fragment key={`${key}-description-${index}`}>
                       {index > 0 && <br />}
                       {line}
@@ -343,7 +350,7 @@ export default function InformationSharing() {
                 {/* onChange receives a plain string value — (change to TextQuestion) RadioQuestion unwraps the event internally */}
                 <TextInput
                   id={`information-sharing-${key}`}
-                  label={question}
+                  label={managedQuestion?.qText || question}
                   type="textarea"
                   rows={4}
                   value={
@@ -356,13 +363,22 @@ export default function InformationSharing() {
                   required
                   error={errors[key]}
               />
-              {disclaimer && (
+              {(managedQuestion?.qDisclaimer || disclaimer) && (
                 <Disclaimer variant="warning">
-                  {disclaimer}
+                  {managedQuestion?.qDisclaimer || disclaimer}
                 </Disclaimer>
               )}
               </div>
-            ))}
+            );})}
+            <SectionQuestionInputs
+              questions={sectionQuestions.additionalQuestions}
+              answers={sectionQuestions.answers}
+              errors={sectionQuestions.errors}
+              loadError={sectionQuestions.loadError}
+              saveError={sectionQuestions.saveError}
+              loading={!sectionQuestions.loaded}
+              onChange={sectionQuestions.setAnswer}
+            />
           </CardContent>
         </Card>
       </div>

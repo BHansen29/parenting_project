@@ -1,6 +1,7 @@
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import LandingPage from '../../src/pages/LandingPage'
+import HowItWorks from '../../src/pages/HowItWorks'
 import { vi } from 'vitest'
 import { renderWithRouter } from '../../src/utils/renderWithRouter'
 
@@ -16,6 +17,7 @@ vi.mock('react-router-dom', async () => {
 describe('LandingPage', () => {
   beforeEach(() => {
     mockNavigate.mockReset()
+    window.sessionStorage.clear()
   })
 
   // ─── Render ───────────────────────────────────────────────────────────────
@@ -78,6 +80,29 @@ describe('LandingPage', () => {
     expect(screen.getByRole('button', { name: /get started/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /begin your plan/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^sign in$/i })).toBeInTheDocument()
+  })
+
+  it('switches between English and Spanish on the landing and How It Works pages', async () => {
+    const user = userEvent.setup()
+    const landing = renderWithRouter(<LandingPage />)
+
+    await user.click(screen.getByRole('button', { name: 'Switch language to Spanish' }))
+    expect(screen.getByRole('heading', { name: 'Crea tu Plan de crianza' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Cómo funciona' })).toBeInTheDocument()
+
+    landing.unmount()
+    renderWithRouter(<HowItWorks />)
+    expect(
+      screen.getByRole('heading', {
+        name: 'Hacemos más sencilla la creación de planes de crianza para todas las familias'
+      })
+    ).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Comienza gratis' })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Cambiar idioma a inglés' }))
+    expect(
+      screen.getByRole('heading', { name: 'Simplifying parenting plan creation for all families' })
+    ).toBeInTheDocument()
   })
 
   it('navigates to /signup when Get Started is clicked', async () => {

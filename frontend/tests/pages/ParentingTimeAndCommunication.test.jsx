@@ -1,6 +1,6 @@
 import { screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { vi } from 'vitest'
+import { afterEach, vi } from 'vitest'
 import ParentingTimeAndCommunication from '../../src/pages/ParentingTimeAndCommunication'
 import { renderWithRouter } from '../../src/utils/renderWithRouter'
 
@@ -38,7 +38,13 @@ describe('ParentingTimeAndCommunication', () => {
   beforeEach(() => {
     mockNavigate.mockReset()
     localStorage.clear()
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [],
+    }))
   })
+
+  afterEach(() => vi.unstubAllGlobals())
 
   // ─── Render ───────────────────────────────────────────────────────────────
 

@@ -1,5 +1,5 @@
 .admin-editor {
-  width: min(1000px, calc(100% - 2rem));
+  width: min(1400px, calc(100% - 2rem));
   margin: 2rem auto;
   color: #1f2937;
 }
@@ -47,8 +47,77 @@
 }
 
 .admin-editor__list {
+  grid-column: 2;
   display: grid;
   gap: 1.25rem;
+  min-width: 0;
+}
+
+.admin-editor__workspace {
+  display: grid;
+  grid-template-columns: 15rem minmax(0, 1fr);
+  align-items: start;
+  gap: 1.5rem;
+}
+
+.layout__content:has(.admin-editor) {
+  overflow: visible;
+}
+
+.admin-editor__section-nav {
+  position: sticky;
+  top: 1rem;
+  grid-column: 1;
+  align-self: start;
+  width: 15rem;
+  max-height: calc(100vh - 2rem);
+  box-sizing: border-box;
+  overflow-y: auto;
+  padding: 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  background: #fff;
+}
+
+.admin-editor__section-nav h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+}
+
+.admin-editor__section-nav ul {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-editor__section-nav a {
+  display: block;
+  padding: 0.45rem 0.5rem;
+  border-radius: 0.25rem;
+  color: #087fa8;
+  text-decoration: none;
+}
+
+.admin-editor__section-nav a:hover,
+.admin-editor__section-nav a:focus-visible {
+  background: #e0f2fe;
+  text-decoration: underline;
+}
+
+.admin-editor__section-header {
+  scroll-margin-top: 1rem;
+  margin: 1.25rem 0 0.25rem;
+  padding: 0.75rem 0.25rem;
+  border-bottom: 2px solid #087fa8;
+  color: #087fa8;
+  font-size: 1.35rem;
+}
+
+.admin-editor__section-header--archived {
+  border-bottom-color: #b45309;
+  color: #92400e;
 }
 
 .admin-editor__flow-item {
@@ -150,6 +219,23 @@
   border: 1px solid #e5e7eb;
   border-radius: 0.5rem;
   background: #fff;
+}
+
+.admin-editor__published-preview {
+  display: grid;
+  gap: 1rem;
+  margin-top: 0.75rem;
+  padding: 1rem;
+  border: 1px solid #bae6fd;
+  border-radius: 0.5rem;
+  background: #f0f9ff;
+}
+
+.admin-editor__preview-label {
+  margin: 0;
+  color: #075985;
+  font-size: 0.9rem;
+  font-weight: 700;
 }
 
 .admin-editor__field {
@@ -268,6 +354,11 @@
   cursor: pointer;
 }
 
+.admin-editor__preview-button {
+  border-color: #7dd3fc !important;
+  color: #087fa8 !important;
+}
+
 .admin-editor button:disabled {
   cursor: not-allowed;
   opacity: 0.6;
@@ -338,6 +429,50 @@
   margin: 0.5rem 0;
 }
 
+.admin-editor__revert-panel {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  border: 1px solid #bae6fd;
+  border-radius: 0.5rem;
+  background: #f0f9ff;
+}
+
+.admin-editor__revert-panel h2,
+.admin-editor__revert-panel p {
+  margin: 0;
+}
+
+.admin-editor__revert-panel h2 {
+  font-size: 1.1rem;
+}
+
+.admin-editor__revert-panel p {
+  font-size: 0.9rem;
+}
+
+.admin-editor__version {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #bae6fd;
+}
+
+.admin-editor__version > div {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.admin-editor__version span {
+  color: #4b5563;
+  font-size: 0.85rem;
+}
+
 .admin-editor__history details {
   padding: 0.65rem 0;
   border-top: 1px solid #e5e7eb;
@@ -390,6 +525,29 @@
 }
 
 @media (max-width: 700px) {
+  .admin-editor__workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-editor__section-nav {
+    position: static;
+    grid-row: 1;
+    width: auto;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .admin-editor__list {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .admin-editor__section-nav ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+
   .admin-editor__create-fields,
   .admin-editor__settings-grid {
     grid-template-columns: 1fr;
@@ -408,9 +566,41 @@
   .admin-editor__create,
   .admin-editor__question-card,
   .admin-editor__advanced,
-  .admin-editor__access {
+  .admin-editor__access,
+  .admin-editor__section-nav {
     border-color: #4b5563;
     background: #293548;
+  }
+
+  .admin-editor__revert-panel {
+    border-color: #155e75;
+    background: #1e293b;
+  }
+
+  .admin-editor__published-preview {
+    border-color: #155e75;
+    background: #1e293b;
+  }
+
+  .admin-editor__preview-label {
+    color: #67d5f5;
+  }
+
+  .admin-editor__version {
+    border-color: #155e75;
+  }
+
+  .admin-editor__version span {
+    color: #9ca3af;
+  }
+
+  .admin-editor__section-nav a {
+    color: #67d5f5;
+  }
+
+  .admin-editor__section-nav a:hover,
+  .admin-editor__section-nav a:focus-visible {
+    background: #164e63;
   }
 
   .admin-editor__entry {
@@ -476,6 +666,12 @@
     border-color: #14abdd;
     background: #087fa8;
     color: #fff;
+  }
+
+  .admin-editor .admin-editor__preview-button {
+    border-color: #155e75 !important;
+    background: #1f2937 !important;
+    color: #67d5f5 !important;
   }
 
   .admin-editor__archive-button {

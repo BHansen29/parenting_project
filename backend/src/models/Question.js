@@ -75,6 +75,7 @@ const questionSchema = new mongoose.Schema({
       "health-insurance-coverage",
       "custody-schedule",
       "transportation",
+      "informationsharing",
       "tax-exemptions",
       "review"],
     required: true
@@ -93,6 +94,10 @@ const questionSchema = new mongoose.Schema({
     default: ''
   },
   multipleChildren: {
+    type: Boolean,
+    default: false
+  },
+  pageManaged: {
     type: Boolean,
     default: false
   },

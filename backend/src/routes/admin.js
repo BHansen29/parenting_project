@@ -2,6 +2,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const Question = require('../models/Question');
 const NextQuestionRule = require('../models/NextQuestionRule');
+const QuestionnaireVersion = require('../models/QuestionnaireVersion');
+const { ensurePageManagedQuestions } = require('../data/pageManagedQuestions');
 const verifyToken = require('../middleware/verifyToken');
 const requireAdmin = require('../middleware/requireAdmin');
 
@@ -27,9 +29,7 @@ const questionnaireSectionOrder = [
   'getting-started',
   'parental-rights',
   'parenting-time-communication',
-  'health-insurance-coverage',
-  'custody-schedule',
-  'transportation',
+  'informationsharing',
   'tax-exemptions',
   'review'
 ];
@@ -54,11 +54,12 @@ function questionSnapshot(question) {
   const snapshot = { qKey: question.qKey };
   for (const field of editableQuestionFields) {
     snapshot[field] = field === 'options'
-      ? question.options.map(({ value, label, description }) => ({ value, label, description }))
+      ? (question.options || []).map(({ value, label, description }) => ({ value, label, description }))
       : question[field];
   }
   snapshot.appliesToGroup = question.appliesToGroup || '';
   snapshot.isArchived = question.isArchived === true;
+  snapshot.pageManaged = question.pageManaged === true;
   return snapshot;
 }
 
@@ -129,6 +130,64 @@ function ruleSnapshot(rule) {
       goTo
     }))
   };
+}
+
+async function captureQuestionnaireSnapshot(session) {
+  let questionQuery = Question.find()
+    .select('type qTitle qIntro qDisclaimer qIcon qText qKey section options appliesToGroup multipleChildren includeInComparison isArchived pageManaged');
+  let ruleQuery = NextQuestionRule.find()
+    .select('qKey isDefault goToDefault notApplicableGoTo nextQuestions');
+  if (session) {
+    questionQuery = questionQuery.session(session);
+    ruleQuery = ruleQuery.session(session);
+  }
+  const questions = await questionQuery.lean();
+  const rules = await ruleQuery.lean();
+  return {
+    questions: questions.map(questionSnapshot),
+    rules: rules.map((rule) => ({ qKey: rule.qKey, ...ruleSnapshot(rule) }))
+  };
+}
+
+function questionRestoreFields(snapshot) {
+  return Object.fromEntries(
+    editableQuestionFields.map((field) => [
+      field,
+      field === 'appliesToGroup'
+        ? snapshot[field] || ''
+        : field === 'multipleChildren'
+          ? snapshot[field] === true
+          : field === 'includeInComparison'
+            ? snapshot[field] !== false
+            : snapshot[field]
+    ])
+  );
+}
+
+function ruleRestoreFields(snapshot) {
+  return {
+    isDefault: snapshot?.isDefault !== false,
+    goToDefault: snapshot?.goToDefault || '',
+    notApplicableGoTo: snapshot?.notApplicableGoTo || '',
+    nextQuestions: snapshot?.nextQuestions || []
+  };
+}
+
+async function createQuestionnaireVersion(actorUid, action, session, capturedSnapshot) {
+  const snapshot = capturedSnapshot || await captureQuestionnaireSnapshot(session);
+  const version = { actorUid, action, ...snapshot };
+  if (session) {
+    return (await QuestionnaireVersion.create([version], { session }))[0];
+  }
+  return QuestionnaireVersion.create(version);
+}
+
+function hasQuestionnaireQuestionChanged(before, after) {
+  return JSON.stringify(before) !== JSON.stringify(after);
+}
+
+function hasQuestionnaireRuleChanged(before, after) {
+  return JSON.stringify(before) !== JSON.stringify(after);
 }
 
 function appendRevision(document, before, after, actorUid) {
@@ -207,12 +266,27 @@ router.get('/access', (req, res) => {
   res.json({ isAdmin: true });
 });
 
+router.get('/questionnaire-versions', async (req, res) => {
+  try {
+    const versions = await QuestionnaireVersion.find()
+      .select('actorUid action createdAt')
+      .sort({ createdAt: -1, _id: -1 })
+      .limit(3)
+      .lean();
+    return res.json({ versions });
+  } catch (error) {
+    console.error('Could not load questionnaire versions:', error);
+    return res.status(500).json({ error: 'Could not load questionnaire versions' });
+  }
+});
+
 // GET /api/admin/questions
 router.get('/questions', async (req, res) => {
   try {
+    await ensurePageManagedQuestions(Question);
     const [allQuestions, rules] = await Promise.all([
       Question.find()
-        .select('type qTitle qIntro qDisclaimer qIcon qText qKey section options appliesToGroup multipleChildren includeInComparison createdAt isArchived')
+        .select('type qTitle qIntro qDisclaimer qIcon qText qKey section options appliesToGroup multipleChildren includeInComparison createdAt isArchived pageManaged')
         .lean(),
       NextQuestionRule.find()
         .select('qKey isDefault goToDefault notApplicableGoTo nextQuestions')
@@ -240,9 +314,16 @@ router.post('/questions', async (req, res) => {
   }
 
   try {
+    const snapshot = await captureQuestionnaireSnapshot();
     const question = new Question(req.body);
     appendRevision(question, null, questionSnapshot(question), req.user.uid);
     await question.save();
+    await createQuestionnaireVersion(
+      req.user.uid,
+      `Before adding question: ${req.body.qTitle} (${req.body.qKey})`,
+      undefined,
+      snapshot
+    );
     return res.status(201).json({ question: questionSnapshot(question) });
   } catch (error) {
     if (error.code === 11000) {
@@ -317,6 +398,11 @@ router.post('/questions/:qKey/after', async (req, res) => {
 
       const questionBefore = new Question(req.body);
       const questionAfter = questionSnapshot(questionBefore);
+      await createQuestionnaireVersion(
+        req.user.uid,
+        `Before adding question: ${req.body.qTitle} (${req.body.qKey})`,
+        session
+      );
       appendRevision(questionBefore, null, questionAfter, req.user.uid);
       await questionBefore.save({ session });
       createdQuestion = questionSnapshot(questionBefore);
@@ -395,12 +481,19 @@ router.patch('/questions/:qKey', async (req, res) => {
       return res.status(404).json({ error: 'Question not found' });
     }
 
+    const snapshot = await captureQuestionnaireSnapshot();
     const before = questionSnapshot(question);
     question.set(req.body);
     const after = questionSnapshot(question);
     appendRevision(question, before, after, req.user.uid);
 
     await question.save();
+    await createQuestionnaireVersion(
+      req.user.uid,
+      `Before editing question: ${question.qTitle} (${question.qKey})`,
+      undefined,
+      snapshot
+    );
     return res.json({ question: questionSnapshot(question) });
   } catch (error) {
     if (error.name === 'VersionError') {
@@ -434,10 +527,14 @@ router.patch('/questions/:qKey/archive', async (req, res) => {
     if (question.isArchived === req.body.isArchived) {
       return res.json({ question: questionSnapshot(question), rewiredRules: 0 });
     }
+    if (question.pageManaged) {
+      return res.status(409).json({ error: 'Built-in page questions cannot be archived' });
+    }
     if (req.body.isArchived && question.qKey === questionnaireStartKey) {
       return res.status(409).json({ error: 'The questionnaire starting question cannot be archived' });
     }
 
+    const snapshot = await captureQuestionnaireSnapshot();
     let rewiredRules = 0;
     if (req.body.isArchived) {
       const inboundRules = await NextQuestionRule.find({
@@ -495,6 +592,12 @@ router.patch('/questions/:qKey/archive', async (req, res) => {
     question.isArchived = req.body.isArchived;
     appendRevision(question, before, questionSnapshot(question), req.user.uid);
     await question.save();
+    await createQuestionnaireVersion(
+      req.user.uid,
+      `Before ${req.body.isArchived ? 'archiving' : 'restoring'} question: ${question.qTitle} (${question.qKey})`,
+      undefined,
+      snapshot
+    );
 
     return res.json({ question: questionSnapshot(question), rewiredRules });
   } catch (error) {
@@ -561,12 +664,7 @@ router.post('/questions/:qKey/restore', async (req, res) => {
       return res.status(409).json({ error: 'This revision does not contain a restorable question snapshot' });
     }
 
-    const restoredFields = Object.fromEntries(
-      editableQuestionFields.map((field) => [
-        field,
-        field === 'appliesToGroup' ? revision.before[field] || '' : revision.before[field]
-      ])
-    );
+    const restoredFields = questionRestoreFields(revision.before);
     const validationError = validateQuestionPayload(restoredFields, editableQuestionFields, {
       requireAll: true
     });
@@ -574,10 +672,17 @@ router.post('/questions/:qKey/restore', async (req, res) => {
       return res.status(409).json({ error: 'This question revision is no longer valid for restoration' });
     }
 
+    const snapshot = await captureQuestionnaireSnapshot();
     const before = questionSnapshot(question);
     question.set(restoredFields);
     appendRevision(question, before, questionSnapshot(question), req.user.uid);
     await question.save();
+    await createQuestionnaireVersion(
+      req.user.uid,
+      `Before restoring question revision: ${question.qTitle} (${question.qKey})`,
+      undefined,
+      snapshot
+    );
 
     return res.json({ question: questionSnapshot(question) });
   } catch (error) {
@@ -592,6 +697,129 @@ router.post('/questions/:qKey/restore', async (req, res) => {
 
     console.error('Could not restore question revision:', error);
     return res.status(500).json({ error: 'Could not restore question revision' });
+  }
+});
+
+router.post('/questionnaire-versions/:versionId/restore', async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.versionId)) {
+    return res.status(400).json({ error: 'Provide a valid questionnaire version' });
+  }
+
+  let session;
+  try {
+    const version = await QuestionnaireVersion.findById(req.params.versionId).lean();
+    if (!version) {
+      return res.status(404).json({ error: 'Questionnaire version not found' });
+    }
+
+    session = await mongoose.startSession();
+    let restoredQuestions = 0;
+    let archivedQuestions = 0;
+    let restoredRules = 0;
+
+    await session.withTransaction(async () => {
+      await createQuestionnaireVersion(
+        req.user.uid,
+        `Before restoring questionnaire to: ${version.action}`,
+        session
+      );
+
+      const currentQuestions = await Question.find()
+        .select('+revisionHistory')
+        .session(session);
+      const targetQuestions = new Map(version.questions.map((question) => [question.qKey, question]));
+      const currentQuestionKeys = new Set(currentQuestions.map((question) => question.qKey));
+
+      for (const question of currentQuestions) {
+        const target = targetQuestions.get(question.qKey);
+        const before = questionSnapshot(question);
+        if (target) {
+          question.set({
+            ...questionRestoreFields(target),
+            isArchived: target.isArchived === true,
+            pageManaged: target.pageManaged === true
+          });
+        } else if (question.pageManaged !== true) {
+          if (question.isArchived !== true) {
+            question.isArchived = true;
+            archivedQuestions += 1;
+          }
+        }
+
+        const after = questionSnapshot(question);
+        if (!hasQuestionnaireQuestionChanged(before, after)) continue;
+        appendRevision(question, before, after, req.user.uid);
+        await question.save({ session });
+        restoredQuestions += 1;
+      }
+
+      for (const target of version.questions) {
+        if (currentQuestionKeys.has(target.qKey)) continue;
+        const question = new Question({
+          ...questionRestoreFields(target),
+          isArchived: target.isArchived === true,
+          pageManaged: target.pageManaged === true
+        });
+        const after = questionSnapshot(question);
+        appendRevision(question, null, after, req.user.uid);
+        await question.save({ session });
+        restoredQuestions += 1;
+      }
+
+      const currentRules = await NextQuestionRule.find()
+        .select('+revisionHistory')
+        .session(session);
+      const targetRules = new Map(version.rules.map((rule) => [rule.qKey, rule]));
+      const currentRuleKeys = new Set(currentRules.map((rule) => rule.qKey));
+
+      for (const rule of currentRules) {
+        const before = ruleSnapshot(rule);
+        const target = targetRules.get(rule.qKey);
+        rule.set(target ? ruleRestoreFields(target) : ruleRestoreFields(null));
+        const after = ruleSnapshot(rule);
+        if (!hasQuestionnaireRuleChanged(before, after)) continue;
+        appendRevision(rule, before, after, req.user.uid);
+        await rule.save({ session });
+        restoredRules += 1;
+      }
+
+      for (const target of version.rules) {
+        if (currentRuleKeys.has(target.qKey)) continue;
+        const rule = new NextQuestionRule({
+          qKey: target.qKey,
+          ...ruleRestoreFields(target)
+        });
+        appendRevision(rule, null, ruleSnapshot(rule), req.user.uid);
+        await rule.save({ session });
+        restoredRules += 1;
+      }
+    });
+
+    return res.json({
+      restoredVersion: {
+        id: version._id,
+        action: version.action,
+        createdAt: version.createdAt
+      },
+      restoredQuestions,
+      archivedQuestions,
+      restoredRules
+    });
+  } catch (error) {
+    if (error.name === 'VersionError') {
+      return res.status(409).json({
+        error: 'The questionnaire changed during restoration. Reload the versions and try again.'
+      });
+    }
+    if (error.name === 'ValidationError' || error.name === 'CastError') {
+      return res.status(400).json({ error: 'Questionnaire version contains invalid question data' });
+    }
+    console.error('Could not restore questionnaire version:', error);
+    return res.status(500).json({ error: 'Could not restore questionnaire version' });
+  } finally {
+    if (session) {
+      await session.endSession();
+    }
   }
 });
 
@@ -671,6 +899,7 @@ router.put('/question-rules/:qKey', async (req, res) => {
     let rule = await NextQuestionRule.findOne({ qKey: req.params.qKey })
       .select('+revisionHistory');
     const before = rule ? ruleSnapshot(rule) : null;
+    const snapshot = await captureQuestionnaireSnapshot();
     if (!rule) {
       rule = new NextQuestionRule({ qKey: req.params.qKey });
     }
@@ -684,6 +913,12 @@ router.put('/question-rules/:qKey', async (req, res) => {
     appendRevision(rule, before, ruleSnapshot(rule), req.user.uid);
 
     await rule.save();
+    await createQuestionnaireVersion(
+      req.user.uid,
+      `Before editing branching rules: ${req.params.qKey}`,
+      undefined,
+      snapshot
+    );
     return res.json({ rule: ruleSnapshot(rule) });
   } catch (error) {
     if (error.name === 'VersionError') {

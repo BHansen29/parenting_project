@@ -1,6 +1,6 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { vi } from 'vitest'
+import { afterEach, vi } from 'vitest'
 import InformationSharing from '../../src/pages/InformationSharing'
 import { renderWithRouter } from '../../src/utils/renderWithRouter'
 
@@ -31,7 +31,13 @@ describe('InformationSharing', () => {
   beforeEach(() => {
     mockNavigate.mockReset()
     localStorage.clear()
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [],
+    }))
   })
+
+  afterEach(() => vi.unstubAllGlobals())
 
   it('renders the page heading and description', () => {
     renderWithRouter(<InformationSharing />)
@@ -48,6 +54,25 @@ describe('InformationSharing', () => {
     expect(screen.getByText('Medical Information Access')).toBeInTheDocument()
     expect(screen.getByText('School Contact Rights & Access to Information')).toBeInTheDocument()
     expect(screen.getByText('School Activity Participation')).toBeInTheDocument()
+  })
+
+  it('renders additional questions configured by an administrator', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [{
+        qKey: 'admin_information_question',
+        qTitle: 'Additional Information',
+        qText: 'What else should your co-parent know?',
+        qIntro: '',
+        type: 'text input',
+        options: [],
+        pageManaged: false,
+      }],
+    }))
+
+    renderWithRouter(<InformationSharing />)
+
+    expect(await screen.findByText('What else should your co-parent know?')).toBeInTheDocument()
   })
 
   it.each([
