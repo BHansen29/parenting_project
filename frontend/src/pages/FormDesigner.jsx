@@ -829,11 +829,6 @@ function normalizeTemplate(saved, format) {
       block &&
       typeof block.id === 'string' &&
       ['heading', 'text', 'answer'].includes(block.type)
-      ))
-      .filter((block, index, blocks) => (
-        !blocks.some((other, otherIndex) => (
-          otherIndex < index && other.qKey && other.qKey === block.qKey
-        ))
       )),
   };
 }

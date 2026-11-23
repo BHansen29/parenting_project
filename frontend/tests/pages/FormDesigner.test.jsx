@@ -1,7 +1,12 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { vi } from 'vitest'
-import FormDesigner, { answerText, FormTemplatePrintDocument } from '../../src/pages/FormDesigner'
+import FormDesigner, {
+  answerText,
+  FormTemplatePrintDocument,
+  loadTemplate,
+  templateStorageKey,
+} from '../../src/pages/FormDesigner'
 import { CUSTOM_COMPARISON_QUESTIONS } from '../../src/lib/comparisonQuestionDefinitions'
 import { renderWithRouter } from '../../src/utils/renderWithRouter'
 
@@ -76,6 +81,20 @@ describe('FormDesigner', () => {
 
     await userEvent.click(screen.getAllByRole('button', { name: 'Duplicate block' })[0])
     expect(screen.getAllByText('Sample parental-rights question').length).toBeGreaterThanOrEqual(3)
+  })
+
+  it('restores duplicate answer blocks from local storage', () => {
+    localStorage.setItem(templateStorageKey('form20'), JSON.stringify({
+      title: 'Repeated responses',
+      blocks: [
+        { id: 'answer-1', type: 'answer', qKey: 'parentalRights.test', questionText: 'First copy' },
+        { id: 'answer-2', type: 'answer', qKey: 'parentalRights.test', questionText: 'Second copy' },
+      ],
+    }))
+
+    const restored = loadTemplate('form20')
+
+    expect(restored.blocks.filter((block) => block.qKey === 'parentalRights.test')).toHaveLength(2)
   })
 
   it('shows readable Information Sharing question labels', async () => {
