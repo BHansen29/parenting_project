@@ -6,6 +6,7 @@ import { CheckCircle, Download, UserPlus, Pencil, ChevronDown, ChevronUp, Flag }
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/card';
 import Disclaimer from '../components/forms/Disclaimer';
 import InviteModal from '../components/common/InviteModal';
+import NextStepsModal from '../components/common/NextStepsModal';
 import { useForm } from '../hooks/useForm';
 import useModalAccessibility from '../hooks/useModalAccessibility';
 import { auth } from '../lib/firebase';
@@ -614,6 +615,7 @@ export default function Review() {
   const switchModalAccessibility = useModalAccessibility(showSwitchPrompt, () => setShowSwitchPrompt(false));
   const [caseStatus, setCaseStatus] = useState(null);
   const [isPrinting, setIsPrinting] = useState(false);
+  const [showNextSteps, setShowNextSteps] = useState(false);
   const [standardForm20Template, setStandardForm20Template] = useState(null);
   const [standardForm21Template, setStandardForm21Template] = useState(null);
   
@@ -760,7 +762,12 @@ export default function Review() {
     return () => clearTimeout(printTimer);
   }, [isPrinting]);
 
-  const handleDownload = () => setIsPrinting(true);
+  const handleDownload = () => setShowNextSteps(true);
+
+  const handleContinueToPrint = () => {
+    setShowNextSteps(false);
+    setIsPrinting(true);
+  };
 
   return (
     <>
@@ -911,6 +918,11 @@ export default function Review() {
           document.body,
         )
       )}
+      <NextStepsModal
+        isOpen={showNextSteps}
+        onClose={() => setShowNextSteps(false)}
+        onContinue={handleContinueToPrint}
+      />
     </>
   );
 }

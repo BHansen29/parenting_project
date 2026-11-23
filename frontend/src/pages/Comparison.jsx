@@ -6,6 +6,7 @@ import { buildApiUrl } from '../lib/apiClient';
 import { CUSTOM_COMPARISON_QUESTIONS } from '../lib/comparisonQuestionDefinitions';
 import { answerText, fetchStandardTemplate, FormTemplatePrintDocument, loadTemplate, printTemplateFormat } from './FormDesigner';
 import { CheckCircle, AlertTriangle, Users, ArrowLeft, Printer, Calendar, Flag } from 'lucide-react';
+import NextStepsModal from '../components/common/NextStepsModal';
 import './Comparison.css';
 import './FormDesigner.css';
 
@@ -334,6 +335,7 @@ export default function Comparison() {
   const [standardForm21Template, setStandardForm21Template] = useState(null);
   const [combinedCurrentCircumstance, setCombinedCurrentCircumstance] = useState('');
   const [isPrinting, setIsPrinting] = useState(false);
+  const [showNextSteps, setShowNextSteps] = useState(false);
 
   const handleTabKeyDown = (event) => {
     const tabs = [...event.currentTarget.parentElement.querySelectorAll('[role="tab"]')];
@@ -774,7 +776,7 @@ export default function Comparison() {
           <div className="comparison__submit-row comparison__final-actions">
               <button
                 className="comparison__download-btn"
-                onClick={() => setIsPrinting(true)}
+                onClick={() => setShowNextSteps(true)}
               >
                 <Printer size={16} aria-hidden="true" /> Print / Save PDF
               </button>
@@ -882,8 +884,17 @@ export default function Comparison() {
           needsDiscussionKeys={needsDiscussionKeys}
           parentNames={parentNames}
           children={children}
+          comparisonMode
         />
       )}
+      <NextStepsModal
+        isOpen={showNextSteps}
+        onClose={() => setShowNextSteps(false)}
+        onContinue={() => {
+          setShowNextSteps(false);
+          setIsPrinting(true);
+        }}
+      />
       </>
     );
   }

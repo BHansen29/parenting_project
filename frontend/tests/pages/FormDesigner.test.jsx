@@ -148,6 +148,63 @@ describe('FormDesigner', () => {
     }, question)).toContain('Parent 2 years: 2025, 2029; Parent 1 years: 2026, 2028')
   })
 
+  it('uses relative tax-year labels in review mode and parent labels in comparison mode', () => {
+    const question = { childAnswers: true }
+    const answer = {
+      Alex: { intent: 'parent1SomeYears', taxYears: 'odd', userIsParent2: false },
+    }
+
+    expect(answerText(answer, question, 'parent1', true, true)).toContain(
+      'I will claim',
+    )
+    expect(answerText(answer, question, 'parent1', false, true)).toContain(
+      'Parent 1 will claim',
+    )
+  })
+
+  it('uses relative labels for generic review options instead of Parent 1 or Parent 2', () => {
+    const question = {
+      qKey: 'test.question',
+      options: [
+        { value: 'parent1', label: 'Just me' },
+        { value: 'parent2', label: 'Just my co-parent' },
+        { value: 'both', label: 'Both me and my co-parent' },
+      ],
+    }
+
+    expect(answerText('parent1', question, 'parent1', true)).toBe('Just me')
+    expect(answerText('parent2', question, 'parent1', true)).toBe('Just my co-parent')
+    expect(answerText('both', question, 'parent1', true)).toBe('Both me and my co-parent')
+  })
+
+  it('prints I and My co-parent in the review schedule instead of Parent labels', () => {
+    render(
+      <FormTemplatePrintDocument
+        template={{
+          title: 'Review',
+          blocks: [{
+            id: 'schedule-1',
+            type: 'answer',
+            qKey: 'parentingTimeAndCommunication.parentingSchedule',
+            questionText: 'Parenting schedule',
+          }],
+        }}
+        answersByKey={{
+          'parentingTimeAndCommunication.parentingSchedule': {
+            answer: { 0: [{ parent: 'parent1', startTime: '09:00', endTime: '17:00' }] },
+          },
+        }}
+        questions={{
+          'parentingTimeAndCommunication.parentingSchedule': { scheduleType: 'regular' },
+        }}
+        answeringParent="parent1"
+      />,
+    )
+
+    expect(screen.getAllByText(/I/).length).toBeGreaterThan(0)
+    expect(screen.queryByText(/Parent 1|Parent 2/)).not.toBeInTheDocument()
+  })
+
   it('prints both parent answers for items needing discussion', () => {
     render(
       <FormTemplatePrintDocument
@@ -178,5 +235,31 @@ describe('FormDesigner', () => {
     expect(screen.getByText("Jordan's answer")).toBeInTheDocument()
     expect(screen.getByText('Parent 2 answer')).toBeInTheDocument()
     expect(screen.queryByText('merged answer')).not.toBeInTheDocument()
+  })
+
+  it('hides headings that contain no answered questions', () => {
+    render(
+      <FormTemplatePrintDocument
+        template={{
+          title: 'Comparison',
+          blocks: [
+            { id: 'heading-empty', type: 'heading', text: 'Empty section' },
+            { id: 'answer-empty', type: 'answer', qKey: 'empty.question', questionText: 'Unanswered question' },
+            { id: 'heading-answered', type: 'heading', text: 'Answered section' },
+            { id: 'answer-answered', type: 'answer', qKey: 'answered.question', questionText: 'Answered question' },
+          ],
+        }}
+        answersByKey={{
+          'empty.question': { qKey: 'empty.question', answer: null },
+          'answered.question': { qKey: 'answered.question', answer: 'The answer' },
+        }}
+        questions={{}}
+      />,
+    )
+
+    expect(screen.queryByText('Empty section')).not.toBeInTheDocument()
+    expect(screen.queryByText('Unanswered question')).not.toBeInTheDocument()
+    expect(screen.getByText('Answered section')).toBeInTheDocument()
+    expect(screen.getByText('Answered question')).toBeInTheDocument()
   })
 })
