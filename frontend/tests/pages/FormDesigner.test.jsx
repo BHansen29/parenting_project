@@ -61,6 +61,23 @@ describe('FormDesigner', () => {
     expect(screen.getByRole('tablist', { name: 'Question pages' })).toBeInTheDocument()
   })
 
+  it('allows the same question to be added repeatedly and duplicated', async () => {
+    renderWithRouter(<FormDesigner />)
+
+    await userEvent.click(await screen.findByRole('tab', { name: 'Parental Rights' }))
+    const questionButton = await screen.findByRole('button', {
+      name: /sample parental-rights question/i,
+    })
+
+    await userEvent.click(questionButton)
+    await userEvent.click(questionButton)
+
+    expect(screen.getAllByText('Sample parental-rights question').length).toBeGreaterThanOrEqual(2)
+
+    await userEvent.click(screen.getAllByRole('button', { name: 'Duplicate block' })[0])
+    expect(screen.getAllByText('Sample parental-rights question').length).toBeGreaterThanOrEqual(3)
+  })
+
   it('shows readable Information Sharing question labels', async () => {
     localStorage.setItem('shareCareFormTemplate:form20', JSON.stringify({
       title: 'Comparison',

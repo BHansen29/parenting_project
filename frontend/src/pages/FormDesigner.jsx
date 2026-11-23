@@ -1114,10 +1114,8 @@ export default function FormDesigner() {
     [allAnswers],
   );
   const availableQuestions = useMemo(
-    () => Object.values(questions).filter((question) => (
-      !template.blocks.some((block) => block.qKey === question.qKey)
-    )),
-    [questions, template.blocks],
+    () => Object.values(questions),
+    [questions],
   );
   const filteredQuestions = useMemo(() => {
     const search = questionSearch.trim().toLowerCase();
@@ -1200,6 +1198,18 @@ export default function FormDesigner() {
     ...current,
     blocks: current.blocks.filter((block) => block.id !== id),
   }));
+
+  const duplicateBlock = (id) => setTemplate((current) => {
+    const index = current.blocks.findIndex((block) => block.id === id);
+    if (index < 0) return current;
+    const duplicate = {
+      ...current.blocks[index],
+      id: `${current.blocks[index].type}-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    };
+    const blocks = [...current.blocks];
+    blocks.splice(index + 1, 0, duplicate);
+    return { ...current, blocks };
+  });
 
   const canvasPages = useMemo(() => {
     const pages = [[]];
@@ -1314,7 +1324,7 @@ export default function FormDesigner() {
             {selectedQuestionGroup && (
               <>
                 <h2>{selectedQuestionGroup[0]}</h2>
-                <p className="form-designer__hint">Drag a question onto the document.</p>
+                <p className="form-designer__hint">Add or drag a question as often as needed.</p>
                 {selectedQuestionGroup[1].map((question) => (
                   <button
                     className="form-designer__answer-token"
@@ -1331,9 +1341,6 @@ export default function FormDesigner() {
                   </button>
                 ))}
               </>
-            )}
-            {availableQuestions.length === 0 && selectedPalettePage !== 'Personal info' && (
-              <p className="form-designer__empty">All questions are placed.</p>
             )}
             {availableQuestions.length > 0 && filteredQuestions.length === 0 && (
               <p className="form-designer__empty">No questions match your search.</p>
@@ -1407,6 +1414,7 @@ export default function FormDesigner() {
                 <div className="form-designer__block-controls">
                   <button onClick={() => moveBlock(index, -1)} aria-label="Move block up"><ArrowUp size={14} /></button>
                   <button onClick={() => moveBlock(index, 1)} aria-label="Move block down"><ArrowDown size={14} /></button>
+                  <button onClick={() => duplicateBlock(block.id)} aria-label="Duplicate block"><Plus size={14} /></button>
                   <button onClick={() => removeBlock(block.id)} aria-label="Remove block"><Trash2 size={14} /></button>
                 </div>
                 {block.type === 'answer' ? (
