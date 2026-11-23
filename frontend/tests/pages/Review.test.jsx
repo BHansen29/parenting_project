@@ -153,11 +153,23 @@ describe('Review', () => {
   // ─── Section Blocks ───────────────────────────────────────────────────────
 
   it('renders all five known section titles', () => {
+    mockPlanAnswers = [
+      { qKey: 'getting', answer: 'yes', section: 'getting-started' },
+      { qKey: 'rights', answer: 'yes', section: 'parental-rights' },
+      { qKey: 'time', answer: 'yes', section: 'parenting-time-communication' },
+      { qKey: 'info', answer: 'yes', section: 'information-sharing' },
+      { qKey: 'tax', answer: 'yes', section: 'tax-exemptions' },
+    ]
+    mockQuestions = mockPlanAnswers.map(({ qKey, section, answer }) => ({
+      qKey,
+      section,
+      qText: `${qKey} question`,
+      answer,
+    }))
     renderReview()
     expect(screen.getByText('Getting Started')).toBeInTheDocument()
     expect(screen.getByText('Parental Rights')).toBeInTheDocument()
     expect(screen.getByText('Parenting Time & Communication')).toBeInTheDocument()
-    expect(screen.getByText('Information Sharing')).toBeInTheDocument()
     expect(screen.getByText('Tax Exemptions')).toBeInTheDocument()
   })
 
@@ -172,7 +184,7 @@ describe('Review', () => {
 
   it('all sections are expanded by default', () => {
     renderReview()
-    expect(screen.getAllByRole('button', { name: /getting started|parental rights|parenting time & communication|information sharing|tax exemptions/i })
+    expect(screen.getAllByRole('button', { name: /getting started|parental rights|health insurance questions|parenting time & communication|information sharing|tax exemptions/i })
       .filter((section) => section.getAttribute('aria-expanded') === 'true')).toHaveLength(5)
   })
 
@@ -251,6 +263,7 @@ describe('Review', () => {
     mockPlanAnswers = Object.keys({
       'getting-started': true,
       'parental-rights': true,
+      'health-insurance-coverage': true,
       'parenting-time-communication': true,
       'information-sharing': true,
       'tax-exemptions': true,
@@ -265,6 +278,7 @@ describe('Review', () => {
       section: Object.keys({
         'getting-started': true,
         'parental-rights': true,
+        'health-insurance-coverage': true,
         'parenting-time-communication': true,
         'information-sharing': true,
         'tax-exemptions': true,

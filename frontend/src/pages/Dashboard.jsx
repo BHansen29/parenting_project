@@ -1,5 +1,5 @@
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { Calendar, FileText, Lock, Pencil, Plus, Trash2, UserPlus, Users } from 'lucide-react';
+import { Calendar, FileText, Lock, Pencil, Plus, Trash2, UserPlus, UserRoundX, Users } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Header from '../components/common/Header';
@@ -336,11 +336,6 @@ export default function Dashboard() {
       <Header
         user={user}
         onSignOut={handleSignOut}
-        onDeleteAccount={() => {
-          setAccountDeleteConfirmation('');
-          setAccountDeleteError('');
-          setShowAccountDeletePrompt(true);
-        }}
       />
       <InviteModal
         isOpen={isInviteOpen}
@@ -683,6 +678,23 @@ export default function Dashboard() {
               );
             })}
           </div>
+
+          {user && (
+            <div className="dashboard__account-actions">
+              <button
+                type="button"
+                className="dashboard__delete-account-btn"
+                onClick={() => {
+                  setAccountDeleteConfirmation('');
+                  setAccountDeleteError('');
+                  setShowAccountDeletePrompt(true);
+                }}
+              >
+                <UserRoundX size={16} aria-hidden="true" />
+                Delete Account
+              </button>
+            </div>
+          )}
         </section>
       </main>
     </div>

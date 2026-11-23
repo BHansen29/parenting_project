@@ -12,7 +12,8 @@ describe('Header', () => {
 
   it('displays the ShareCare logo', () => {
     renderWithRouter(<Header />);
-    expect(screen.getByAltText('ShareCare')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Go to dashboard' })).toBeInTheDocument();
+    expect(document.querySelector('.header__logo')).toBeInTheDocument();
   });
 
   it('does not show Saved indicator by default', () => {
@@ -27,6 +28,6 @@ describe('Header', () => {
 
   it('renders without crashing when showNavigation is false', () => {
     renderWithRouter(<Header showNavigation={false} />);
-    expect(screen.getByAltText('ShareCare')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Go to dashboard' })).toBeInTheDocument();
   });
 });

@@ -25,6 +25,21 @@ const fillValidSchedule = async () => {
   }
 }
 
+const seedValidSchedulingState = () => {
+  localStorage.setItem('sharedCareForm', JSON.stringify({
+    plan: {},
+    timeAndCommunication: {
+      scheduleScope: 'later',
+      parentingSchedule: {},
+      holidaySchedule: {},
+      schoolSchedule: {},
+      holidayGatheringAdults: 'no',
+      holidayGatheringAdultsDetails: '',
+      errors: {},
+    },
+  }))
+}
+
 // Helper: fill in the minimum valid form to allow navigation
 const fillValidForm = async () => {
   await userEvent.click(document.querySelector('#agreeToTransportationPolicy'))
@@ -114,11 +129,9 @@ describe('ParentingTimeAndCommunication', () => {
       expect(document.querySelector('#agreeToTransportationPolicy')).not.toBeChecked()
     })
 
-    it('renders the transportation agreement checkbox with accessible label', () => {
+    it('renders the transportation agreement checkbox with accessible label', async () => {
       renderWithRouter(<ParentingTimeAndCommunication />)
-      expect(
-        screen.getByLabelText(/i agree to the standard transportation policy/i)
-      ).toBeInTheDocument()
+      expect(screen.getByLabelText(/i agree to the standard transportation policy/i)).toBeInTheDocument()
     })
 
     it('renders the transportation description text input', () => {
@@ -664,6 +677,7 @@ describe('ParentingTimeAndCommunication', () => {
     })
 
     it('navigates to /informationsharing on valid form submission using checkboxes', async () => {
+      seedValidSchedulingState()
       renderWithRouter(<ParentingTimeAndCommunication />)
       await fillValidForm()
       await userEvent.click(screen.getByRole('button', { name: /next/i }))
@@ -671,6 +685,7 @@ describe('ParentingTimeAndCommunication', () => {
     })
 
     it('navigates to /informationsharing when descriptions are provided instead of checkboxes', async () => {
+      seedValidSchedulingState()
       renderWithRouter(<ParentingTimeAndCommunication />)
       fireEvent.change(
         document.querySelector('#transportationArrangementDescription'),
@@ -692,6 +707,7 @@ describe('ParentingTimeAndCommunication', () => {
     })
 
     it('navigates to /informationsharing when "Sometimes" is selected with a description filled', async () => {
+      seedValidSchedulingState()
       renderWithRouter(<ParentingTimeAndCommunication />)
       await userEvent.click(document.querySelector('#agreeToTransportationPolicy'))
       await userEvent.click(document.querySelector('#agreeToActivityPolicy'))

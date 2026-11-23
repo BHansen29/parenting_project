@@ -77,9 +77,9 @@ describe('LandingPage', () => {
 
   it('has all navigation buttons', () => {
     renderWithRouter(<LandingPage />)
-    expect(screen.getByRole('button', { name: /get started/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /begin your plan/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /^sign in$/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /get started/i })).toHaveAttribute('href', '/signup')
+    expect(screen.getByRole('link', { name: /begin your plan/i })).toHaveAttribute('href', '/signup')
+    expect(screen.getByRole('link', { name: /^sign in$/i })).toHaveAttribute('href', '/signin')
   })
 
   it('switches between English and Spanish on the landing and How It Works pages', async () => {
@@ -106,21 +106,21 @@ describe('LandingPage', () => {
   })
 
   it('navigates to /signup when Get Started is clicked', async () => {
-  renderWithRouter(<LandingPage />)
-  await userEvent.click(screen.getByRole('button', { name: /get started/i }))
-  expect(mockNavigate).toHaveBeenCalledWith('/signup')
+    renderWithRouter(<LandingPage />)
+    await userEvent.click(screen.getByRole('link', { name: /get started/i }))
+    expect(mockNavigate).not.toHaveBeenCalled()
 })
 
   it('navigates to /signup when Begin Your Plan is clicked', async () => {
     renderWithRouter(<LandingPage />)
-    await userEvent.click(screen.getByRole('button', { name: /begin your plan/i }))
-    expect(mockNavigate).toHaveBeenCalledWith('/signup')
+    await userEvent.click(screen.getByRole('link', { name: /begin your plan/i }))
+    expect(mockNavigate).not.toHaveBeenCalled()
   })
 
   it('navigates to /signin when Sign In is clicked', async () => {
     renderWithRouter(<LandingPage />)
-    await userEvent.click(screen.getByRole('button', { name: /^sign in$/i }))
-    expect(mockNavigate).toHaveBeenCalledWith('/signin')
+    await userEvent.click(screen.getByRole('link', { name: /^sign in$/i }))
+    expect(mockNavigate).not.toHaveBeenCalled()
   })
 
   // ─── Footer ───────────────────────────────────────────────────────────────
@@ -128,7 +128,8 @@ describe('LandingPage', () => {
   it('displays footer information', () => {
     renderWithRouter(<LandingPage />)
     expect(screen.getByText(/Action for Children/i)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /privacy policy/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /terms of service/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /privacy policy/i })).toHaveAttribute('href', '/privacy-policy')
+    expect(screen.getByRole('link', { name: /terms of service/i })).toHaveAttribute('href', '/terms-of-service')
+    expect(screen.getByRole('link', { name: /contact support/i })).toHaveAttribute('href', '/contact-support')
   })
 })

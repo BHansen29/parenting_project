@@ -133,7 +133,10 @@ describe('FormDesigner', () => {
     const question = { childAnswers: true }
     expect(answerText({
       Alex: { intent: 'parent1SomeYears', taxYears: 'odd', userIsParent2: true },
-    }, question)).toContain('Parent 1 years: Odd-numbered tax years; Parent 2 years: Even-numbered tax years')
+    }, question)).toContain('Parent 1 will claim: Odd-numbered tax years')
+    expect(answerText({
+      Alex: { intent: 'parent1SomeYears', taxYears: 'odd', userIsParent2: true },
+    }, question)).toContain('Parent 2 will claim: Even-numbered tax years')
     expect(answerText({
       Alex: { intent: 'parent1SomeYears', taxYears: 'odd', userIsParent2: true },
     }, question)).not.toContain('Alex: Parent 1 —')
@@ -145,7 +148,16 @@ describe('FormDesigner', () => {
         coParentCustomYears: '2026, 2028',
         userIsParent2: false,
       },
-    }, question)).toContain('Parent 2 years: 2025, 2029; Parent 1 years: 2026, 2028')
+    }, question)).toContain('Parent 2 will claim: 2025, 2029')
+    expect(answerText({
+      Alex: {
+        intent: 'parent2SomeYears',
+        taxYears: 'custom',
+        customYears: '2025, 2029',
+        coParentCustomYears: '2026, 2028',
+        userIsParent2: false,
+      },
+    }, question)).toContain('Parent 1 will claim: 2026, 2028')
   })
 
   it('uses relative tax-year labels in review mode and parent labels in comparison mode', () => {

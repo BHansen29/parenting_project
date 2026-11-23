@@ -26,7 +26,6 @@ const SECTION_META = {
   'parental-rights': { label: 'Parental Rights', route: '/parental-rights' },
   'health-insurance-coverage': { label: 'Health Insurance Questions', route: '/parental-rights' },
   'parenting-time-communication': { label: 'Parenting Time & Communication', route: '/parenting-time-communication' },
-  'information-sharing': { label: 'Information Sharing', route: '/informationsharing' },
   'tax-exemptions': { label: 'Tax Exemptions', route: '/tax-exemptions' },
 };
 
@@ -165,23 +164,7 @@ const CUSTOM_SECTION_FIELDS = {
       holidayGatheringAdultsDetails: 'Restricted holiday-gathering adult name',
     },
   },
-  informationSharing: {
-    section: 'information-sharing',
-    fields: {
-      medicalRecords: 'Medical information access',
-      schoolContact: 'School contact rights',
-      schoolActivities: 'School activity participation',
-    },
-  },
 };
-
-const INFORMATION_SHARING_OPTIONS = [
-  { value: 'parent1', label: 'Just me' },
-  { value: 'parent2', label: 'Just my co-parent' },
-  { value: 'both', label: 'Both me and my co-parent' },
-  { value: 'needInfo', label: 'I need more information' },
-  { value: 'defer', label: "Default to my co-parent's choice" },
-];
 
 /* Parenting time & Information Sharing question options, translates stored values to human-readable labels for display in the review page */
 const CUSTOM_FIELD_OPTIONS = {
@@ -211,9 +194,6 @@ const CUSTOM_FIELD_OPTIONS = {
     { value: 'yes', label: 'Yes' },
     { value: 'no', label: 'No' },
   ],
-  medicalRecords: INFORMATION_SHARING_OPTIONS,
-  schoolContact: INFORMATION_SHARING_OPTIONS,
-  schoolActivities: INFORMATION_SHARING_OPTIONS,
 };
 
 const STATE_FIELD_OPTIONS = {

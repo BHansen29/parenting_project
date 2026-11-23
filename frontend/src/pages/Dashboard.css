@@ -317,6 +317,35 @@
   gap: 1.25rem;
 }
 
+.dashboard__account-actions {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 2rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.dashboard__delete-account-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: transparent;
+  border: none;
+  color: #b91c1c;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.25rem 0;
+  border-radius: 0;
+  transition: color 0.2s;
+}
+
+.dashboard__delete-account-btn:hover {
+  color: #7f1d1d;
+  background: transparent;
+  border-color: transparent;
+}
+
 /* ── Plan Card ── */
 .plan-card {
   background-color: #ffffff;
@@ -574,6 +603,18 @@
   .dashboard__new-plan-btn:hover {
     background-color: #087da2;
     color: #ffffff;
+  }
+
+  .dashboard__account-actions {
+    border-top-color: #4b5563;
+  }
+
+  .dashboard__delete-account-btn {
+    color: #f87171;
+  }
+
+  .dashboard__delete-account-btn:hover {
+    color: #ef4444;
   }
 
   /* Plan card */

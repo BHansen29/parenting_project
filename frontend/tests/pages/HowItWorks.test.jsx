@@ -31,19 +31,16 @@ describe('HowItWorks', () => {
   it('navigates from the primary calls to action', async () => {
     renderWithRouter(<HowItWorks />)
 
-    await userEvent.click(screen.getByRole('button', { name: /create your plan/i }))
-    expect(mockNavigate).toHaveBeenCalledWith('/signup')
-    await userEvent.click(screen.getByRole('button', { name: /return to sharecare home/i }))
-    expect(mockNavigate).toHaveBeenCalledWith('/')
-    await userEvent.click(screen.getByRole('button', { name: /sign in/i }))
-    expect(mockNavigate).toHaveBeenCalledWith('/signin')
+    expect(screen.getByRole('link', { name: /create your plan/i })).toHaveAttribute('href', '/signup')
+    expect(screen.getByRole('link', { name: /return to sharecare home/i })).toHaveAttribute('href', '/')
+    expect(screen.getByRole('link', { name: /sign in/i })).toHaveAttribute('href', '/signin')
   })
 
   it('provides footer links to the static pages', () => {
     renderWithRouter(<HowItWorks />)
 
-    expect(screen.getByRole('button', { name: /privacy policy/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /terms of service/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /contact support/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /privacy policy/i })).toHaveAttribute('href', '/privacy-policy')
+    expect(screen.getByRole('link', { name: /terms of service/i })).toHaveAttribute('href', '/terms-of-service')
+    expect(screen.getByRole('link', { name: /contact support/i })).toHaveAttribute('href', '/contact-support')
   })
 })
