@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, vi } from 'vitest'
 import InformationSharing from '../../src/pages/InformationSharing'
@@ -15,18 +15,6 @@ vi.mock('react-router-dom', async () => {
 
 window.HTMLElement.prototype.scrollIntoView = vi.fn()
 
-const sectionKeys = ['medicalRecords', 'schoolContact', 'schoolActivities']
-
-function textareaFor(key) {
-  return document.querySelector(`#information-sharing-${key}`)
-}
-
-async function fillAllSections(values = {}) {
-  for (const key of sectionKeys) {
-    await userEvent.type(textareaFor(key), values[key] ?? `${key} response`)
-  }
-}
-
 describe('InformationSharing', () => {
   beforeEach(() => {
     mockNavigate.mockReset()
@@ -42,18 +30,20 @@ describe('InformationSharing', () => {
   it('renders the page heading and description', () => {
     renderWithRouter(<InformationSharing />)
 
-    expect(screen.getByText('Information Sharing')).toBeInTheDocument()
+    expect(screen.getByText('Additional Information')).toBeInTheDocument()
     expect(
-      screen.getByText(/Determine who has access to medical, school, and activity information/i)
+      screen.getByText(/Review child support worksheet requirements and resources/i)
     ).toBeInTheDocument()
   })
 
-  it('renders the current information-sharing sections', () => {
+  it('does not render the removed built-in questions', () => {
     renderWithRouter(<InformationSharing />)
 
-    expect(screen.getByText('Medical Information Access')).toBeInTheDocument()
-    expect(screen.getByText('School Contact Rights & Access to Information')).toBeInTheDocument()
-    expect(screen.getByText('School Activity Participation')).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Medical Information Access' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'School Contact Rights & Access to Information' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'School Activity Participation' })).not.toBeInTheDocument()
+    expect(screen.queryByText(/Do you agree to these default rights/i)).not.toBeInTheDocument()
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
   })
 
   it('renders additional questions configured by an administrator', async () => {
@@ -73,6 +63,10 @@ describe('InformationSharing', () => {
     renderWithRouter(<InformationSharing />)
 
     expect(await screen.findByText('What else should your co-parent know?')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /next/i }))
+
+    expect(mockNavigate).not.toHaveBeenCalled()
+    expect(await screen.findByText('Answer this question to continue.')).toBeInTheDocument()
   })
 
   it.each([
@@ -81,7 +75,7 @@ describe('InformationSharing', () => {
     ['married_seeking_parenting_time', '20', 'Shared Parenting Plan'],
     ['never_married_seeking_custody', '21', 'Parenting Plan'],
     ['never_married_seeking_parenting_time', '21', 'Parenting Plan'],
-  ])('shows the %s child-support information before Medical Information Access', (
+  ])('shows the %s child-support information before Additional Resources', (
     currentCircumstance,
     formNumber,
     planName,
@@ -107,83 +101,13 @@ describe('InformationSharing', () => {
     const headings = screen.getAllByRole('heading').map((heading) => heading.textContent)
     expect(headings.indexOf('Child Support Calculation'))
       .toBeLessThan(headings.indexOf('Additional Resources'))
-    expect(headings.indexOf('Additional Resources'))
-      .toBeLessThan(headings.indexOf('Medical Information Access'))
+    expect(screen.queryByRole('heading', { name: 'Medical Information Access' })).not.toBeInTheDocument()
   })
 
   it('does not show child-support information when circumstance is unavailable', () => {
     renderWithRouter(<InformationSharing />)
 
     expect(screen.queryByRole('heading', { name: 'Child Support Calculation' })).not.toBeInTheDocument()
-  })
-
-  it('renders one required textarea for each section', () => {
-    renderWithRouter(<InformationSharing />)
-
-    expect(screen.getAllByRole('textbox')).toHaveLength(3)
-    sectionKeys.forEach((key) => {
-      expect(textareaFor(key)).toHaveAttribute('required')
-      expect(textareaFor(key)).toHaveAttribute('placeholder', expect.stringContaining('Enter'))
-    })
-  })
-
-  it('renders the current questions and default-rights descriptions', () => {
-    renderWithRouter(<InformationSharing />)
-
-    expect(screen.getAllByText(/Do you agree to these default rights\?/i)).toHaveLength(3)
-    expect(screen.getByText(/the right to participate in major decisions/i)).toBeInTheDocument()
-    expect(screen.getByText(/the right to talk with school officials/i)).toBeInTheDocument()
-    expect(screen.getByText(/parent-teacher conferences, school trips/i)).toBeInTheDocument()
-  })
-
-  it('updates each section response', async () => {
-    renderWithRouter(<InformationSharing />)
-
-    await userEvent.type(textareaFor('medicalRecords'), 'Medical response')
-    await userEvent.type(textareaFor('schoolContact'), 'School response')
-    await userEvent.type(textareaFor('schoolActivities'), 'Activity response')
-
-    expect(textareaFor('medicalRecords')).toHaveValue('Medical response')
-    expect(textareaFor('schoolContact')).toHaveValue('School response')
-    expect(textareaFor('schoolActivities')).toHaveValue('Activity response')
-  })
-
-  it('does not show validation errors before submission', () => {
-    renderWithRouter(<InformationSharing />)
-
-    expect(screen.queryByText('Please enter a response.')).not.toBeInTheDocument()
-  })
-
-  it('shows a validation error for each unanswered section on empty submit', async () => {
-    renderWithRouter(<InformationSharing />)
-
-    await userEvent.click(screen.getByRole('button', { name: /next/i }))
-
-    expect(await screen.findAllByText('Please enter a response.')).toHaveLength(3)
-    expect(mockNavigate).not.toHaveBeenCalled()
-  })
-
-  it('clears a section error when that section receives a response', async () => {
-    renderWithRouter(<InformationSharing />)
-
-    await userEvent.click(screen.getByRole('button', { name: /next/i }))
-    await screen.findAllByText('Please enter a response.')
-    await userEvent.type(textareaFor('medicalRecords'), 'Medical response')
-
-    await waitFor(() => {
-      expect(screen.getAllByText('Please enter a response.')).toHaveLength(2)
-    })
-  })
-
-  it('does not navigate when only some sections are answered', async () => {
-    renderWithRouter(<InformationSharing />)
-
-    await userEvent.type(textareaFor('medicalRecords'), 'Medical response')
-    await userEvent.type(textareaFor('schoolContact'), 'School response')
-    await userEvent.click(screen.getByRole('button', { name: /next/i }))
-
-    expect(mockNavigate).not.toHaveBeenCalled()
-    expect(await screen.findByText('Please enter a response.')).toBeInTheDocument()
   })
 
   it('renders the Next and Back buttons', () => {
@@ -201,21 +125,11 @@ describe('InformationSharing', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/parenting-time-communication')
   })
 
-  it('clears validation errors when navigating back', async () => {
+  it('navigates to tax exemptions without requiring the removed built-in answers', async () => {
     renderWithRouter(<InformationSharing />)
-
-    await userEvent.click(screen.getByRole('button', { name: /next/i }))
-    await screen.findAllByText('Please enter a response.')
-    await userEvent.click(screen.getByRole('button', { name: /back/i }))
-
-    expect(mockNavigate).toHaveBeenCalledWith('/parenting-time-communication')
-    expect(screen.queryByText('Please enter a response.')).not.toBeInTheDocument()
-  })
-
-  it('navigates to tax exemptions after all sections are answered', async () => {
-    renderWithRouter(<InformationSharing />)
-
-    await fillAllSections()
+    await waitFor(() => {
+      expect(screen.queryByText('Loading additional questions...')).not.toBeInTheDocument()
+    })
     await userEvent.click(screen.getByRole('button', { name: /next/i }))
 
     await waitFor(() => {
@@ -223,44 +137,4 @@ describe('InformationSharing', () => {
     })
   })
 
-  it('persists responses when returning to the page', async () => {
-    const { unmount } = renderWithRouter(<InformationSharing />)
-    await fillAllSections({
-      medicalRecords: 'Medical response',
-      schoolContact: 'School response',
-      schoolActivities: 'Activity response',
-    })
-    unmount()
-
-    renderWithRouter(<InformationSharing />)
-
-    expect(textareaFor('medicalRecords')).toHaveValue('Medical response')
-    expect(textareaFor('schoolContact')).toHaveValue('School response')
-    expect(textareaFor('schoolActivities')).toHaveValue('Activity response')
-  })
-
-  it('treats legacy radio answers as empty text responses', () => {
-    localStorage.setItem('sharedCareForm', JSON.stringify({
-      informationSharing: {
-        medicalRecords: 'parent1',
-        schoolContact: 'both',
-        schoolActivities: 'needInfo',
-      },
-    }))
-    renderWithRouter(<InformationSharing />)
-
-    sectionKeys.forEach((key) => {
-      expect(textareaFor(key)).toHaveValue('')
-    })
-  })
-
-  it('does not submit whitespace-only responses', async () => {
-    renderWithRouter(<InformationSharing />)
-
-    sectionKeys.forEach((key) => fireEvent.change(textareaFor(key), { target: { value: '  ' } }))
-    await userEvent.click(screen.getByRole('button', { name: /next/i }))
-
-    expect(await screen.findAllByText('Please enter a response.')).toHaveLength(3)
-    expect(mockNavigate).not.toHaveBeenCalled()
-  })
 })
