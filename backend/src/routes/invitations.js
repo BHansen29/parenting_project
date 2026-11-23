@@ -15,14 +15,14 @@ const INVITE_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 function getEmailDeliveryError(emailErr) {
   const code = emailErr?.code || '';
 
-  if (code === 'EAUTH' || /invalid login|authentication/i.test(emailErr?.message || '')) {
-    return 'Gmail SMTP authentication failed. Verify the SMTP user and App Password on Render.';
-  }
-  if (code === 'ETIMEDOUT' || code === 'ECONNECTION' || code === 'ENETUNREACH') {
-    return 'The server could not reach Gmail SMTP. Check Render networking and the SMTP host and port.';
+  if (code === 'invalid_grant' || /invalid_grant|authentication/i.test(emailErr?.message || '')) {
+    return 'Gmail OAuth authentication failed. Verify the Gmail refresh token and OAuth credentials on Render.';
   }
   if (/not configured|missing:/i.test(emailErr?.message || '')) {
-    return 'Gmail SMTP is not configured on Render. Add the EMAIL_SMTP_* environment variables.';
+    return 'Gmail API is not configured on Render. Add the GMAIL_* environment variables.';
+  }
+  if (/ETIMEDOUT|ECONNECTION|ENETUNREACH|fetch failed/i.test(emailErr?.message || '')) {
+    return 'The server could not reach the Gmail API.';
   }
   if (code === 'EENVELOPE' || /rejected/i.test(emailErr?.message || '')) {
     return 'Gmail or the recipient address rejected the email.';

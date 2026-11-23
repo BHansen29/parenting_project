@@ -272,7 +272,7 @@ router.get('/', (req, res) => {
       document: 'GET /api/documents/:id - Get a document by ID',
       createDocument: 'POST /api/documents - Create a new document',
       firebaseSession: 'POST /api/auth/firebase/session - Verify Firebase token and sync user profile',
-      sendInviteEmail: 'POST /api/email/invite - Send a Gmail SMTP invite email to a submitted recipient',
+      sendInviteEmail: 'POST /api/email/invite - Send a Gmail API invite email to a submitted recipient',
       users: 'GET /api/users - List all users'
     }
   });
