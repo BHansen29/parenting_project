@@ -12,6 +12,24 @@ const { getFirstName } = require('../utils/nameUtils');
 // How long an invite link stays valid before it expires
 const INVITE_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
+function getEmailDeliveryError(emailErr) {
+  const code = emailErr?.code || '';
+
+  if (code === 'EAUTH' || /invalid login|authentication/i.test(emailErr?.message || '')) {
+    return 'Gmail SMTP authentication failed. Verify the SMTP user and App Password on Render.';
+  }
+  if (code === 'ETIMEDOUT' || code === 'ECONNECTION' || code === 'ENETUNREACH') {
+    return 'The server could not reach Gmail SMTP. Check Render networking and the SMTP host and port.';
+  }
+  if (/not configured|missing:/i.test(emailErr?.message || '')) {
+    return 'Gmail SMTP is not configured on Render. Add the EMAIL_SMTP_* environment variables.';
+  }
+  if (code === 'EENVELOPE' || /rejected/i.test(emailErr?.message || '')) {
+    return 'Gmail or the recipient address rejected the email.';
+  }
+  return 'Gmail SMTP could not send the invitation email.';
+}
+
 // Looks up an invitation by token and checks it is still valid.
 // Returns { invitation } on success, or { error, status } if something is wrong.
 // Used by both the GET and POST /accept routes to avoid duplicating this logic.
@@ -49,8 +67,9 @@ router.post('/cases/:caseId/invite', verifyToken, async (req, res) => {
       await sendInviteEmail(invitedEmail, inviteLink);
     } catch (emailErr) {
       console.error('Failed to send invite email:', emailErr.message);
+      const deliveryError = getEmailDeliveryError(emailErr);
       return res.status(502).json({
-        error: 'The invitation was created, but the email could not be sent. Please copy and share the invitation link.',
+        error: `${deliveryError} The invitation was created, so you can copy and share the invitation link.`,
       });
     }
 

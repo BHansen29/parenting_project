@@ -32,6 +32,8 @@ export default function InviteModal({ isOpen, onClose, caseId, onInviteSent }) {
     } catch (error) {
       console.error('Failed to send invite:', error);
       setError(error.message || 'Failed to send the invitation email.');
+      const link = await getPendingInviteLink(caseId);
+      if (link) setInviteLink(link);
     } finally {
       setIsSending(false);
     }
