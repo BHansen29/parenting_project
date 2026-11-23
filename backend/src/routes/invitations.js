@@ -43,12 +43,15 @@ router.post('/cases/:caseId/invite', verifyToken, async (req, res) => {
     // Build the invite link using APP_BASE_URL from .env - the frontend handles this route
     const inviteLink = `${process.env.APP_BASE_URL}/invite/${token}`;
 
-    // Email failure is non-fatal — invitation record is already created.
-    // Log the error so ops can see it but don't block the response.
+    // An invitation record still allows the invite link to be copied, but email
+    // delivery failures must be reported accurately to the caller.
     try {
       await sendInviteEmail(invitedEmail, inviteLink);
     } catch (emailErr) {
       console.error('Failed to send invite email:', emailErr.message);
+      return res.status(502).json({
+        error: 'The invitation was created, but the email could not be sent. Please copy and share the invitation link.',
+      });
     }
 
     return res.status(201).json({ message: 'Invitation sent', invitedEmail });

@@ -165,6 +165,14 @@
   opacity: 0.8;
 }
 
+/* ── Email error ── */
+.invite-modal__error {
+  margin: 0;
+  color: #b91c1c;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
 /* ── Divider ── */
 .invite-modal__divider {
   display: flex;

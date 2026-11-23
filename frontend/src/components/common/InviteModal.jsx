@@ -9,6 +9,7 @@ export default function InviteModal({ isOpen, onClose, caseId, onInviteSent }) {
   const [copied, setCopied] = useState(false);
   const [sent, setSent] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [error, setError] = useState('');
   const [inviteLink, setInviteLink] = useState(null);
   const { dialogRef, handleKeyDown } = useModalAccessibility(isOpen, onClose);
 
@@ -19,6 +20,7 @@ export default function InviteModal({ isOpen, onClose, caseId, onInviteSent }) {
     const recipientEmail = email.trim();
     if (!recipientEmail) return;
     setIsSending(true);
+    setError('');
     try {
       await sendCaseInvite(caseId, recipientEmail);
       setSent(true);
@@ -29,6 +31,7 @@ export default function InviteModal({ isOpen, onClose, caseId, onInviteSent }) {
       setTimeout(() => setSent(false), 3000);
     } catch (error) {
       console.error('Failed to send invite:', error);
+      setError(error.message || 'Failed to send the invitation email.');
     } finally {
       setIsSending(false);
     }
@@ -77,12 +80,6 @@ export default function InviteModal({ isOpen, onClose, caseId, onInviteSent }) {
             <strong>How it works:</strong> Each parent fills out the parenting plan independently. Once both complete it, a comparison summary will be generated showing areas that conflict or where further discussion is necessary. Each parent will have the opportunity to revise their responses after seeing the summary. All changes to original responses will be highlighted to make it easier to track compromises.
           </p>
         </div>
-        <div className="invite-modal__info-box">
-          <p>
-            <strong>Note:</strong> Currently the email system has not been configured, the link needs to be shared directly with the other parent.
-          </p>
-        </div>
-
         <div className="invite-modal__section">
           <label className="invite-modal__label" htmlFor="invite-email">
             Send invite via email
@@ -105,6 +102,11 @@ export default function InviteModal({ isOpen, onClose, caseId, onInviteSent }) {
               {isSending ? 'Sending...' : sent ? 'Sent!' : 'Send'}
             </button>
           </form>
+          {error && (
+            <p className="invite-modal__error" role="alert">
+              {error}
+            </p>
+          )}
         </div>
 
         <div className="invite-modal__divider">

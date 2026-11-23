@@ -1,5 +1,10 @@
-// Load environment variables from .env file (like MONGODB_URI, PORT)
-require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
+// Load the backend .env when present. Fall back to the project-root .env used by Docker
+// and local workspace scripts.
+const path = require('path');
+const backendEnvPath = path.resolve(__dirname, '../.env');
+const rootEnvPath = path.resolve(__dirname, '../../.env');
+require('dotenv').config({ path: backendEnvPath });
+require('dotenv').config({ path: rootEnvPath });
 
 // Import the packages we need
 const express = require('express');  // Web framework for creating APIs

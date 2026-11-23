@@ -89,6 +89,14 @@ async function sendInviteEmail(toAddress, inviteLink) {
       : '<p>This is a test email from <strong>ShareCare</strong> using Gmail SMTP.</p>',
     });
 
+  if (Array.isArray(result.rejected) && result.rejected.length > 0) {
+    throw new Error(`Email provider rejected the recipient: ${result.rejected.join(', ')}`);
+  }
+
+  if (!result.accepted || result.accepted.length === 0) {
+    throw new Error('Email provider did not accept the recipient');
+  }
+
   return {
     accepted: result.accepted,
     rejected: result.rejected,
