@@ -85,15 +85,7 @@ router.post('/', verifyToken, async (req, res) => {
           plan.custodyGrantedTo = p1Plan?.courtCustodyOrderIssued === 'yes'
             ? oppositeCustodyRecipient[p1Plan?.custodyGrantedTo] ?? p1Plan?.custodyGrantedTo ?? ''
             : '';
-          plan.parentingTimeAndCommunication = {
-            parentingSchedule: p1Plan?.parentingTimeAndCommunication?.parentingSchedule ?? {},
-            holidaySchedule: p1Plan?.parentingTimeAndCommunication?.holidaySchedule ?? {},
-            schoolSchedule: p1Plan?.parentingTimeAndCommunication?.schoolSchedule ?? {},
-            scheduleScope: p1Plan?.parentingTimeAndCommunication?.scheduleScope ?? 'all',
-            parentingSchedulesByChild: p1Plan?.parentingTimeAndCommunication?.parentingSchedulesByChild ?? {},
-            holidaySchedulesByChild: p1Plan?.parentingTimeAndCommunication?.holidaySchedulesByChild ?? {},
-            schoolSchedulesByChild: p1Plan?.parentingTimeAndCommunication?.schoolSchedulesByChild ?? {},
-          };
+          plan.parentingTimeAndCommunication = {};
           await plan.save();
         }
       } catch (caseErr) {

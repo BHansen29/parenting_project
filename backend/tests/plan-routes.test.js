@@ -11,6 +11,7 @@ const questionModelPath = path.join(__dirname, '..', 'src', 'models', 'Question.
 const nextQuestionRulePath = path.join(__dirname, '..', 'src', 'models', 'NextQuestionRule.js');
 const questionNavigationPath = path.join(__dirname, '..', 'src', 'lib', 'question-navigation.js');
 const verifyTokenPath = path.join(__dirname, '..', 'src', 'middleware', 'verifyToken.js');
+const userModelPath = path.join(__dirname, '..', 'src', 'models', 'User.js');
 
 // Loads the real plan router while mocking auth and Mongoose models for testing.
 function loadPlanRouter({
@@ -19,6 +20,7 @@ function loadPlanRouter({
   Case = {},
   Question = {},
   NextQuestionRule = {},
+  User = {},
 } = {}) {
   const originals = new Map();
 
@@ -38,6 +40,7 @@ function loadPlanRouter({
   mockModule(caseModelPath, Case);
   mockModule(questionModelPath, Question);
   mockModule(nextQuestionRulePath, NextQuestionRule);
+  mockModule(userModelPath, User);
   mockModule(verifyTokenPath, (req, res, next) => {
     req.user = { uid: authUid };
     next();
@@ -154,6 +157,73 @@ test('POST /api/plan creates a plan for the authenticated user', async (t) => {
   assert.equal(saved, true);
   assert.equal(json.userID, 'user-1');
   assert.equal(json.caseId, 'case-1');
+});
+
+test('POST /api/plan with a shared case does not copy the inviter calendar', async (t) => {
+  const createdPlan = {
+    _id: 'plan-2',
+    userID: 'user-2',
+    async save() { this.saved = true; },
+  };
+  const existingCase = {
+    _id: 'case-1',
+    parent1Uid: 'user-1',
+    parent2Uid: null,
+    parent1PlanId: 'plan-1',
+    async save() { this.saved = true; },
+  };
+  const inviterPlan = {
+    _id: 'plan-1',
+    children: [{ fName: 'Alex', lName: 'Smith', birthday: '2015-01-01', classifications: [] }],
+    parentingTimeAndCommunication: {
+      parentingSchedule: { 1: [{ parent: 'parent1' }] },
+      holidaySchedule: { Christmas: { year: 'every' } },
+      schoolSchedule: { 'Spring Break': { year: 'odd' } },
+      scheduleScope: 'all',
+    },
+  };
+
+  const server = await createTestServer({
+    authUid: 'user-2',
+    Plan: {
+      async create(payload) {
+        assert.deepEqual(payload, { userID: 'user-2' });
+        return createdPlan;
+      },
+      async findById(id) {
+        if (id === 'plan-1') return inviterPlan;
+        return null;
+      },
+    },
+    Case: {
+      async findById(id) {
+        assert.equal(id, 'case-1');
+        return existingCase;
+      },
+    },
+    User: {
+      async findOne() {
+        return { name: 'Parent' };
+      },
+    },
+  });
+
+  t.after(() => server.close());
+
+  const { response, json } = await requestJson(server.baseUrl, '/api/plan', {
+    method: 'POST',
+    body: { caseId: 'case-1' },
+  });
+
+  assert.equal(response.status, 201);
+  assert.equal(json.isShared, true);
+  assert.equal(json.isParent2, true);
+  assert.deepEqual(json.parentingTimeAndCommunication, {});
+  assert.equal(existingCase.parent2Uid, 'user-2');
+  assert.equal(existingCase.parent2PlanId, 'plan-2');
+  assert.deepEqual(inviterPlan.parentingTimeAndCommunication.parentingSchedule, {
+    1: [{ parent: 'parent1' }],
+  });
 });
 
 // Test 2: List plans for correct user
