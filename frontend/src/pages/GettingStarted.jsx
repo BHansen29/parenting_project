@@ -629,53 +629,6 @@ const handleChildChange = (childKey, field) => (value) => {
               </Card>
             </section>
             <hr className="section-divider" />
-
-            <section className="case-filing-status-section">
-              <SectionHeader
-                iconClassName="info-icon"
-                icon={<Info size={25} />}
-                title="Case Filing Status"
-                help="Help us understand your legal situation."
-              />
-              <RadioQuestion
-                question="Did you file the divorce, separation, or child custody case that led to this parenting plan?"
-                name="caseFilingStatus"
-                value={caseFilingStatus}
-                onChange={handleFormChange('plan', 'userRole')}
-                error={caseFilingError}
-                disclaimers={[
-                    { disclaimer: "Please note: ShareCare cannot confirm if your answer is correct or if there is an active divorce, separation, or child support case.", disclaimerVariant: "info" }
-                ]}
-                options={[
-                  { value: 'parent1/petitioner1/plaintiff',     label: 'Yes, it was me',         description: 'You will be identified as Parent 1/Petitioner 1/Plaintiff in the parenting plan' },
-                  { value: 'parent2/petitioner2/defendant',     label: 'No, my co-parent filed', description: 'You will be identified as Parent 2/Petitioner 2/Defendant in the parenting plan' },
-                  { value: 'no_case',                           label: 'No case has been filed yet by either co-parent' },
-                  { value: 'flagged',                             label: 'I\'m not sure' },
-                ]}
-              />
-            </section>
-            <hr className="section-divider" />
-
-            <section className="residential-parent-section">
-              <SectionHeader
-                iconClassName="users-icon"
-                icon={<Users size={25} />}
-                title="Residential Parent"
-                help="This means your child spends most of their time with you"
-              />
-              <RadioQuestion
-                question="Are you the residential parent?"
-                name="residentialParent"
-                value={residentialParent}
-                onChange={handleFormChange('plan', 'residentialParent')}
-                options={[
-                  { value: 'yes',   label: 'Yes, I am the residential parent' },
-                  { value: 'no',    label: 'No, I am not' }
-                ]}
-              />
-            </section>
-            <hr className="section-divider" />
-
             <section className="aggregate-data">
               <SectionHeader
                 iconClassName="info-icon"
