@@ -1,5 +1,10 @@
-// Load environment variables from .env file (like MONGODB_URI, PORT)
-require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
+// Load the backend .env when present. Fall back to the project-root .env used by Docker
+// and local workspace scripts.
+const path = require('path');
+const backendEnvPath = path.resolve(__dirname, '../.env');
+const rootEnvPath = path.resolve(__dirname, '../../.env');
+require('dotenv').config({ path: backendEnvPath });
+require('dotenv').config({ path: rootEnvPath });
 
 // Import the packages we need
 const express = require('express');  // Web framework for creating APIs
@@ -13,7 +18,12 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware - these run on every request
 app.use(cors());           // Allow requests from frontend
-app.use(express.json());   // Parse JSON data from requests
+// Templates can contain many question blocks, so allow a larger payload only
+// for the template endpoints while retaining the default limit elsewhere.
+app.use('/api/form-templates', express.json({ limit: '1mb' }));
+app.use(express.json({
+  type: (req) => !req.path.startsWith('/api/form-templates'),
+}));   // Parse JSON data from other requests
 
 // Use our routes for any URL starting with /api
 app.use('/api', routes);

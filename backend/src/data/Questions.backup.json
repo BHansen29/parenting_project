@@ -52,6 +52,7 @@
     "qIcon": "scale-icon",
     "qText": "The next few questions ask about who your children will live with and who will make the legal decisions for them. Will your answers apply to all of your children that you share with your co-parent?",
     "qKey": "allocation_parental_rights",
+    "multipleChildren": true,
     "section": "parental-rights",
     "options": [
       {

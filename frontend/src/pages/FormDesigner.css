@@ -87,6 +87,8 @@ display: block; color: #425057; }
   @page { size: letter; margin: 0.65in; }
   html, body, #root { width: 100% !important; max-width: 100% !important; overflow: visible !important; }
   body { background: #fff !important; }
+  body > #root { display: none !important; }
+  body > .form-designer__template-print { display: block !important; }
   body > #root, .layout, .layout__main, .layout__content { display: block !important; visibility: visible !important; width: 100% !important; max-width: 100% !important; min-height: 0 !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; }
   .form-designer.page-container { display: none !important; }
   .sidebar, .header, .footer, .form-designer__header, .form-designer__palette, .form-designer__block-controls, .form-designer__drop-hint, .form-designer__print, .form-designer__title, .form-designer__block textarea, .form-designer__block label { display: none !important; }

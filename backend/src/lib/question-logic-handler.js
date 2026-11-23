@@ -9,6 +9,12 @@ class QuestionLogicHandler {
         'lte': (a, b) => a <= b, // less than or equal to
         'in': (a, b) => Array.isArray(b) && b.includes(a), // is in array of values
         'nin': (a, b) => Array.isArray(b) && !b.includes(a), // is not in array of values
+        'exists': (a) => {
+            if (a === null || a === undefined) return false;
+            if (typeof a === 'string') return a.trim().length > 0;
+            if (Array.isArray(a)) return a.length > 0;
+            return true;
+        },
     };
 
     /**

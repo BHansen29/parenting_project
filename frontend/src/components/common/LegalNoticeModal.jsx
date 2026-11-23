@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { X, Scale, AlertTriangle, RefreshCw, ArrowRight } from 'lucide-react';
 import Checkbox from '../forms/Checkbox';
+import useModalAccessibility from '../../hooks/useModalAccessibility';
 import './LegalNoticeModal.css';
 
 const ACKNOWLEDGMENTS = [
@@ -16,7 +18,16 @@ const ACKNOWLEDGMENTS = [
     id: 'ack-law-may-change',
     label: 'I understand that the laws may have changed.',
   },
+  {
+    id: 'ack-terms-of-service',
+    label: 'I agree to the Terms of Service.',
+  },
 ];
+
+const initialCheckedState = ACKNOWLEDGMENTS.reduce((state, acknowledgment) => ({
+  ...state,
+  [acknowledgment.id]: false,
+}), {});
 
 /**
  * LegalNoticeModal
@@ -25,11 +36,7 @@ const ACKNOWLEDGMENTS = [
  * @param {function} onClose     - Called when user clicks X (cancels sign-up flow)
  */
 export default function LegalNoticeModal({ isOpen, onAccept, onClose }) {
-  const [checked, setChecked] = useState({
-    'ack-no-legal-advice': false,
-    'ack-no-lawyer':       false,
-    'ack-law-may-change':  false,
-  });
+  const [checked, setChecked] = useState(initialCheckedState);
   const [submitAttempted, setSubmitAttempted] = useState(false);
 
   const allChecked = Object.values(checked).every(Boolean);
@@ -48,26 +55,32 @@ export default function LegalNoticeModal({ isOpen, onAccept, onClose }) {
 
   const handleClose = () => {
     // Reset state so re-opening starts fresh
-    setChecked({
-      'ack-no-legal-advice': false,
-      'ack-no-lawyer':       false,
-      'ack-law-may-change':  false,
-    });
+    setChecked(initialCheckedState);
     setSubmitAttempted(false);
     onClose();
   };
 
+  const { dialogRef, handleKeyDown } = useModalAccessibility(isOpen, handleClose);
+
   if (!isOpen) return null;
 
   return (
-    <div className="lnm-overlay" role="dialog" aria-modal="true" aria-labelledby="lnm-title">
-      <div className="lnm">
+    <div className="lnm-overlay">
+      <div
+        ref={dialogRef}
+        className="lnm"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="lnm-title"
+        tabIndex="-1"
+        onKeyDown={handleKeyDown}
+      >
 
         {/* Header */}
         <div className="lnm__header">
           <div className="lnm__header-left">
             <div className="lnm__header-icon">
-              <Scale size={20} />
+              <Scale size={20} aria-hidden="true" />
             </div>
             <h2 id="lnm-title" className="lnm__title">Important Notices</h2>
           </div>
@@ -76,7 +89,7 @@ export default function LegalNoticeModal({ isOpen, onAccept, onClose }) {
             onClick={handleClose}
             aria-label="Close — you will not be able to create an account without agreeing"
           >
-            <X size={20} />
+            <X size={20} aria-hidden="true" />
           </button>
         </div>
 
@@ -86,8 +99,24 @@ export default function LegalNoticeModal({ isOpen, onAccept, onClose }) {
           {/* Notice cards */}
           <div className="lnm__notices">
             <div className="lnm__notice">
+              <div className="lnm__notice-icon lnm__notice-icon--amber">
+                <AlertTriangle size={18} aria-hidden="true" />
+              </div>
+              <div>
+                <p className="lnm__notice-title">Legal Disclaimer</p>
+                <p className="lnm__notice-text">
+                  This tool is for informational purposes only. It does not provide legal advice
+                  or create an attorney-client relationship. Your responses do not create or
+                  establish legal rights for either parent. A plan created with this tool is a draft
+                  and does not change an existing court order or become enforceable unless approved
+                  by the court. If you have questions, please talk with a lawyer.
+                </p>
+              </div>
+            </div>
+
+            <div className="lnm__notice">
               <div className="lnm__notice-icon lnm__notice-icon--blue">
-                <Scale size={18} />
+                <Scale size={18} aria-hidden="true" />
               </div>
               <div>
                 <p className="lnm__notice-title">Not Legal Advice</p>
@@ -101,7 +130,7 @@ export default function LegalNoticeModal({ isOpen, onAccept, onClose }) {
 
             <div className="lnm__notice">
               <div className="lnm__notice-icon lnm__notice-icon--amber">
-                <AlertTriangle size={18} />
+                <AlertTriangle size={18} aria-hidden="true" />
               </div>
               <div>
                 <p className="lnm__notice-title">No Individual Legal Help</p>
@@ -115,7 +144,7 @@ export default function LegalNoticeModal({ isOpen, onAccept, onClose }) {
 
             <div className="lnm__notice">
               <div className="lnm__notice-icon lnm__notice-icon--gray">
-                <RefreshCw size={18} />
+                <RefreshCw size={18} aria-hidden="true" />
               </div>
               <div>
                 <p className="lnm__notice-title">Laws May Have Changed</p>
@@ -147,6 +176,13 @@ export default function LegalNoticeModal({ isOpen, onAccept, onClose }) {
                 />
               ))}
             </div>
+            <p className="lnm__terms-link">
+              Review the full{' '}
+              <Link to="/terms-of-service" target="_blank" rel="noreferrer">
+                Terms of Service
+              </Link>{' '}
+              before agreeing.
+            </p>
 
             {submitAttempted && !allChecked && (
               <p className="lnm__ack-error" role="alert">
@@ -167,7 +203,7 @@ export default function LegalNoticeModal({ isOpen, onAccept, onClose }) {
             aria-disabled={!allChecked}
           >
             I Agree — Create Account
-            <ArrowRight size={16} />
+            <ArrowRight size={16} aria-hidden="true" />
           </button>
         </div>
 

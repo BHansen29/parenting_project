@@ -1,3 +1,4 @@
+import * as XLSX from 'xlsx';
 import { useEffect, useState } from 'react';
 import { buildApiUrl } from '../lib/apiClient';
 import { auth } from '../lib/firebase';
@@ -15,7 +16,127 @@ const fields = [
   { key: 'education', label: 'Education' }
 ];
 
-function summarizeUsers(users) {
+const choiceLabels = {
+  collaborationMode: {
+    'locked-individual': 'Locked-individual',
+    collaborative: 'Collaborative',
+    individual: "Individual"
+  },
+  gender: {
+    'female/feminine': 'Female/Feminine',
+    'male/masculine': 'Male/Masculine',
+    other: 'Other',
+    prefer_not_to_answer: 'Prefer not to answer'
+  },
+  background: {
+    'hispanic/latino': 'Hispanic/Latino',
+    mena: 'MENA',
+    other: 'Not Hispanic/Latino, not MENA',
+    prefer_not_to_answer: 'Prefer not to answer/Unknown ethnicity'
+  },
+  race: {
+    african: 'African',
+    black: 'Black or African American',
+    american_indian: 'American Indian or Alaska Native',
+    asian: 'Asian or Asian American',
+    middle_eastern: 'Middle Eastern or North African',
+    pacific_islander: 'Pacific Islander or Native Hawaiian',
+    white: 'White or European American',
+    'bi-racial': 'Bi-racial',
+    multi_racial: 'Multiple races/Multi-racial',
+    other: 'Race not listed/Other',
+    prefer_not_to_answer: 'Prefer not to answer'
+  },
+  income: {
+    under_5k: 'Below $4,999',
+    under_10k: '$5,000-$9,999',
+    under_20k: '$10,000-$19,999',
+    under_40k: '$20,000-$39,999',
+    under_60k: '$40,000-$59,999',
+    under_80k: '$60,000-$79,999',
+    under_90k: '$80,000-$89,999',
+    under_100k: '$90,000-$99,999',
+    over_100k: 'Over $100,000',
+    prefer_not_to_answer: 'Prefer not to answer'
+  },
+  household: {
+    '1': '1 person',
+    '2': '2 person',
+    '3': '3 person',
+    '4': '4 person',
+    '5': '5 person',
+    '6': '6 person',
+    '7': '7 person',
+    '8': '8 person',
+    '9': '9 person',
+    over_10: '10+ person',
+    prefer_not_to_answer: 'Prefer not to answer'
+  },
+  language: {
+    amharic: 'Amharic',
+    arabic: 'Arabic',
+    asian: 'Asian and Pacific Islander languages',
+    english: 'English',
+    french: 'French',
+    haitian: 'Haitian Creole',
+    nepali: 'Nepali',
+    somali: 'Somali',
+    spanish: 'Spanish',
+    pashto: 'Pashto',
+    other: 'Other languages',
+    prefer_not_to_answer: 'Prefer not to answer'
+  },
+  education: {
+    none: 'No degree or diploma earned/Less than high school diploma',
+    high_school: 'High school or General Education Development (GED)',
+    trade: 'Trade/Vocational/Technical Certification/Child Development Associate (CDA)',
+    some_college: 'Some college, no degree',
+    associate: "Associate's degree",
+    bachelor: "Bachelor's degree",
+    master: "Master's degree",
+    phd: 'Doctorate or Professional degree',
+    prefer_not_to_answer: 'Prefer not to answer'
+  }
+};
+
+function formatChoiceLabel(fieldKey, value) {
+  return choiceLabels[fieldKey]?.[value] ?? value;
+}
+
+function formatExportValue(value, fieldKey) {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => item === null || item === undefined
+        ? ''
+        : formatChoiceLabel(fieldKey, String(item)))
+      .join(', ');
+  }
+  if (fieldKey && value !== null && value !== undefined) {
+    return formatChoiceLabel(fieldKey, String(value));
+  }
+  return value ?? '';
+}
+
+function getUtcDateKey(createdAt) {
+  if (!createdAt) return null;
+  const date = new Date(createdAt);
+  if (Number.isNaN(date.getTime())) return null;
+
+  return date.toISOString().slice(0, 10);
+}
+
+function filterUsersByDateRange(users, startDate, endDate) {
+  if (!startDate && !endDate) return users;
+
+  return users.filter((user) => {
+    const createdDate = getUtcDateKey(user.createdAt);
+    return createdDate !== null
+      && (!startDate || createdDate >= startDate)
+      && (!endDate || createdDate <= endDate);
+  });
+}
+
+export function summarizeUsers(users) {
   const ages = users
     .map((user) => user.parentAge === null || user.parentAge === undefined || user.parentAge === ''
       ? Number.NaN
@@ -66,6 +187,51 @@ function summarizeUsers(users) {
   };
 }
 
+export function exportAggregateData(users, summary) {
+  const summaryRows = [
+    ['Field', 'Choice', 'Count', 'Percentage'],
+    ['Overview', 'Plans represented', summary.planRecords, ''],
+    ['Overview', 'Average parent age', summary.averageParentAge ?? '', ''],
+    ['Overview', 'Parent age responses', summary.parentAgeRespondents, '']
+  ];
+
+  fields.forEach((field) => {
+    Object.entries(summary.distributions[field.key].choices).forEach(([value, choice]) => {
+      summaryRows.push([
+        field.label,
+        formatChoiceLabel(field.key, value),
+        choice.count,
+        `${choice.percentage}%`
+      ]);
+    });
+  });
+
+  const responseRows = users.map((user) => Object.fromEntries([
+    ['Plan created (UTC)', user.createdAt ? new Date(user.createdAt).toISOString() : ''],
+    ['Parent age', formatExportValue(user.parentAge)],
+    ...fields.map((field) => [
+      field.label,
+      formatExportValue(user[field.key], field.key)
+    ])
+  ]));
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet(summaryRows), 'Summary');
+  XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(responseRows), 'Responses');
+
+  const workbookData = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+  const downloadUrl = URL.createObjectURL(new Blob([workbookData], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  }));
+  const link = document.createElement('a');
+  link.href = downloadUrl;
+  link.download = `aggregate-data-${new Date().toISOString().slice(0, 10)}.xlsx`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(downloadUrl);
+}
+
 function DistributionCard({ field, distribution }) {
   const choices = Object.entries(distribution.choices);
   const totalSelections = choices.reduce((total, [, choice]) => total + choice.count, 0);
@@ -110,7 +276,12 @@ function DistributionCard({ field, distribution }) {
                   style={{ backgroundColor: chartColors[index % chartColors.length] }}
                   aria-hidden="true"
                 />
-                <span className="user-data__legend-label" title={value}>{value}</span>
+                <span
+                  className="user-data__legend-label"
+                  title={formatChoiceLabel(field.key, value)}
+                >
+                  {formatChoiceLabel(field.key, value)}
+                </span>
                 <span className="user-data__legend-count">
                   {choice.count}
                   <span className="user-data__legend-percent">{choice.percentage}%</span>
@@ -135,8 +306,10 @@ const chartColors = [
   '#4f46e5'
 ];
 
-export default function UserData() {
+export default function UserData({ onDataLoaded }) {
   const [users, setUsers] = useState(null);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -164,7 +337,10 @@ export default function UserData() {
           throw new Error('Aggregate user data response must be a list');
         }
 
-        if (isMounted) setUsers(data);
+        if (isMounted) {
+          setUsers(data);
+          onDataLoaded?.(data, summarizeUsers(data));
+        }
       } catch (fetchError) {
         if (isMounted) setError(fetchError.message);
       }
@@ -188,14 +364,51 @@ export default function UserData() {
     return <main className="user-data" aria-busy="true"><p>Loading aggregate data...</p></main>;
   }
 
-  const summary = summarizeUsers(users);
+  const filteredUsers = filterUsersByDateRange(users, startDate, endDate);
+  const summary = summarizeUsers(filteredUsers);
+
+  const handleDateRangeChange = (nextStartDate, nextEndDate) => {
+    setStartDate(nextStartDate);
+    setEndDate(nextEndDate);
+    const nextUsers = filterUsersByDateRange(users, nextStartDate, nextEndDate);
+    onDataLoaded?.(nextUsers, summarizeUsers(nextUsers));
+  };
 
   return (
     <main className="user-data">
       <header className="user-data__header">
-        <p className="user-data__eyebrow">Community overview</p>
-        <h1>Aggregate data dashboard</h1>
-        <p>Explore the demographics and preferences represented in parenting plans.</p>
+        <div>
+          <p className="user-data__eyebrow">Community overview</p>
+          <h1>Aggregate data dashboard</h1>
+          <p>Explore the demographics and preferences represented in parenting plans.</p>
+        </div>
+        <div className="user-data__date-filters" role="group" aria-label="Filter by plan creation date">
+          <label>
+            <span>From (UTC)</span>
+            <input
+              type="date"
+              value={startDate}
+              max={endDate || undefined}
+              onChange={(event) => handleDateRangeChange(event.target.value, endDate)}
+            />
+          </label>
+          <label>
+            <span>Through (UTC)</span>
+            <input
+              type="date"
+              value={endDate}
+              min={startDate || undefined}
+              onChange={(event) => handleDateRangeChange(startDate, event.target.value)}
+            />
+          </label>
+          <button
+            type="button"
+            disabled={!startDate && !endDate}
+            onClick={() => handleDateRangeChange('', '')}
+          >
+            Clear dates
+          </button>
+        </div>
       </header>
 
       <section className="user-data__metrics" aria-label="Summary statistics">

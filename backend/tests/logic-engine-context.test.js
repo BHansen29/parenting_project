@@ -21,10 +21,16 @@ function mockModule(modulePath, exports, originals) {
   };
 }
 
-test('context-aware navigation skips questions outside the married group', async (t) => {
+test('context-aware navigation uses the married group for both married circumstances', async (t) => {
   const originals = new Map();
   let currentCircumstance = 'married';
-  const marriedQuestionRule = { notApplicableGoTo: 'shared_question' };
+  const marriedQuestionRule = {
+    isDefault: false,
+    nextQuestions: [
+      { operator: 'exists', value: true, goTo: 'shared_question' },
+    ],
+    notApplicableGoTo: 'shared_question',
+  };
 
   mockModule(planModelPath, {
     findOne: async () => ({ userID: 'user-1', currentCircumstance }),
@@ -93,9 +99,41 @@ test('context-aware navigation skips questions outside the married group', async
     return { response, body: await response.json() };
   }
 
+  async function resolveNextQuestion(qKey, answer) {
+    const response = await fetch(
+      `http://127.0.0.1:${server.address().port}/api/logic-engine/nextQuestionWithContext`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ planId: 'plan-1', qKey, answer }),
+      },
+    );
+    return { response, body: await response.json() };
+  }
+
   let result = await resolveStartQuestion();
   assert.equal(result.response.status, 200);
   assert.equal(result.body.qKey, 'married_question');
+
+  result = await resolveNextQuestion('married_question', 'yes');
+  assert.equal(result.response.status, 200);
+  assert.equal(result.body.qKey, 'shared_question');
+
+  const legacyResponse = await fetch(
+    `http://127.0.0.1:${server.address().port}/api/logic-engine/nextQuestion/married_question/yes`,
+  );
+  assert.equal(legacyResponse.status, 200);
+  assert.equal((await legacyResponse.json()).qKey, 'shared_question');
+
+  for (const circumstance of [
+    'married_seeking_custody',
+    'married_seeking_parenting_time',
+  ]) {
+    currentCircumstance = circumstance;
+    result = await resolveStartQuestion();
+    assert.equal(result.response.status, 200);
+    assert.equal(result.body.qKey, 'married_question');
+  }
 
   for (const circumstance of [
     'never_married_seeking_custody',

@@ -12,6 +12,24 @@ const { getFirstName } = require('../utils/nameUtils');
 // How long an invite link stays valid before it expires
 const INVITE_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
+function getEmailDeliveryError(emailErr) {
+  const code = emailErr?.code || '';
+
+  if (code === 'invalid_grant' || /invalid_grant|authentication/i.test(emailErr?.message || '')) {
+    return 'Gmail OAuth authentication failed. Verify the Gmail refresh token and OAuth credentials on Render.';
+  }
+  if (/not configured|missing:/i.test(emailErr?.message || '')) {
+    return 'Gmail API is not configured on Render. Add the GMAIL_* environment variables.';
+  }
+  if (/ETIMEDOUT|ECONNECTION|ENETUNREACH|fetch failed/i.test(emailErr?.message || '')) {
+    return 'The server could not reach the Gmail API.';
+  }
+  if (code === 'EENVELOPE' || /rejected/i.test(emailErr?.message || '')) {
+    return 'Gmail or the recipient address rejected the email.';
+  }
+  return 'Gmail SMTP could not send the invitation email.';
+}
+
 // Looks up an invitation by token and checks it is still valid.
 // Returns { invitation } on success, or { error, status } if something is wrong.
 // Used by both the GET and POST /accept routes to avoid duplicating this logic.
@@ -43,12 +61,16 @@ router.post('/cases/:caseId/invite', verifyToken, async (req, res) => {
     // Build the invite link using APP_BASE_URL from .env - the frontend handles this route
     const inviteLink = `${process.env.APP_BASE_URL}/invite/${token}`;
 
-    // Email failure is non-fatal — invitation record is already created.
-    // Log the error so ops can see it but don't block the response.
+    // An invitation record still allows the invite link to be copied, but email
+    // delivery failures must be reported accurately to the caller.
     try {
       await sendInviteEmail(invitedEmail, inviteLink);
     } catch (emailErr) {
       console.error('Failed to send invite email:', emailErr.message);
+      const deliveryError = getEmailDeliveryError(emailErr);
+      return res.status(502).json({
+        error: `${deliveryError} The invitation was created, so you can copy and share the invitation link.`,
+      });
     }
 
     return res.status(201).json({ message: 'Invitation sent', invitedEmail });

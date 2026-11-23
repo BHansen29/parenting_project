@@ -42,7 +42,7 @@ router.get('/auth/me', verifyToken, requireDatabaseConnection, async (req, res) 
 });
 
 router.get('/form-templates/:format', verifyToken, requireDatabaseConnection, async (req, res) => {
-  if (!['review', 'comparison'].includes(req.params.format)) {
+  if (!['form20', 'form21'].includes(req.params.format)) {
     return res.status(400).json({ error: 'Invalid form template format' });
   }
   const template = await StandardFormTemplate.findOne({ format: req.params.format }).lean();
@@ -50,7 +50,7 @@ router.get('/form-templates/:format', verifyToken, requireDatabaseConnection, as
 });
 
 router.put('/form-templates/:format', verifyToken, requireDatabaseConnection, requireAdmin, async (req, res) => {
-  if (!['review', 'comparison'].includes(req.params.format)) {
+  if (!['form20', 'form21'].includes(req.params.format)) {
     return res.status(400).json({ error: 'Invalid form template format' });
   }
   const { title, layout, blocks } = req.body;
@@ -264,10 +264,11 @@ router.get(
     try {
       const plans = await Plan.find(
         {},
-        'parentAge zipCode collaborationMode aggregateData'
+        'parentAge zipCode collaborationMode aggregateData createdAt'
       ).lean();
 
       res.json(plans.map((plan) => ({
+        createdAt: plan.createdAt ?? plan._id?.getTimestamp?.() ?? null,
         parentAge: plan.parentAge ?? null,
         zipCode: plan.zipCode ?? null,
         collaborationMode: plan.collaborationMode ?? null,
@@ -294,7 +295,7 @@ router.get('/', (req, res) => {
       document: 'GET /api/documents/:id - Get a document by ID',
       createDocument: 'POST /api/documents - Create a new document',
       firebaseSession: 'POST /api/auth/firebase/session - Verify Firebase token and sync user profile',
-      sendInviteEmail: 'POST /api/email/invite - Send a Gmail SMTP invite email to a submitted recipient',
+      sendInviteEmail: 'POST /api/email/invite - Send a Gmail API invite email to a submitted recipient',
       users: 'GET /api/users - List all users'
     }
   });

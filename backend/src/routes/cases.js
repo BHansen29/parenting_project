@@ -90,7 +90,13 @@ function toPlanAnswerMap(plan, parentRole) {
 
   const legacyUserRole = plan.userRole ?? '';
   const currentCircumstance = plan.currentCircumstance || (
-    ['married', 'never_married_seeking_custody', 'never_married_seeking_parenting_time']
+    [
+      'married',
+      'married_seeking_custody',
+      'married_seeking_parenting_time',
+      'never_married_seeking_custody',
+      'never_married_seeking_parenting_time',
+    ]
       .includes(legacyUserRole)
       ? legacyUserRole
       : ''
@@ -145,8 +151,8 @@ router.get('/:caseId/status', verifyToken, async (req, res) => {
 
     // Gets parents names for comparison tool understanding
     const [plan1, plan2, parent1, parent2] = await Promise.all([
-      parentingCase.parent1PlanId ? Plan.findById(parentingCase.parent1PlanId, 'parentFName parentLName streetAddress city state zipCode children userRole') : null,
-      parentingCase.parent2PlanId ? Plan.findById(parentingCase.parent2PlanId, 'parentFName parentLName streetAddress city state zipCode children userRole') : null,
+      parentingCase.parent1PlanId ? Plan.findById(parentingCase.parent1PlanId, 'parentFName parentLName streetAddress city state zipCode children userRole currentCircumstance') : null,
+      parentingCase.parent2PlanId ? Plan.findById(parentingCase.parent2PlanId, 'parentFName parentLName streetAddress city state zipCode children userRole currentCircumstance') : null,
       User.findOne({ firebaseUid: parentingCase.parent1Uid }, 'name email'),
       parentingCase.parent2Uid
         ? User.findOne({ firebaseUid: parentingCase.parent2Uid }, 'name email')
@@ -163,6 +169,9 @@ router.get('/:caseId/status', verifyToken, async (req, res) => {
       status: parentingCase.status,
       isParent1: parentingCase.parent1Uid === req.user.uid,
       userRole: parentingCase.parent1Uid === req.user.uid ? plan1?.userRole : plan2?.userRole,
+      currentCircumstance: parentingCase.parent1Uid === req.user.uid
+        ? (plan1?.currentCircumstance || '')
+        : (plan2?.currentCircumstance || ''),
       parent1Name: displayName(parentingCase.parent1Name, plan1, parent1, 'Parent 1'),
       parent2Name: parentingCase.parent2Uid
         ? displayName(parentingCase.parent2Name, plan2, parent2, 'Co-parent')
@@ -407,6 +416,7 @@ router.post('/:caseId/resolutions', verifyToken, async (req, res) => {
 
     const normalizedResolutions = resolutions.map((resolution) => ({
       ...resolution,
+      flaggedForDiscussion: Boolean(resolution.flaggedForDiscussion),
       proposedAnswer: resolution.source === 'parent1' || resolution.source === 'parent2'
         ? normalizeAnswer(resolution.proposedAnswer, resolution.source)
         : resolution.proposedAnswer,
@@ -460,12 +470,6 @@ router.post('/:caseId/resolutions/review', verifyToken, async (req, res) => {
       return res.status(400).json({ error: 'reviews array is required' });
     }
 
-    await ResolutionReview.findOneAndUpdate(
-      { caseId: parentingCase._id },
-      { reviews, submittedAt: new Date() },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
-    );
-
     const [sourcePlan, resolution] = await Promise.all([
       Plan.findById(parentingCase.parent1PlanId),
       Resolution.findOne({ caseId: parentingCase._id }),
@@ -478,7 +482,21 @@ router.post('/:caseId/resolutions/review', verifyToken, async (req, res) => {
     });
     parentingCase.mergedAnswers = toMergedAnswerEntries(mergedAnswers);
 
-    const hasFlaggedItems = reviews.some((review) => !review.accepted);
+    const flaggedByParent1 = (resolution?.resolutions || [])
+      .filter((item) => item.flaggedForDiscussion)
+      .map((item) => ({ qKey: item.qKey, accepted: false }));
+    const flaggedKeys = new Set(flaggedByParent1.map(({ qKey }) => qKey));
+    const combinedReviews = [
+      ...reviews.filter(({ qKey }) => !flaggedKeys.has(qKey)),
+      ...flaggedByParent1,
+    ];
+    await ResolutionReview.findOneAndUpdate(
+      { caseId: parentingCase._id },
+      { reviews: combinedReviews, submittedAt: new Date() },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    const hasFlaggedItems = combinedReviews.some((review) => !review.accepted);
     parentingCase.status = hasFlaggedItems ? 'needs_discussion' : 'resolved';
     await parentingCase.save();
 
@@ -497,10 +515,20 @@ router.get('/:caseId/resolutions/review', verifyToken, async (req, res) => {
     if (!parentingCase) return res.status(404).json({ error: 'Case not found' });
     if (!isCaseMember(parentingCase, req.user.uid)) return res.status(403).json({ error: 'Forbidden' });
 
-    const review = await ResolutionReview.findOne({ caseId: parentingCase._id });
+    const [review, resolution] = await Promise.all([
+      ResolutionReview.findOne({ caseId: parentingCase._id }),
+      Resolution.findOne({ caseId: parentingCase._id }),
+    ]);
     if (!review) return res.status(404).json({ error: 'No review submitted yet' });
 
-    res.status(200).json(review);
+    const reviews = [...review.reviews];
+    const reviewedKeys = new Set(reviews.map(({ qKey }) => qKey));
+    resolution?.resolutions?.forEach(({ qKey, flaggedForDiscussion }) => {
+      if (flaggedForDiscussion && !reviewedKeys.has(qKey)) {
+        reviews.push({ qKey, accepted: false });
+      }
+    });
+    res.status(200).json({ reviews });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal server error' });

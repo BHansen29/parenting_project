@@ -18,6 +18,8 @@ import RadioQuestion from '../components/forms/RadioQuestion';
 import { auth } from '../lib/firebase';
 import { buildApiUrl } from '../lib/apiClient';
 import Disclaimer from '../components/forms/Disclaimer';
+import SectionQuestionInputs from '../components/forms/SectionQuestionInputs';
+import useSectionQuestions from '../hooks/useSectionQuestions';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -69,6 +71,7 @@ function ChildTaxBlock({
   childData = {},
   parentRole,
   isParent2,
+  claimQuestion,
   onUpdate,
   errors = {},
   isFlagged,
@@ -90,6 +93,15 @@ function ChildTaxBlock({
   const displayParent2 = isParent2 ? 'I' : 'My co-parent';
   const parent1Years = customYears;
   const parent2Years = coParentCustomYears;
+  const claimPrompt = (claimQuestion?.qText || 'Who will claim [child] on tax forms?')
+    .replace('[child]', childName);
+  const claimOptions = new Map(
+    (claimQuestion?.options || []).map(({ value, label }) => [value, label]),
+  );
+  const resolveClaimOption = (value, fallback) => (claimOptions.get(value) || fallback)
+    .replace(/\bI\b|\bmy co-parent\b/gi, (parent) =>
+      parent.toLowerCase() === 'i' ? displayParent1 : displayParent2)
+    .replace(/this child/gi, childName);
 
   const update = (payload) => onUpdate(childIndex, payload);
   const clearError = (field) => {
@@ -104,7 +116,8 @@ function ChildTaxBlock({
         </div>
         <div>
           <p className="child-tax-block__name">{childName}</p>
-          <p className="child-tax-block__subtitle">Tax claiming arrangement</p>
+          <p className="child-tax-block__subtitle">{claimQuestion?.qTitle || 'Tax claiming arrangement'}</p>
+          {claimQuestion?.qIntro && <p>{claimQuestion.qIntro}</p>}
         </div>
         {intent && (
           <div className="child-tax-block__status">
@@ -116,16 +129,34 @@ function ChildTaxBlock({
       <Card>
         <CardHeader className="card-header-with-flag">
           <CardDescription className="card-heading-question-bold">
-            Who will claim {childName} on tax forms?
+            {claimPrompt}
           </CardDescription>
           <FlagButton isFlagged={isFlagged} onClick={onToggleFlag} />
         </CardHeader>
         <CardContent>
           <div className="radio-group">
             {[
-              { value: 'parent1EveryYear', label: `${displayParent1} will claim this child every year` },
-              { value: 'parent2EveryYear', label: `${displayParent2} will claim this child every year` },
-              { value: 'someYears', label: 'The parents will split claiming this child per year' },
+              {
+                value: 'parent1EveryYear',
+                label: resolveClaimOption(
+                  'parent1EveryYear',
+                  `${displayParent1} will claim this child every year`,
+                )
+              },
+              {
+                value: 'parent2EveryYear',
+                label: resolveClaimOption(
+                  'parent2EveryYear',
+                  `${displayParent2} will claim this child every year`,
+                )
+              },
+              {
+                value: 'someYears',
+                label: resolveClaimOption(
+                  'someYears',
+                  'The parents will split claiming this child per year',
+                )
+              },
             ].map(({ value, label }) => (
               <RadioButton
                 key={value}
@@ -239,6 +270,9 @@ function ChildTaxBlock({
               {showSomeYearsDisclaimers && (
                 <ClaimSomeYearsDisclaimers taxYears={taxYears} parentRole={parentRole} />
               )}
+              {claimQuestion?.qDisclaimer && (
+                <Disclaimer variant="info">{claimQuestion.qDisclaimer}</Disclaimer>
+              )}
             </div>
           )}
 
@@ -249,7 +283,15 @@ function ChildTaxBlock({
 }
 
 // ─── ChildTaxBlock wrapper for use in TaxExemptions ─────────────────────────────
-function ChildTaxBlockWrapper({ name, idx, childData, parentRole, isParent2, updateChildAnswer }) {
+function ChildTaxBlockWrapper({
+  name,
+  idx,
+  childData,
+  parentRole,
+  isParent2,
+  claimQuestion,
+  updateChildAnswer
+}) {
   const flag = useSectionFlag(`taxChild-${name}`);
   return (
     <ChildTaxBlock
@@ -258,6 +300,7 @@ function ChildTaxBlockWrapper({ name, idx, childData, parentRole, isParent2, upd
       childData={childData}
       parentRole={parentRole}
       isParent2={isParent2}
+      claimQuestion={claimQuestion}
       onUpdate={(_, payload) => updateChildAnswer(name, payload)}
       errors={childData?.errors ?? {}}
       isFlagged={flag.isFlagged}
@@ -280,6 +323,8 @@ export default function TaxExemptions() {
   const navigate = useNavigate();
   const { state, dispatch } = useForm();
   const { setOnNext, setOnBack } = useNavigation();
+  const sectionQuestions = useSectionQuestions('tax-exemptions');
+  const managedQuestions = sectionQuestions.questionsByKey;
 
   const children         = state.plan?.children ?? [];
   const formData         = state.taxExemptions ?? {};
@@ -411,7 +456,7 @@ export default function TaxExemptions() {
   const [submitAttempted, setSubmitAttempted] = useState(false);
 
   const handleNext = useCallback(async () => {
-    if (!validateForm()) {
+    if (!validateForm() || !sectionQuestions.validate()) {
       setSubmitAttempted(true);
       return;
     }
@@ -424,6 +469,7 @@ export default function TaxExemptions() {
 
     try {
       const idToken = await user.getIdToken();
+      await sectionQuestions.save();
       const response = await fetch(buildApiUrl(`api/plan/${state.plan._id}/sections`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
@@ -436,7 +482,7 @@ export default function TaxExemptions() {
     } catch (error) {
       console.error(error.message);
     }
-  }, [dispatch, navigate, state, validateForm]);
+  }, [dispatch, navigate, sectionQuestions, state, validateForm]);
 
   const handleBack = useCallback(() => {
     update({ errors: {} });
@@ -446,7 +492,7 @@ export default function TaxExemptions() {
   useEffect(() => {
     setOnNext(handleNext);
     setOnBack(handleBack);
-  }, [handleNext, handleBack]);
+  }, [handleNext, handleBack, setOnNext, setOnBack]);
 
   useEffect(() => {
     if (submitAttempted) {
@@ -479,7 +525,7 @@ export default function TaxExemptions() {
             <Card>
               <CardHeader className="card-header-with-flag">
                 <CardDescription className="card-heading-question-bold">
-                  What is your parental role?
+                  {managedQuestions.managed_tax_parent_role?.qText || 'What is your parental role?'}
                 </CardDescription>
                 <FlagButton
                   isFlagged={parentalRoleFlag.isFlagged}
@@ -488,19 +534,31 @@ export default function TaxExemptions() {
               </CardHeader>
               <CardContent>
                 <div className="radio-group">
-                  {PARENT_ROLE_OPTIONS.map(({ value, label }) => (
-                    <RadioButton
-                      key={value}
-                      name="parentRole"
-                      value={value}
-                      checked={parentRole === value}
-                      onChange={() => { update({ parentRole: value }); clearError('parentRole'); }}
-                      label={label}
-                    />
-                  ))}
+                  {PARENT_ROLE_OPTIONS.map(({ value, label: defaultLabel }) => {
+                    const label = managedQuestions.managed_tax_parent_role?.options
+                      ?.find((option) => option.value === value)?.label || defaultLabel;
+                    return (
+                      <RadioButton
+                        key={value}
+                        name="parentRole"
+                        value={value}
+                        checked={parentRole === value}
+                        onChange={() => { update({ parentRole: value }); clearError('parentRole'); }}
+                        label={label}
+                      />
+                    );
+                  })}
                 </div>
                 {errors.parentRole && (
                   <p className="text-input__error-message">{errors.parentRole}</p>
+                )}
+                {managedQuestions.managed_tax_parent_role?.qIntro && (
+                  <p>{managedQuestions.managed_tax_parent_role.qIntro}</p>
+                )}
+                {managedQuestions.managed_tax_parent_role?.qDisclaimer && (
+                  <Disclaimer variant="info">
+                    {managedQuestions.managed_tax_parent_role.qDisclaimer}
+                  </Disclaimer>
                 )}
               </CardContent>
             </Card>
@@ -515,10 +573,20 @@ export default function TaxExemptions() {
                   childData={childAnswers[name]}
                   parentRole={parentRole}
                   isParent2={isParent2}
+                  claimQuestion={managedQuestions.managed_tax_claim_child}
                   updateChildAnswer={updateChildAnswer}
                 />
               );
             })}
+            <SectionQuestionInputs
+              questions={sectionQuestions.additionalQuestions}
+              answers={sectionQuestions.answers}
+              errors={sectionQuestions.errors}
+              loadError={sectionQuestions.loadError}
+              saveError={sectionQuestions.saveError}
+              loading={!sectionQuestions.loaded}
+              onChange={sectionQuestions.setAnswer}
+            />
           </CardContent>
         </Card>
       </div>

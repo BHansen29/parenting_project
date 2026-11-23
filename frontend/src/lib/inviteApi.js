@@ -55,14 +55,22 @@ export async function sendCaseInvite(caseId, invitedEmail) {
 
   const idToken = await auth.currentUser.getIdToken();
   let response;
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), 45000);
   try {
     response = await fetch(buildApiUrl(`/api/v1/cases/${caseId}/invite`), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
       body: JSON.stringify({ invitedEmail }),
+      signal: controller.signal,
     });
   } catch (error) {
+    if (error?.name === 'AbortError') {
+      throw new Error('The invitation request timed out. Please try again or copy the invitation link.');
+    }
     throw new Error('Could not reach invite endpoint');
+  } finally {
+    window.clearTimeout(timeoutId);
   }
   const payload = await parseResponseBody(response);
   if (!response.ok) throw new Error(payload.error || 'Failed to send invite');

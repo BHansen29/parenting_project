@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X, UserPlus, Mail, Copy, Check } from 'lucide-react';
 import { sendCaseInvite, getPendingInviteLink } from '../../lib/inviteApi';
+import useModalAccessibility from '../../hooks/useModalAccessibility';
 import './InviteModal.css';
 
 export default function InviteModal({ isOpen, onClose, caseId, onInviteSent }) {
@@ -8,7 +9,9 @@ export default function InviteModal({ isOpen, onClose, caseId, onInviteSent }) {
   const [copied, setCopied] = useState(false);
   const [sent, setSent] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [error, setError] = useState('');
   const [inviteLink, setInviteLink] = useState(null);
+  const { dialogRef, handleKeyDown } = useModalAccessibility(isOpen, onClose);
 
     if (!isOpen) return null;
 
@@ -17,6 +20,7 @@ export default function InviteModal({ isOpen, onClose, caseId, onInviteSent }) {
     const recipientEmail = email.trim();
     if (!recipientEmail) return;
     setIsSending(true);
+    setError('');
     try {
       await sendCaseInvite(caseId, recipientEmail);
       setSent(true);
@@ -27,6 +31,9 @@ export default function InviteModal({ isOpen, onClose, caseId, onInviteSent }) {
       setTimeout(() => setSent(false), 3000);
     } catch (error) {
       console.error('Failed to send invite:', error);
+      setError(error.message || 'Failed to send the invitation email.');
+      const link = await getPendingInviteLink(caseId);
+      if (link) setInviteLink(link);
     } finally {
       setIsSending(false);
     }
@@ -46,11 +53,19 @@ export default function InviteModal({ isOpen, onClose, caseId, onInviteSent }) {
 
   return (
     <div className="modal-backdrop" onClick={handleBackdropClick}>
-      <div className="invite-modal" role="dialog" aria-modal="true" aria-labelledby="invite-modal-title">
+      <div
+        ref={dialogRef}
+        className="invite-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="invite-modal-title"
+        tabIndex="-1"
+        onKeyDown={handleKeyDown}
+      >
         <div className="invite-modal__header">
           <div className="invite-modal__title-row">
             <div className="invite-modal__icon">
-              <UserPlus size={22} color="#14abdd" />
+              <UserPlus size={22} color="#14abdd" aria-hidden="true" />
             </div>
             <div>
               <h2 id="invite-modal-title" className="invite-modal__title">Invite Other Parent</h2>
@@ -58,7 +73,7 @@ export default function InviteModal({ isOpen, onClose, caseId, onInviteSent }) {
             </div>
           </div>
           <button className="invite-modal__close" onClick={onClose} aria-label="Close">
-            <X size={20} />
+            <X size={20} aria-hidden="true" />
           </button>
         </div>
 
@@ -67,12 +82,6 @@ export default function InviteModal({ isOpen, onClose, caseId, onInviteSent }) {
             <strong>How it works:</strong> Each parent fills out the parenting plan independently. Once both complete it, a comparison summary will be generated showing areas that conflict or where further discussion is necessary. Each parent will have the opportunity to revise their responses after seeing the summary. All changes to original responses will be highlighted to make it easier to track compromises.
           </p>
         </div>
-        <div className="invite-modal__info-box">
-          <p>
-            <strong>Note:</strong> Currently the email system has not been configured, the link needs to be shared directly with the other parent.
-          </p>
-        </div>
-
         <div className="invite-modal__section">
           <label className="invite-modal__label" htmlFor="invite-email">
             Send invite via email
@@ -91,10 +100,15 @@ export default function InviteModal({ isOpen, onClose, caseId, onInviteSent }) {
               className={`invite-modal__send-btn ${sent ? 'invite-modal__send-btn--sent' : ''}`}
               disabled={sent || isSending}
             >
-              <Mail size={16} />
+              <Mail size={16} aria-hidden="true" />
               {isSending ? 'Sending...' : sent ? 'Sent!' : 'Send'}
             </button>
           </form>
+          {error && (
+            <p className="invite-modal__error" role="alert">
+              {error}
+            </p>
+          )}
         </div>
 
         <div className="invite-modal__divider">
@@ -108,7 +122,7 @@ export default function InviteModal({ isOpen, onClose, caseId, onInviteSent }) {
               {inviteLink || (caseId ? 'Send email invite to generate link' : 'Create a plan first')}
             </div>
             <button className="invite-modal__copy-btn" onClick={handleCopy} disabled={!inviteLink}>
-              {copied ? <Check size={16} /> : <Copy size={16} />}
+              {copied ? <Check size={16} aria-hidden="true" /> : <Copy size={16} aria-hidden="true" />}
               {copied ? 'Copied' : 'Copy'}
             </button>
           </div>

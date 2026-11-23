@@ -75,6 +75,7 @@ const questionSchema = new mongoose.Schema({
       "health-insurance-coverage",
       "custody-schedule",
       "transportation",
+      "informationsharing",
       "tax-exemptions",
       "review"],
     required: true
@@ -91,6 +92,14 @@ const questionSchema = new mongoose.Schema({
     type: String,
     enum: ['married', 'not_married', ''],
     default: ''
+  },
+  multipleChildren: {
+    type: Boolean,
+    default: false
+  },
+  pageManaged: {
+    type: Boolean,
+    default: false
   },
 
   // the followings field is dependant on the type of question

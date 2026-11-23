@@ -49,8 +49,8 @@
 .user-icon, .info-icon, .users-icon, .house-icon, .scale-icon, .car-icon {
   width: 3rem;
   height: 3rem;
-  background-color: #14abdd29;
-  color: #14abdd;
+  background-color: #087da229;
+  color: #087da2;
   border-radius: 100%;
   display: flex;
   align-items: center;
@@ -84,6 +84,28 @@
   height: 0.25px;
   background-color: #e5e7eb;
   margin: 2rem 0;
+}
+
+.parental-rights-child-question {
+  width: 100%;
+}
+
+.parental-rights-apply-all {
+  display: block;
+  margin: 0.25rem auto 1.5rem;
+  padding: 0.6rem 1rem;
+  border: 1px solid #087da2;
+  border-radius: 6px;
+  background: #e8f8fd;
+  color: #087da2;
+  cursor: pointer;
+}
+
+.parental-rights-apply-all:disabled {
+  border-color: #d1d5db;
+  background: #f3f4f6;
+  color: #9ca3af;
+  cursor: not-allowed;
 }
 
 /* Card component styling */
@@ -247,8 +269,8 @@
 }
 
 .add-child-btn:hover {
-  border-color: #14abdd;
-  color: #14abdd;
+  border-color: #087da2;
+  color: #087da2;
   background-color: rgba(20, 171, 221, 0.05);
 }
 
@@ -334,7 +356,7 @@
 
   [data-slot="card-description"],
   .page-card > p {
-    color: #9ca3af;
+    color: #6b7280;
   }
 
   [data-slot="card-heading-question-bold"],
@@ -347,7 +369,7 @@
   }
 
   .section-intro {
-    color: #9ca3af;
+    color: #6b7280;
   }
 
   .section-divider {
@@ -357,12 +379,12 @@
   .add-child-btn {
     background-color: #1f2937;
     border-color: #374151;
-    color: #9ca3af;
+    color: #6b7280;
   }
 
   .add-child-btn:hover {
-    border-color: #14abdd;
-    color: #14abdd;
+    border-color: #087da2;
+    color: #087da2;
     background-color: rgba(20, 171, 221, 0.1);
   }
 
@@ -382,11 +404,11 @@
   }
 
   .policy-description-group li {
-    color: #9ca3af;
+    color: #6b7280;
   }
 
   .or-divider {
-    color: #9ca3af;
+    color: #6b7280;
   }
 
   .remove-child-btn {
@@ -492,6 +514,24 @@
 }
 
 /* ── InformationSharing section headers ─────────────────────────────── */
+.child-support-content {
+  line-height: 1.6;
+}
+
+.child-support-content h3 {
+  margin: 1.25rem 0 0.5rem;
+  font-size: 1.125rem;
+}
+
+.child-support-content p {
+  margin: 0 0 0.75rem;
+}
+
+.child-support-content ul {
+  margin: 0.5rem 0 1rem;
+  padding-left: 1.5rem;
+}
+
 .info-section {
   margin-bottom: 2rem;
 }
@@ -528,7 +568,7 @@
 /* Dark mode overrides for info-section */
 @media (prefers-color-scheme: dark) {
   .info-section__description {
-    color: #9ca3af;
+    color: #6b7280;
   }
 }
 
@@ -677,7 +717,7 @@
   padding: 8px 16px;
   border: none;
   border-radius: 8px;
-  background: #14abdd;
+  background: #087da2;
   color: #fff;
   font-size: 0.875rem;
   font-weight: 600;
@@ -709,6 +749,12 @@
   padding: 1rem 0 0.25rem;
 }
 
+@media (prefers-color-scheme: dark) {
+  .schedule-scope-text {
+    color: var(--text-color, #d1d5db);
+  }
+}
+
 .schedule-scope-controls label {
   color: var(--text-color, #374151);
   font-size: 0.8125rem;
@@ -720,7 +766,7 @@
   align-self: center;
   display: block;
   padding-left: 0.75rem;
-  border-left: 3px solid var(--input-border-focus, #14abdd);
+  border-left: 3px solid var(--input-border-focus, #087da2);
   color: var(--heading-color, var(--text-color, #374151));
   font-size: 1rem;
   font-weight: 750;
@@ -746,7 +792,8 @@
 }
 
 .schedule-scope-controls select:focus-visible {
-  outline: none;
+  outline: 3px solid #4955a5;
+  outline-offset: 2px;
   border-color: var(--primary-color, #2563eb);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color, #2563eb) 18%, transparent);
 }

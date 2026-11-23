@@ -1,5 +1,7 @@
 import { Plus, Trash2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import useModalAccessibility from '../../hooks/useModalAccessibility';
+import { cloneSchedule, getIncompleteScheduleSlots, SCHEDULE_TEMPLATES } from './scheduleTemplates';
 import './ScheduleBuilder.css';
 
 const timeToMinutes = (time) => {
@@ -40,6 +42,7 @@ export default function ScheduleBuilder({
   const [schedule, setSchedule] = useState(value);
   const [selectedDay, setSelectedDay] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const modalAccessibility = useModalAccessibility(showModal, () => setShowModal(false));
   const [recurrenceFrequency, setRecurrenceFrequency] = useState('weekly');
   const [recurrenceDays, setRecurrenceDays] = useState([]);
   const [recurrenceStartTime, setRecurrenceStartTime] = useState('');
@@ -48,6 +51,14 @@ export default function ScheduleBuilder({
   const [recurrenceWholeDay, setRecurrenceWholeDay] = useState(false);
   const [recurrenceError, setRecurrenceError] = useState('');
   const [slotError, setSlotError] = useState('');
+  const [templatePending, setTemplatePending] = useState(null);
+  const [templateTimes, setTemplateTimes] = useState({
+    firstStart: '',
+    firstEnd: '',
+    secondStart: '',
+    secondEnd: '',
+  });
+  const [templateTimeError, setTemplateTimeError] = useState('');
 
   // Update schedule when value prop changes
   useEffect(() => {
@@ -325,6 +336,51 @@ export default function ScheduleBuilder({
   };
 
   const stats = getStats();
+  const incompleteScheduleSlots = getIncompleteScheduleSlots(schedule);
+
+  const applyTemplate = (template) => {
+    if (template.requiresTimes) {
+      setTemplatePending(template);
+      setTemplateTimes({ firstStart: '', firstEnd: '', secondStart: '', secondEnd: '' });
+      setTemplateTimeError('');
+      return;
+    }
+    setSchedule(cloneSchedule(template.schedule));
+    setTemplatePending(null);
+    setShowModal(false);
+  };
+
+  const applyTimedTemplate = () => {
+    if (!templatePending) return;
+
+    const ranges = [
+      [templateTimes.firstStart, templateTimes.firstEnd],
+      [templateTimes.secondStart, templateTimes.secondEnd],
+    ];
+    if (ranges.some(([start, end]) => !start || !end)) {
+      setTemplateTimeError('Enter a start and end time for both visits.');
+      return;
+    }
+    if (ranges.some(([start, end]) => timeToMinutes(end) <= timeToMinutes(start))) {
+      setTemplateTimeError('Each end time must be later than its start time.');
+      return;
+    }
+
+    const populatedSchedule = Object.fromEntries(
+      Object.entries(templatePending.schedule).map(([dayIndex, slots]) => [
+        dayIndex,
+        slots.map((slot, slotIndex) => ({
+          ...slot,
+          startTime: ranges[slotIndex][0],
+          endTime: ranges[slotIndex][1],
+          wholeDay: false,
+        })),
+      ]),
+    );
+    setSchedule(populatedSchedule);
+    setTemplatePending(null);
+    setTemplateTimeError('');
+  };
 
   return (
     <div className="schedule-builder">
@@ -343,6 +399,87 @@ export default function ScheduleBuilder({
           <span>Unassigned</span>
         </div>
       </div>
+
+      <section className="schedule-builder__templates" aria-labelledby="schedule-templates-heading">
+        <div className="schedule-builder__templates-heading">
+          <div>
+            <h3 id="schedule-templates-heading">Start with a template</h3>
+            <p>Choose a sample schedule as a starting point, then adjust it below. Template entries are parent assignments; add exact exchange times if needed.</p>
+          </div>
+        </div>
+        <div className="schedule-builder__template-grid">
+          {SCHEDULE_TEMPLATES.map((template) => (
+            <article className="schedule-builder__template-card" key={template.id}>
+              <div>
+                <h4>{template.name}</h4>
+                <p>{template.description}</p>
+              </div>
+              <div className="schedule-builder__template-preview" aria-label={`${template.name} four-week preview. Each row is one week and each column is one day.`}>
+                <div className="schedule-builder__template-preview-header">
+                  <span aria-hidden="true"></span>
+                  {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => <span key={`${day}-${index}`}>{day}</span>)}
+                </div>
+                {template.weekPatterns.map((week, weekIndex) => (
+                  <div className="schedule-builder__template-preview-row" key={weekIndex}>
+                    <span className="schedule-builder__template-preview-week-label">W{weekIndex + 1}</span>
+                    {week.map((dayParents, dayIndex) => (
+                      <div className={`schedule-builder__template-preview-day ${dayParents.length === 1 ? 'schedule-builder__template-preview-day--single' : ''}`} key={dayIndex}>
+                        {dayParents.map((parent, slotIndex) => (
+                          <i className={`schedule-builder__template-preview-slot schedule-builder__template-preview-slot--${parent}`} key={`${parent}-${slotIndex}`}>
+                            {parent === 'parent1' ? 'A' : 'B'}
+                          </i>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+              <div className="schedule-builder__template-key" aria-label="Template preview key">
+                <span><i className="schedule-builder__template-key-swatch schedule-builder__template-key-swatch--parent1">A</i> You</span>
+                <span><i className="schedule-builder__template-key-swatch schedule-builder__template-key-swatch--parent2">B</i> Co-parent</span>
+              </div>
+              <button type="button" className="schedule-builder__template-button" onClick={() => applyTemplate(template)}>
+                {template.requiresTimes ? 'Enter times & use template' : 'Use this template'}
+              </button>
+            </article>
+          ))}
+        </div>
+        {templatePending && (
+          <div className="schedule-builder__template-time-form" aria-labelledby="template-time-form-heading">
+            <h4 id="template-time-form-heading">Add times for {templatePending.name}</h4>
+            <p>Enter each split visit once. These times will be applied to every matching day across all four weeks.</p>
+            <div className="schedule-builder__template-time-fields">
+              <div className="schedule-builder__template-time-group">
+                <strong>Visit 1</strong>
+                <div className="schedule-builder__template-time-field">
+                  <label htmlFor="template-first-start">Start time</label>
+                  <input id="template-first-start" type="time" value={templateTimes.firstStart} onChange={(event) => setTemplateTimes((current) => ({ ...current, firstStart: event.target.value }))} />
+                </div>
+                <div className="schedule-builder__template-time-field">
+                  <label htmlFor="template-first-end">End time</label>
+                  <input id="template-first-end" type="time" value={templateTimes.firstEnd} onChange={(event) => setTemplateTimes((current) => ({ ...current, firstEnd: event.target.value }))} />
+                </div>
+              </div>
+              <div className="schedule-builder__template-time-group">
+                <strong>Visit 2</strong>
+                <div className="schedule-builder__template-time-field">
+                  <label htmlFor="template-second-start">Start time</label>
+                  <input id="template-second-start" type="time" value={templateTimes.secondStart} onChange={(event) => setTemplateTimes((current) => ({ ...current, secondStart: event.target.value }))} />
+                </div>
+                <div className="schedule-builder__template-time-field">
+                  <label htmlFor="template-second-end">End time</label>
+                  <input id="template-second-end" type="time" value={templateTimes.secondEnd} onChange={(event) => setTemplateTimes((current) => ({ ...current, secondEnd: event.target.value }))} />
+                </div>
+              </div>
+            </div>
+            {templateTimeError && <div className="schedule-builder__recurring-error" role="alert">{templateTimeError}</div>}
+            <div className="schedule-builder__template-time-actions">
+              <button type="button" className="schedule-builder__template-button schedule-builder__template-button--primary" onClick={applyTimedTemplate}>Apply times to template</button>
+              <button type="button" className="schedule-builder__template-cancel" onClick={() => setTemplatePending(null)}>Cancel</button>
+            </div>
+          </div>
+        )}
+      </section>
 
       {/* Calendar Grid - 4 weeks */}
       <div className="schedule-builder__weekly-grid">
@@ -415,9 +552,18 @@ export default function ScheduleBuilder({
       {/* Modal for editing day */}
       {showModal && selectedDay && (
         <div className="schedule-builder__modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="schedule-builder__modal" onClick={(e) => e.stopPropagation()}>
+          <div
+            ref={modalAccessibility.dialogRef}
+            className="schedule-builder__modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="schedule-builder-modal-title"
+            tabIndex="-1"
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={modalAccessibility.handleKeyDown}
+          >
             <div className="schedule-builder__modal-header">
-              <h3>
+              <h3 id="schedule-builder-modal-title">
                 {getDayLabel(selectedDay.dayOfWeek)} - {weekLabels[selectedDay.week]}
               </h3>
               <button
@@ -636,7 +782,13 @@ export default function ScheduleBuilder({
         </div>
       )}
 
-      {helpText && !error && (
+      {!error && incompleteScheduleSlots.length > 0 && (
+        <div className="schedule-builder__error" role="status">
+          Enter a start and end time for each split visit before continuing. {incompleteScheduleSlots.length} visit{incompleteScheduleSlots.length === 1 ? '' : 's'} still need{incompleteScheduleSlots.length === 1 ? 's' : ''} times.
+        </div>
+      )}
+
+      {helpText && !error && incompleteScheduleSlots.length === 0 && (
         <div className="schedule-builder__help-text">
           {helpText}
         </div>

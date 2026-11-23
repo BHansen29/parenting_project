@@ -1,7 +1,8 @@
 import { onAuthStateChanged } from 'firebase/auth';
+import { Download } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import UserData from './UserData';
+import UserData, { exportAggregateData } from './UserData';
 import { auth } from '../lib/firebase';
 import { buildApiUrl } from '../lib/apiClient';
 import './AdminView.css';
@@ -10,6 +11,7 @@ export default function AdminView() {
   const navigate = useNavigate();
   const [access, setAccess] = useState('checking');
   const [error, setError] = useState('');
+  const [exportData, setExportData] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -79,12 +81,21 @@ export default function AdminView() {
           <h1>Admin View</h1>
         </div>
         <nav className="admin-view__actions" aria-label="Admin navigation">
+          <button
+            className="admin-view__export-button"
+            type="button"
+            disabled={!exportData}
+            onClick={() => exportAggregateData(exportData.users, exportData.summary)}
+          >
+            <Download size={18} aria-hidden="true" />
+            Export to Excel
+          </button>
           <Link className="admin-view__link" to="/form-designer">Customize PDF form</Link>
           <Link className="admin-view__link" to="/admin/questions">Edit questions</Link>
           <Link className="admin-view__link" to="/dashboard">Back to dashboard</Link>
         </nav>
       </header>
-      <UserData />
+      <UserData onDataLoaded={(users, summary) => setExportData({ users, summary })} />
     </div>
   );
 }

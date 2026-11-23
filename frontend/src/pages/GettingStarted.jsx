@@ -13,6 +13,8 @@ import RadioQuestion from '../components/forms/RadioQuestion';
 import Checkbox from '../components/forms/Checkbox';
 import Disclaimer from '../components/forms/Disclaimer';
 import SafetyPrivacyQuestion from '../components/forms/SafetyPrivacyQuestion';
+import TextQuestion from '../components/forms/TextQuestion';
+import { buildApiUrl } from '../lib/apiClient';
 
 function AggregateCheckboxQuestion({ question, name, value, options, onChange }) {
   const selectedValues = Array.isArray(value) ? value : [];
@@ -119,12 +121,21 @@ export default function GettingStarted() {
   const aggregateData = plan.aggregateData ?? {};
   const collaborationMode = plan.collaborationMode ?? '';
   const legacyUserRole = plan.userRole ?? '';
-  const currentCircumstance = plan.currentCircumstance || (
-    ['married', 'never_married_seeking_custody', 'never_married_seeking_parenting_time']
+  const savedCurrentCircumstance = plan.currentCircumstance || (
+    [
+      'married',
+      'married_seeking_custody',
+      'married_seeking_parenting_time',
+      'never_married_seeking_custody',
+      'never_married_seeking_parenting_time',
+    ]
       .includes(legacyUserRole)
       ? legacyUserRole
       : ''
   );
+  const currentCircumstance = savedCurrentCircumstance === 'married'
+    ? ''
+    : savedCurrentCircumstance;
   const caseFilingStatus = plan.caseFilingStatus || (
     [
       'parent1/petitioner1/plaintiff',
@@ -137,18 +148,22 @@ export default function GettingStarted() {
   );
   const courtCustodyOrderIssued = plan.courtCustodyOrderIssued ?? '';
   const custodyGrantedTo = plan.custodyGrantedTo ?? '';
+  const residentialParent = plan.residentialParent ?? '';
   const parentingGuideInfo = state?.parentingGuideInfo ?? '';
   const errors = formData.errors ?? {};
+  const [gettingStartedQuestions, setGettingStartedQuestions] = useState([]);
+  const [gettingStartedAnswers, setGettingStartedAnswers] = useState({});
+  const [gettingStartedAnswerErrors, setGettingStartedAnswerErrors] = useState({});
 
   const [collaborationModeError, setCollaborationModeError] = useState('');
   const [currentCircumstanceError, setCurrentCircumstanceError] = useState('');
   const [caseFilingError, setCaseFilingError] = useState('');
   const [courtOrderError, setCourtOrderError] = useState('');
   const [custodyGrantedError, setCustodyGrantedError] = useState('');
+  const [residentialParentError, setResidentialParentError] = useState('');
   const [parentingGuideError, setParentingGuideError] = useState('');
 
   const caseFilingFlag = useSectionFlag('caseFilingStatus');
-  const childrenFlag = useSectionFlag('children');
 
   const [children, setChildren] = useState(() => {
     let startKey = 1
@@ -168,9 +183,42 @@ export default function GettingStarted() {
     setCaseFilingError('');
     setCourtOrderError('');
     setCustodyGrantedError('');
+    setResidentialParentError('');
     setParentingGuideError('');
     setChildren(prev => prev.map(c => ({ ...c, errors: {} })));
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    fetch(buildApiUrl('/api/logic-engine/questions/getting-started'))
+      .then((response) => {
+        if (!response.ok) throw new Error('Could not load additional Getting Started questions');
+        return response.json();
+      })
+      .then((questions) => {
+        if (!active) return;
+        setGettingStartedQuestions(Array.isArray(questions) ? questions : []);
+        const savedAnswers = Object.fromEntries(
+          (plan.answers || [])
+            .filter((response) => questions.some((question) => question.qKey === response.qKey))
+            .map((response) => [response.qKey, response.answer]),
+        );
+        setGettingStartedAnswers(savedAnswers);
+        if (Object.keys(savedAnswers).length > 0) {
+          dispatch({
+            type: 'UPDATE_SECTION',
+            section: 'plan',
+            payload: { gettingStartedAnswers: savedAnswers },
+          });
+        }
+      })
+      .catch((requestError) => {
+        if (active) console.error(requestError.message);
+      });
+    return () => {
+      active = false;
+    };
+  }, [plan._id]);
 
   useEffect(() => {
     if (!plan._id) return;
@@ -218,6 +266,7 @@ export default function GettingStarted() {
     }
     if (section === 'plan' && field === 'currentCircumstance') setCurrentCircumstanceError('');
     if (section === 'plan' && field === 'caseFilingStatus') setCaseFilingError('');
+    if (section === 'plan' && field === 'residentialParent') setResidentialParentError('');
   };
 
   const handleCourtOrderChange = (value) => {
@@ -252,6 +301,21 @@ export default function GettingStarted() {
           [field]: value
         }
       }
+    });
+  };
+
+  const handleGettingStartedQuestionChange = (qKey) => (value) => {
+    setGettingStartedAnswers((current) => ({ ...current, [qKey]: value }));
+    setGettingStartedAnswerErrors((current) => ({ ...current, [qKey]: '' }));
+    dispatch({
+      type: 'UPDATE_SECTION',
+      section: 'plan',
+      payload: {
+        gettingStartedAnswers: {
+          ...(plan.gettingStartedAnswers || {}),
+          [qKey]: value,
+        },
+      },
     });
   };
 
@@ -417,6 +481,18 @@ const handleChildChange = (childKey, field) => (value) => {
     } else {
       setParentingGuideError('');
     }
+
+    const answerErrors = {};
+    gettingStartedQuestions.forEach((question) => {
+      const answer = gettingStartedAnswers[question.qKey];
+      const hasAnswer = question.type === 'text input'
+        ? String(answer ?? '').trim().length > 0
+        : Array.isArray(question.options)
+          && question.options.some((option) => option.value === answer);
+      if (!hasAnswer) answerErrors[question.qKey] = 'Answer this question to continue.';
+    });
+    setGettingStartedAnswerErrors(answerErrors);
+    if (Object.keys(answerErrors).length > 0) isValid = false;
 
     setSubmitAttempted(true);
     return isValid;
@@ -737,7 +813,8 @@ const handleChildChange = (childKey, field) => (value) => {
                 onChange={handleFormChange('plan', 'currentCircumstance')}
                 error={currentCircumstanceError}
                 options={[
-                  { value: 'married', label: 'I am going through the process of a divorce, dissolution of marriage, or legal separation.' },
+                  { value: 'married_seeking_parenting_time', label: 'I am going through the process of a divorce, dissolution of marriage, or legal separation, and I want shared parenting time with my coparent.' },
+                  { value: 'married_seeking_custody', label: 'I am going through the process of a divorce, dissolution of marriage, or legal separation, and I have or am seeking legal custody of our child(ren).' },
                   { value: 'never_married_seeking_custody', label: 'I was never married to my co-parent, and I have or am seeking legal custody of our child(ren).'},
                   { value: 'never_married_seeking_parenting_time', label: 'I was never married to my co-parent, and I want to establish parenting time with our child(ren).' },
                 ]}
@@ -920,6 +997,48 @@ const handleChildChange = (childKey, field) => (value) => {
                 + Add Another Child
               </button>
             </section>
+            {gettingStartedQuestions.length > 0 && (
+              <>
+                <hr className="section-divider" />
+                <section className="getting-started-custom-section">
+                  <SectionHeader
+                    iconClassName="info-icon"
+                    icon={<Info size={25} />}
+                    title="Additional Questions"
+                    help="Please answer the remaining Getting Started questions."
+                  />
+                  {gettingStartedQuestions.map((question) => (
+                    question.type === 'text input' ? (
+                      <TextQuestion
+                        key={question.qKey}
+                        question={question.qText}
+                        help={question.qIntro}
+                        id={question.qKey}
+                        value={gettingStartedAnswers[question.qKey] ?? ''}
+                        onChange={handleGettingStartedQuestionChange(question.qKey)}
+                        placeholder="Enter your answer"
+                        error={gettingStartedAnswerErrors[question.qKey]}
+                        required
+                      />
+                    ) : (
+                      <RadioQuestion
+                        key={question.qKey}
+                        question={question.qText}
+                        help={question.qIntro}
+                        name={question.qKey}
+                        value={gettingStartedAnswers[question.qKey] ?? ''}
+                        onChange={handleGettingStartedQuestionChange(question.qKey)}
+                        options={question.options || []}
+                        error={gettingStartedAnswerErrors[question.qKey]}
+                        disclaimers={question.qDisclaimer
+                          ? [{ disclaimer: question.qDisclaimer, disclaimerVariant: 'info' }]
+                          : undefined}
+                      />
+                    )
+                  ))}
+                </section>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useLayoutEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from '../components/common/Sidebar';
 import Header from '../components/common/Header';
@@ -13,6 +13,7 @@ import { useNavigation } from '../context/NavigationContext';
 export default function Layout({ children }) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [navigationError, setNavigationError] = useState('');
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -22,6 +23,20 @@ export default function Layout({ children }) {
   const q = state.question
   const parents = state.parents
   const answer = state.currAnswer
+  const isChildSpecificQuestion = ['parental-rights', 'health-insurance-coverage'].includes(q?.section)
+    && q.multipleChildren !== true
+    && Array.isArray(plan.children)
+    && plan.children.length > 1
+  const answerToPersist = isChildSpecificQuestion
+    ? state.parental_rights?.responses?.find((response) => response.qKey === q.qKey)?.answer ?? answer
+    : answer
+  const persistedByChild = answerToPersist && typeof answerToPersist === 'object'
+    ? answerToPersist.byChild
+    : null
+  const persistedChildAnswers = persistedByChild ? Object.values(persistedByChild) : []
+  const effectiveAnswer = isChildSpecificQuestion
+    ? (persistedChildAnswers.length > 0 ? persistedChildAnswers[persistedChildAnswers.length - 1] : answer)
+    : answer
   // Define the page navigation order
   const pageOrder = [
     '/getting-started',
@@ -213,7 +228,7 @@ export default function Layout({ children }) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${idToken}`,
         },
-        body: JSON.stringify({qKey: q.qKey, answer})
+        body: JSON.stringify({qKey: q.qKey, answer: answerToPersist})
       })
       .then( async (response) => {
         if (!response.ok) {
@@ -274,6 +289,13 @@ export default function Layout({ children }) {
       section: 'plan',
       payload: savedPlan,
     });
+
+    for (const [qKey, answer] of Object.entries(plan.gettingStartedAnswers || {})) {
+      await saveRequest(`api/plan/${plan._id}/answer`, {
+        qKey,
+        answer,
+      });
+    }
   }
 
   async function saveQuestionBeforeNavigation(idToken) {
@@ -297,7 +319,7 @@ export default function Layout({ children }) {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${idToken}`,
       },
-      body: JSON.stringify({ qKey: q.qKey, answer }),
+      body: JSON.stringify({ qKey: q.qKey, answer: answerToPersist }),
     });
     if (!answerResponse.ok) {
       throw new Error(`Failed to save question answer (${answerResponse.status})`);
@@ -313,7 +335,20 @@ export default function Layout({ children }) {
   const handleSave = () => {
     if (!user) return;
     const isGettingStarted = location.pathname === '/getting-started';
-    const hasValidAnswer = isGettingStarted || (q?.type === 'text input' ? String(answer ?? '').trim().length > 0 : q?.options && q.options.findIndex(qAnswer => qAnswer.value === answer) >= 0);
+    const hasValidPerChildAnswer = isChildSpecificQuestion
+      && Array.isArray(plan.children)
+      && plan.children.length > 0
+      && plan.children.every((child, index) => {
+        const childId = child?._id || child?.id || `child-${index + 1}`;
+        const childAnswer = persistedByChild?.[childId];
+        return childAnswer !== undefined && childAnswer !== '';
+      });
+    const hasValidAnswer = isGettingStarted
+      || (isChildSpecificQuestion
+        ? hasValidPerChildAnswer
+        : q?.type === 'text input'
+          ? String(answer ?? '').trim().length > 0
+          : q?.options && q.options.findIndex(qAnswer => qAnswer.value === answer) >= 0);
     if (!hasValidAnswer) return;
     user.getIdToken().then((idToken) => {
       if (isGettingStarted) {
@@ -326,11 +361,12 @@ export default function Layout({ children }) {
     });
   };
 
-  const { onNext: pageOnNext, setOnNext, setOnBack } = useNavigation();
+  const { onNext: pageOnNext, onBack: pageOnBack, setOnNext, setOnBack } = useNavigation();
 
-    useEffect(() => {
+    useLayoutEffect(() => {
       setOnNext(null);
       setOnBack(null);
+      setNavigationError('');
     }, [location.pathname, setOnNext, setOnBack]);
 
   const handleNext = async () => {
@@ -338,13 +374,42 @@ export default function Layout({ children }) {
       const pageValidationResult = await pageOnNext();
       if (pageValidationResult !== true) return;
     }
-    const hasValidQuestionAnswer = q?.type === 'text input'
+    const hasValidPerChildAnswer = isChildSpecificQuestion
+      && Array.isArray(plan.children)
+      && plan.children.length > 0
+      && plan.children.every((child, index) => {
+        const childId = child?._id || child?.id || `child-${index + 1}`;
+        const childAnswer = persistedByChild?.[childId];
+        return childAnswer !== undefined && childAnswer !== '';
+      });
+    const hasValidQuestionAnswer = isChildSpecificQuestion
+      ? hasValidPerChildAnswer
+      : q?.type === 'text input'
         ? String(answer ?? '').trim().length > 0
         : q?.options && q.options.findIndex(qAnswer => qAnswer.value === answer) >= 0;
     if (pageOrder[currentPageIndex] !== '/getting-started' && !hasValidQuestionAnswer) {
       return;
     }
     try {
+      setNavigationError('');
+      if (pageOnNext) {
+        const pageValidationResult = await pageOnNext();
+        if (pageValidationResult !== true) return;
+      }
+      const hasValidQuestionAnswer = q?.type === 'text input'
+          ? String(answer ?? '').trim().length > 0
+          : q?.options && q.options.findIndex(qAnswer => qAnswer.value === answer) >= 0;
+      if (pageOrder[currentPageIndex] !== '/getting-started' && !hasValidQuestionAnswer) {
+        setNavigationError('Please answer this question before continuing.');
+        return;
+      }
+      if (!user) {
+        throw new Error('Your sign-in is still loading. Please try again in a moment.');
+      }
+      if (!plan?._id) {
+        throw new Error('No plan is loaded. Return to the dashboard and reopen the plan.');
+      }
+
       const idToken = await user.getIdToken();
       const isGettingStarted = pageOrder[currentPageIndex] === '/getting-started';
       if (isGettingStarted) {
@@ -361,7 +426,7 @@ export default function Layout({ children }) {
         },
         body: JSON.stringify(isGettingStarted
           ? { planId: plan._id, startQKey: 'allocation_parental_rights' }
-          : { planId: plan._id, qKey: q.qKey, answer }),
+          : { planId: plan._id, qKey: q.qKey, answer: effectiveAnswer }),
       });
       if (!response.ok) {
         const result = await response.json().catch(() => ({}));
@@ -387,7 +452,19 @@ export default function Layout({ children }) {
       navigate(`/${data.section}`);
     } catch (e) {
       console.error('Could not navigate to the next question:', e);
+      setNavigationError(
+        e instanceof Error ? e.message : 'Could not move to the next question. Please try again.'
+      );
     }
+  };
+
+  const handleFooterBack = () => {
+    if (pageOnBack) {
+      pageOnBack();
+      return;
+    }
+
+    handleBack();
   };
 
   return (
@@ -417,6 +494,11 @@ export default function Layout({ children }) {
         )}
 
         <main className="layout__content">
+          {navigationError && (
+            <p className="layout__navigation-error" role="alert">
+              {navigationError}
+            </p>
+          )}
           {children}
         </main>
 
@@ -424,7 +506,7 @@ export default function Layout({ children }) {
           showBackButton={!isFirstPage}
           showNextButton={!isLastPage}
           showSaveButton={shouldShowNavigation}
-          onBack={handleBack}
+          onBack={handleFooterBack}
           onNext={handleNext}
           onSave={handleSave}
           saved={saved}

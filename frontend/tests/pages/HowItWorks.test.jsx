@@ -12,7 +12,10 @@ vi.mock('react-router-dom', async () => {
 })
 
 describe('HowItWorks', () => {
-  beforeEach(() => mockNavigate.mockReset())
+  beforeEach(() => {
+    mockNavigate.mockReset()
+    window.sessionStorage.clear()
+  })
 
   it('renders the process and family-focused content', () => {
     renderWithRouter(<HowItWorks />)

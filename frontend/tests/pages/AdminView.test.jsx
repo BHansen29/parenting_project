@@ -57,6 +57,7 @@ describe('AdminView', () => {
     expect(await screen.findByRole('heading', { name: 'Admin View' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Edit questions' })).toHaveAttribute('href', '/admin/questions');
     expect(screen.getByRole('link', { name: 'Back to dashboard' })).toHaveAttribute('href', '/dashboard');
+    expect(screen.getByRole('button', { name: 'Export to Excel' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Response distributions' })).toBeInTheDocument();
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(

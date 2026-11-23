@@ -3,86 +3,29 @@ const router = express.Router();
 const Question = require('../models/Question');
 const NextQuestionRule = require('../models/NextQuestionRule');
 const Plan = require('../models/Plan');
+const { ensurePageManagedQuestions } = require('../data/pageManagedQuestions');
 const verifyToken = require('../middleware/verifyToken');
-const questionLogicHandler = require('../lib/question-logic-handler.js')
-
-function getCircumstanceGroup(currentCircumstance) {
-  if (currentCircumstance === 'married') return 'married';
-  if ([
-    'never_married_seeking_custody',
-    'never_married_seeking_parenting_time',
-  ].includes(currentCircumstance)) {
-    return 'not_married';
-  }
-  return null;
-}
-
-async function findNextApplicableQuestion(startQKey, circumstanceGroup) {
-  let qKey = startQKey;
-  const visited = new Set();
-
-  while (qKey) {
-    if (visited.has(qKey)) {
-      const error = new Error(`Question skip loop detected at "${qKey}"`);
-      error.statusCode = 409;
-      throw error;
-    }
-    visited.add(qKey);
-    if (visited.size > 100) {
-      const error = new Error('Question skip chain exceeds the maximum length');
-      error.statusCode = 409;
-      throw error;
-    }
-
-    const question = await Question.findOne({
-      qKey,
-      isArchived: { $ne: true },
-    });
-    if (!question) {
-      const error = new Error(`Question "${qKey}" was not found or is archived`);
-      error.statusCode = 404;
-      throw error;
-    }
-
-    if (!question.appliesToGroup || question.appliesToGroup === circumstanceGroup) {
-      return question;
-    }
-
-    const questionRule = await NextQuestionRule.findOne({ qKey });
-    if (!questionRule?.notApplicableGoTo) {
-      const error = new Error(
-        `Question "${qKey}" does not apply to this circumstance and has no skip destination`,
-      );
-      error.statusCode = 409;
-      throw error;
-    }
-    qKey = questionRule.notApplicableGoTo;
-  }
-
-  return null;
-}
+const {
+  findNextApplicableQuestion,
+  getCircumstanceGroup,
+  getNextQuestionKey,
+} = require('../lib/question-navigation');
 
 // GET /api/logic-engine/nextQuestion/:qkey/:answer - get next question from answer to current question
 router.get('/nextQuestion/:qkey/:answer', async (req, res) => {
-  const userAnswer = req.params.answer
-  const qKey = req.params.qkey
-  const nextQRules = await NextQuestionRule.findOne({qKey: qKey})
-  
-  if (nextQRules == null) {
-    console.log("Failed to retrieve NextQuestionRule using qkey: " + qKey)
-    res.status(404).send()
-  }
-
-  const next = nextQRules.isDefault 
-    ? nextQRules.goToDefault 
-    : nextQRules.nextQuestions.find(rule => questionLogicHandler.evaluate(userAnswer, rule.operator, rule.value)).goTo
   try {
-    const nextQ = await Question.findOne({ qKey: next, isArchived: { $ne: true } })
-    console.log("Returning next question of id: " + next)
-    res.status(200).json(nextQ)
-  } catch(err) {
-    console.error("Failed to find next question of id: " + next)
-    res.status(400).json({ error: err.message})
+    const nextQKey = await getNextQuestionKey(req.params.qkey, req.params.answer);
+    const nextQuestion = await Question.findOne({
+      qKey: nextQKey,
+      isArchived: { $ne: true },
+    });
+    return res.status(200).json(nextQuestion);
+  } catch (error) {
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
+    console.error('Could not resolve next question:', error);
+    return res.status(500).json({ error: 'Could not resolve next question' });
   }
 });
 
@@ -110,6 +53,8 @@ router.post('/nextQuestionWithContext', verifyToken, async (req, res) => {
     const currentCircumstance = plan.currentCircumstance || (
       [
         'married',
+        'married_seeking_custody',
+        'married_seeking_parenting_time',
         'never_married_seeking_custody',
         'never_married_seeking_parenting_time',
       ].includes(legacyCircumstance)
@@ -131,22 +76,7 @@ router.post('/nextQuestionWithContext', verifyToken, async (req, res) => {
         return res.status(404).json({ error: 'Current question not found or is archived' });
       }
 
-      const rule = await NextQuestionRule.findOne({ qKey });
-      if (!rule) {
-        return res.status(404).json({ error: 'No next-question rule was found' });
-      }
-
-      if (rule.isDefault) {
-        destinationQKey = rule.goToDefault;
-      } else {
-        const matchingRule = rule.nextQuestions.find((nextRule) =>
-          questionLogicHandler.evaluate(answer, nextRule.operator, nextRule.value)
-        );
-        if (!matchingRule) {
-          return res.status(409).json({ error: `No branching rule matched the answer for "${qKey}"` });
-        }
-        destinationQKey = matchingRule.goTo;
-      }
+      destinationQKey = await getNextQuestionKey(qKey, answer);
     }
 
     if (!destinationQKey) {
@@ -187,6 +117,7 @@ router.get('/next-question-rules', async (req, res) => {
 // GET /api/logic-engine/questions/:section - Get all questions from the section specified
 router.get('/questions/:section', async (req, res) => {
   try {
+    await ensurePageManagedQuestions(Question);
     const questions = await Question.find({
       section: req.params.section,
       isArchived: { $ne: true }

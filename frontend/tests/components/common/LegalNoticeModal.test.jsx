@@ -1,6 +1,7 @@
 import { screen, fireEvent, render } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { vi } from 'vitest'
+import { MemoryRouter } from 'react-router-dom'
 import LegalNoticeModal from '../../../src/components/common/LegalNoticeModal'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -9,13 +10,18 @@ const onAccept = vi.fn()
 const onClose = vi.fn()
 
 const renderModal = (isOpen = true) =>
-  render(<LegalNoticeModal isOpen={isOpen} onAccept={onAccept} onClose={onClose} />)
+  render(
+    <MemoryRouter>
+      <LegalNoticeModal isOpen={isOpen} onAccept={onAccept} onClose={onClose} />
+    </MemoryRouter>,
+  )
 
-// Check all three acknowledgment checkboxes
+// Check all acknowledgment checkboxes
 const checkAllBoxes = async () => {
   await userEvent.click(screen.getByLabelText(/this form is not legal advice/i))
   await userEvent.click(screen.getByLabelText(/not be provided a lawyer/i))
   await userEvent.click(screen.getByLabelText(/laws may have changed/i))
+  await userEvent.click(screen.getByLabelText(/agree to the terms of service/i))
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
@@ -52,11 +58,12 @@ describe('LegalNoticeModal', () => {
     expect(screen.getByText('Laws May Have Changed')).toBeInTheDocument()
   })
 
-  it('displays all three acknowledgment checkboxes unchecked by default', () => {
+  it('displays all acknowledgment checkboxes unchecked by default', () => {
     renderModal()
     expect(screen.getByLabelText(/this form is not legal advice/i)).not.toBeChecked()
     expect(screen.getByLabelText(/not be provided a lawyer/i)).not.toBeChecked()
     expect(screen.getByLabelText(/laws may have changed/i)).not.toBeChecked()
+    expect(screen.getByLabelText(/agree to the terms of service/i)).not.toBeChecked()
   })
 
   it('displays the confirm button', () => {
@@ -67,6 +74,13 @@ describe('LegalNoticeModal', () => {
   it('displays the cancel button', () => {
     renderModal()
     expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument()
+  })
+
+  it('opens the Terms of Service in a new tab', () => {
+    renderModal()
+    const termsLink = screen.getByRole('link', { name: /terms of service/i })
+    expect(termsLink).toHaveAttribute('target', '_blank')
+    expect(termsLink).toHaveAttribute('href', '/terms-of-service')
   })
 
   it('displays the close (X) button', () => {
@@ -168,7 +182,11 @@ describe('LegalNoticeModal', () => {
     fireEvent.click(screen.getByRole('button', { name: /close/i }))
 
     // Reopen
-    rerender(<LegalNoticeModal isOpen={true} onAccept={onAccept} onClose={onClose} />)
+    rerender(
+      <MemoryRouter>
+        <LegalNoticeModal isOpen={true} onAccept={onAccept} onClose={onClose} />
+      </MemoryRouter>,
+    )
 
     expect(screen.getByLabelText(/this form is not legal advice/i)).not.toBeChecked()
     expect(screen.getByLabelText(/not be provided a lawyer/i)).not.toBeChecked()
@@ -184,7 +202,11 @@ describe('LegalNoticeModal', () => {
     fireEvent.click(screen.getByRole('button', { name: /close/i }))
 
     // Reopen
-    rerender(<LegalNoticeModal isOpen={true} onAccept={onAccept} onClose={onClose} />)
+    rerender(
+      <MemoryRouter>
+        <LegalNoticeModal isOpen={true} onAccept={onAccept} onClose={onClose} />
+      </MemoryRouter>,
+    )
 
     expect(screen.queryByText(/please check all boxes/i)).not.toBeInTheDocument()
   })

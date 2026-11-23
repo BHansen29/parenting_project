@@ -6,17 +6,8 @@ const Question = require('../models/Question');
 const User = require('../models/User');
 const verifyToken = require('../middleware/verifyToken');
 const { getFirstName } = require('../utils/nameUtils');
-
-function getCircumstanceGroup(currentCircumstance) {
-  if (currentCircumstance === 'married') return 'married';
-  if ([
-    'never_married_seeking_custody',
-    'never_married_seeking_parenting_time',
-  ].includes(currentCircumstance)) {
-    return 'not_married';
-  }
-  return null;
-}
+const { findPreviousQuestion } = require('../lib/question-navigation');
+const { getCircumstanceGroup } = require('../lib/circumstance-group');
 
 // POST /api/plan - Start a new plan
 // Optional body: { caseId } — when provided (co-parent accept flow), the new plan
@@ -66,7 +57,13 @@ router.post('/', verifyToken, async (req, res) => {
           };
           const legacyUserRole = p1Plan?.userRole ?? '';
           const parent1CurrentCircumstance = p1Plan?.currentCircumstance || (
-            ['married', 'never_married_seeking_custody', 'never_married_seeking_parenting_time']
+            [
+              'married',
+              'married_seeking_custody',
+              'married_seeking_parenting_time',
+              'never_married_seeking_custody',
+              'never_married_seeking_parenting_time',
+            ]
               .includes(legacyUserRole)
               ? legacyUserRole
               : ''
@@ -88,15 +85,7 @@ router.post('/', verifyToken, async (req, res) => {
           plan.custodyGrantedTo = p1Plan?.courtCustodyOrderIssued === 'yes'
             ? oppositeCustodyRecipient[p1Plan?.custodyGrantedTo] ?? p1Plan?.custodyGrantedTo ?? ''
             : '';
-          plan.parentingTimeAndCommunication = {
-            parentingSchedule: p1Plan?.parentingTimeAndCommunication?.parentingSchedule ?? {},
-            holidaySchedule: p1Plan?.parentingTimeAndCommunication?.holidaySchedule ?? {},
-            schoolSchedule: p1Plan?.parentingTimeAndCommunication?.schoolSchedule ?? {},
-            scheduleScope: p1Plan?.parentingTimeAndCommunication?.scheduleScope ?? 'all',
-            parentingSchedulesByChild: p1Plan?.parentingTimeAndCommunication?.parentingSchedulesByChild ?? {},
-            holidaySchedulesByChild: p1Plan?.parentingTimeAndCommunication?.holidaySchedulesByChild ?? {},
-            schoolSchedulesByChild: p1Plan?.parentingTimeAndCommunication?.schoolSchedulesByChild ?? {},
-          };
+          plan.parentingTimeAndCommunication = {};
           await plan.save();
         }
       } catch (caseErr) {
@@ -287,18 +276,12 @@ router.get('/prevQuestion/:qkey/:planId', verifyToken, async (req, res) => {
     if (!plan || plan.userID !== req.user.uid) {
       return res.status(403).json({ error: 'Forbidden' });
     }
-    let index = plan.answers.findIndex(userAnswer => userAnswer.qKey === qKey)
-    if (index < 0) {
-      // If the current question has not been answered yet, use the most recent answer.
-      index = plan.answers.length
-    }
-    const previousKey = index > 0 ? plan.answers[index - 1].qKey : undefined;
-
-    const prevQuestion = previousKey
-      ? await Question.findOne({ qKey: previousKey })
-      : "none";
-    return res.status(200).json(prevQuestion)
+    const previousQuestion = await findPreviousQuestion(plan, qKey);
+    return res.status(200).json(previousQuestion ?? 'none');
   } catch (error) {
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     console.error(error);
     res.status(500).json({ error: 'Internal server error' });
   }

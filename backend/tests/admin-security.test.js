@@ -8,6 +8,7 @@ const mongoosePath = require.resolve('mongoose');
 const userModelPath = path.join(backendRoot, 'src', 'models', 'User.js');
 const questionModelPath = path.join(backendRoot, 'src', 'models', 'Question.js');
 const ruleModelPath = path.join(backendRoot, 'src', 'models', 'NextQuestionRule.js');
+const questionnaireVersionModelPath = path.join(backendRoot, 'src', 'models', 'QuestionnaireVersion.js');
 const firebaseAdminPath = path.join(backendRoot, 'src', 'config', 'firebaseAdmin.js');
 const verifyTokenPath = path.join(backendRoot, 'src', 'middleware', 'verifyToken.js');
 const requireAdminPath = path.join(backendRoot, 'src', 'middleware', 'requireAdmin.js');
@@ -32,6 +33,44 @@ function restoreModules(originals) {
       delete require.cache[resolved];
     }
   }
+}
+
+function snapshotQuery(value) {
+  return {
+    select() { return this; },
+    session() { return this; },
+    lean: async () => value,
+    then(resolve, reject) {
+      return Promise.resolve(value).then(resolve, reject);
+    }
+  };
+}
+
+function mockQuestionnaireVersionModel(originals, versions = []) {
+  mockModule(questionnaireVersionModelPath, {
+    async create(documents) {
+      const isList = Array.isArray(documents);
+      const entries = isList ? documents : [documents];
+      const created = entries.map((entry) => ({
+        _id: '64f000000000000000000001',
+        createdAt: new Date(),
+        ...entry
+      }));
+      versions.push(...created);
+      return isList ? created : created[0];
+    },
+    find() {
+      return {
+        select() { return this; },
+        sort() { return this; },
+        limit() { return this; },
+        lean: async () => versions
+      };
+    },
+    findById(id) {
+      return { lean: async () => versions.find((version) => String(version._id) === String(id)) || null };
+    }
+  }, originals);
 }
 
 function createResponse() {
@@ -144,6 +183,7 @@ test('admin question endpoints reject protected and unknown fields', async (t) =
   mockModule(ruleModelPath, {}, originals);
   mockModule(verifyTokenPath, pass, originals);
   mockModule(requireAdminPath, (req, res, next) => next(), originals);
+  mockQuestionnaireVersionModel(originals);
   delete require.cache[require.resolve(adminRoutePath)];
   const router = require(adminRoutePath);
   const app = express();
@@ -193,6 +233,7 @@ test('admin question endpoints reject protected and unknown fields', async (t) =
 
 test('admin question edits save a revision with the authenticated administrator UID', async (t) => {
   const originals = new Map();
+  const questionnaireVersions = [];
   const question = {
     type: 'multiple choice',
     qTitle: 'Original title',
@@ -215,11 +256,13 @@ test('admin question edits save a revision with the authenticated administrator 
   };
   pass.withRevocationCheck = () => pass;
   mockModule(questionModelPath, {
-    findOne: () => ({ select: async () => question })
+    findOne: () => ({ select: async () => question }),
+    find: () => snapshotQuery([question])
   }, originals);
-  mockModule(ruleModelPath, {}, originals);
+  mockModule(ruleModelPath, { find: () => snapshotQuery([]) }, originals);
   mockModule(verifyTokenPath, pass, originals);
   mockModule(requireAdminPath, (req, res, next) => next(), originals);
+  mockQuestionnaireVersionModel(originals, questionnaireVersions);
   delete require.cache[require.resolve(adminRoutePath)];
   const router = require(adminRoutePath);
   const app = express();
@@ -248,6 +291,7 @@ test('admin question edits save a revision with the authenticated administrator 
   assert.equal(question.revisionHistory[0].actorUid, 'verified-admin-uid');
   assert.equal(question.revisionHistory[0].before.qTitle, 'Original title');
   assert.equal(question.revisionHistory[0].after.qTitle, 'Updated title');
+  assert.equal(questionnaireVersions[0].questions[0].qTitle, 'Original title');
 });
 
 test('restoring a question revision applies the saved snapshot and records the rollback', async (t) => {
@@ -303,11 +347,13 @@ test('restoring a question revision applies the saved snapshot and records the r
   };
   pass.withRevocationCheck = () => pass;
   mockModule(questionModelPath, {
-    findOne: () => ({ select: async () => question })
+    findOne: () => ({ select: async () => question }),
+    find: () => snapshotQuery([question])
   }, originals);
-  mockModule(ruleModelPath, {}, originals);
+  mockModule(ruleModelPath, { find: () => snapshotQuery([]) }, originals);
   mockModule(verifyTokenPath, pass, originals);
   mockModule(requireAdminPath, (req, res, next) => next(), originals);
+  mockQuestionnaireVersionModel(originals);
   delete require.cache[require.resolve(adminRoutePath)];
   const router = require(adminRoutePath);
   const app = express();
@@ -342,6 +388,144 @@ test('restoring a question revision applies the saved snapshot and records the r
   assert.equal(question.revisionHistory[1].after.qTitle, 'Older title');
 });
 
+test('restoring a questionnaire version restores definitions and archives questions added later', async (t) => {
+  const originals = new Map();
+  const versionId = '64f000000000000000000001';
+  const version = {
+    _id: versionId,
+    action: 'Before editing question: Original title (first_question)',
+    createdAt: new Date('2026-01-01T12:00:00.000Z'),
+    questions: [{
+      qKey: 'first_question',
+      type: 'multiple choice',
+      qTitle: 'Original title',
+      qIntro: '',
+      qDisclaimer: '',
+      qIcon: 'scale-icon',
+      qText: 'Original prompt',
+      section: 'parental-rights',
+      options: [],
+      appliesToGroup: '',
+      multipleChildren: false,
+      includeInComparison: true,
+      isArchived: false,
+      pageManaged: false
+    }],
+    rules: [{
+      qKey: 'first_question',
+      isDefault: true,
+      goToDefault: '',
+      notApplicableGoTo: '',
+      nextQuestions: []
+    }]
+  };
+  const questions = [
+    {
+      qKey: 'first_question',
+      type: 'multiple choice',
+      qTitle: 'Edited title',
+      qIntro: '',
+      qDisclaimer: '',
+      qIcon: 'scale-icon',
+      qText: 'Edited prompt',
+      section: 'parental-rights',
+      options: [],
+      appliesToGroup: '',
+      multipleChildren: false,
+      includeInComparison: true,
+      isArchived: false,
+      pageManaged: false,
+      revisionHistory: [],
+      set(fields) { Object.assign(this, fields); },
+      async save() {}
+    },
+    {
+      qKey: 'later_question',
+      type: 'multiple choice',
+      qTitle: 'Added later',
+      qIntro: '',
+      qDisclaimer: '',
+      qIcon: 'scale-icon',
+      qText: 'Later prompt',
+      section: 'parental-rights',
+      options: [],
+      appliesToGroup: '',
+      multipleChildren: false,
+      includeInComparison: true,
+      isArchived: false,
+      pageManaged: false,
+      revisionHistory: [],
+      set(fields) { Object.assign(this, fields); },
+      async save() {}
+    }
+  ];
+  const rules = [{
+    qKey: 'first_question',
+    isDefault: true,
+    goToDefault: 'later_question',
+    notApplicableGoTo: '',
+    nextQuestions: [],
+    revisionHistory: [],
+    set(fields) { Object.assign(this, fields); },
+    async save() {}
+  }];
+  const session = {
+    async withTransaction(callback) { await callback(); },
+    async endSession() {}
+  };
+  class MockQuestion {
+    constructor(fields) {
+      Object.assign(this, fields, { options: fields.options || [], revisionHistory: [] });
+    }
+    static find() { return snapshotQuery(questions); }
+  }
+  const MockRule = {
+    find() { return snapshotQuery(rules); }
+  };
+  const pass = (req, res, next) => {
+    req.user = { uid: 'restoring-admin' };
+    next();
+  };
+  pass.withRevocationCheck = () => pass;
+
+  mockModule(mongoosePath, {
+    Types: { ObjectId: { isValid: () => true } },
+    startSession: async () => session
+  }, originals);
+  mockModule(questionModelPath, MockQuestion, originals);
+  mockModule(ruleModelPath, MockRule, originals);
+  mockModule(verifyTokenPath, pass, originals);
+  mockModule(requireAdminPath, (req, res, next) => next(), originals);
+  mockQuestionnaireVersionModel(originals, [version]);
+  delete require.cache[require.resolve(adminRoutePath)];
+  const router = require(adminRoutePath);
+  const app = express();
+  app.use(express.json());
+  app.use('/api/admin', router);
+  const server = await new Promise((resolve) => {
+    const instance = app.listen(0, () => resolve(instance));
+  });
+
+  t.after(async () => {
+    await new Promise((resolve) => server.close(resolve));
+    delete require.cache[require.resolve(adminRoutePath)];
+    restoreModules(originals);
+  });
+
+  const response = await fetch(
+    `http://127.0.0.1:${server.address().port}/api/admin/questionnaire-versions/${versionId}/restore`,
+    { method: 'POST' }
+  );
+  const payload = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.equal(questions[0].qTitle, 'Original title');
+  assert.equal(questions[1].isArchived, true);
+  assert.equal(rules[0].goToDefault, '');
+  assert.equal(payload.archivedQuestions, 1);
+  assert.equal(questions[0].revisionHistory.length, 1);
+});
+
 test('admin question list follows the questionnaire flow and then includes unreachable questions', async (t) => {
   const originals = new Map();
   const questions = [
@@ -373,10 +557,14 @@ test('admin question list follows the questionnaire flow and then includes unrea
     next();
   };
   pass.withRevocationCheck = () => pass;
-  mockModule(questionModelPath, { find: () => query(questions) }, originals);
+  mockModule(questionModelPath, {
+    find: () => query(questions),
+    updateOne: async () => ({ acknowledged: true })
+  }, originals);
   mockModule(ruleModelPath, { find: () => query(rules) }, originals);
   mockModule(verifyTokenPath, pass, originals);
   mockModule(requireAdminPath, (req, res, next) => next(), originals);
+  mockQuestionnaireVersionModel(originals);
   delete require.cache[require.resolve(adminRoutePath)];
   const router = require(adminRoutePath);
   const app = express();
@@ -458,16 +646,17 @@ test('inserting after a question keeps its existing next question immediately af
   mockModule(mongoosePath, { startSession: async () => session }, originals);
   MockQuestion.findOne = () => query(questions.find((question) => question.qKey === 'school_address_parent'));
   MockQuestion.exists = () => query(true);
-  MockQuestion.find = () => ({ select() { return this; }, lean: async () => questions });
+  MockQuestion.find = () => snapshotQuery(questions);
   MockRule.findOne = () => ({
     select() { return this; },
     session: async () => previousRule
   });
-  MockRule.find = () => ({ select() { return this; }, lean: async () => rules });
+  MockRule.find = () => snapshotQuery(rules);
   mockModule(questionModelPath, MockQuestion, originals);
   mockModule(ruleModelPath, MockRule, originals);
   mockModule(verifyTokenPath, pass, originals);
   mockModule(requireAdminPath, (req, res, next) => next(), originals);
+  mockQuestionnaireVersionModel(originals);
   delete require.cache[require.resolve(adminRoutePath)];
   const router = require(adminRoutePath);
   const app = express();
@@ -568,6 +757,7 @@ test('insertion rejects branching questions with different destinations', async 
   mockModule(ruleModelPath, MockRule, originals);
   mockModule(verifyTokenPath, pass, originals);
   mockModule(requireAdminPath, (req, res, next) => next(), originals);
+  mockQuestionnaireVersionModel(originals);
   delete require.cache[require.resolve(adminRoutePath)];
   const router = require(adminRoutePath);
   const app = express();
@@ -650,14 +840,16 @@ test('archiving a question rewires inbound rules to its safe default successor',
   pass.withRevocationCheck = () => pass;
   mockModule(questionModelPath, {
     findOne: () => ({ select: async () => archivedQuestion }),
-    exists: async () => true
+    exists: async () => true,
+    find: () => snapshotQuery([archivedQuestion])
   }, originals);
   mockModule(ruleModelPath, {
     findOne: () => query(targetRule),
-    find: () => query([inboundRule])
+    find: (filter) => filter ? query([inboundRule]) : snapshotQuery([])
   }, originals);
   mockModule(verifyTokenPath, pass, originals);
   mockModule(requireAdminPath, (req, res, next) => next(), originals);
+  mockQuestionnaireVersionModel(originals);
   delete require.cache[require.resolve(adminRoutePath)];
   const router = require(adminRoutePath);
   const app = express();
@@ -713,13 +905,15 @@ test('an unconnected question can be archived without a branching rule', async (
   };
   pass.withRevocationCheck = () => pass;
   mockModule(questionModelPath, {
-    findOne: () => ({ select: async () => question })
+    findOne: () => ({ select: async () => question }),
+    find: () => snapshotQuery([question])
   }, originals);
   mockModule(ruleModelPath, {
-    find: () => query([])
+    find: () => snapshotQuery([])
   }, originals);
   mockModule(verifyTokenPath, pass, originals);
   mockModule(requireAdminPath, (req, res, next) => next(), originals);
+  mockQuestionnaireVersionModel(originals);
   delete require.cache[require.resolve(adminRoutePath)];
   const router = require(adminRoutePath);
   const app = express();
@@ -758,15 +952,18 @@ test('admins can create a question with an immutable-style stable key and initia
 
     async save() {}
   }
+  MockQuestion.find = () => snapshotQuery([]);
+  const MockRule = { find: () => snapshotQuery([]) };
   const pass = (req, res, next) => {
     req.user = { uid: 'admin-uid' };
     next();
   };
   pass.withRevocationCheck = () => pass;
   mockModule(questionModelPath, MockQuestion, originals);
-  mockModule(ruleModelPath, {}, originals);
+  mockModule(ruleModelPath, MockRule, originals);
   mockModule(verifyTokenPath, pass, originals);
   mockModule(requireAdminPath, (req, res, next) => next(), originals);
+  mockQuestionnaireVersionModel(originals);
   delete require.cache[require.resolve(adminRoutePath)];
   const router = require(adminRoutePath);
   const app = express();

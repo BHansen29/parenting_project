@@ -8,7 +8,8 @@
     "dev": "nodemon src/index.js",
     "test": "node --test --test-reporter=spec tests/*.test.js",
     "test:api": "node --test --test-reporter=spec tests/*.test.js",
-    "grant-admin": "node scripts/grant-admin.js"
+    "grant-admin": "node scripts/grant-admin.js",
+    "gmail-oauth": "node scripts/gmail-oauth.js"
   },
   "keywords": [],
   "author": "",

@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useNavigate } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
-import { CheckCircle, Download, UserPlus, Pencil, ChevronDown, ChevronUp } from 'lucide-react';
+import { CheckCircle, Download, UserPlus, Pencil, ChevronDown, ChevronUp, Flag } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/common/card';
 import Disclaimer from '../components/forms/Disclaimer';
 import InviteModal from '../components/common/InviteModal';
+import NextStepsModal from '../components/common/NextStepsModal';
 import { useForm } from '../hooks/useForm';
+import useModalAccessibility from '../hooks/useModalAccessibility';
 import { auth } from '../lib/firebase';
 import { buildApiUrl } from '../lib/apiClient';
-import { answerText, fetchStandardTemplate, FormTemplatePrintDocument, collectAnswers, standardTemplate } from './FormDesigner';
+import { answerText, fetchStandardTemplate, FormTemplatePrintDocument, collectAnswers, loadTemplate, printTemplateFormat } from './FormDesigner';
 import shareCareLogo from '../assets/logos/ShareCare_Symmetrical Diamond Logo (1120 x 310 px).png';
 import './Page.css';
 import './Review.css';
@@ -27,6 +30,25 @@ const SECTION_META = {
   'tax-exemptions': { label: 'Tax Exemptions', route: '/tax-exemptions' },
 };
 
+const FLAG_KEY_ALIASES = {
+  'personalInfo.userRole': 'caseFilingStatus',
+  'getting-started.children': 'children',
+  'taxExemptions.parentRole': 'taxParentalRole',
+  'taxExemptions.claimingChildren': 'taxClaimingChildren',
+  'parentingTimeAndCommunication.agreeToTransportationPolicy': 'transportationAgreement',
+  'parentingTimeAndCommunication.agreeToActivityPolicy': 'activitiesAndScheduling',
+};
+
+function isResponseFlagged(qKey, flags = {}) {
+  const field = String(qKey).split('.').pop();
+  return Boolean(
+    flags[qKey]
+    || flags[`question-${qKey}`]
+    || flags[field]
+    || flags[FLAG_KEY_ALIASES[qKey]],
+  );
+}
+
 // Formats stored answer values using the question's human-readable option labels.
 function annotateParentReferences(text, isParent2) {
   if (typeof text !== 'string') return text;
@@ -37,7 +59,7 @@ function annotateParentReferences(text, isParent2) {
   );
 }
 
-function formatAnswer(answer, question, isParent2, userRole) {
+function formatAnswer(answer, question, isParent2, userRole, children = []) {
   if (answer === null || answer === undefined || answer === '') {
     return <span className="review__empty">Not answered</span>;
   }
@@ -48,9 +70,40 @@ function formatAnswer(answer, question, isParent2, userRole) {
     return option?.label || String(value);
   };
 
+  if (answer && typeof answer === 'object' && !Array.isArray(answer) && answer.byChild) {
+    return (
+      <div className="review__child-answers">
+        {Object.entries(answer.byChild).map(([childId, childAnswer], index) => {
+          const child = children.find((item) => String(item?._id || item?.id) === childId);
+          const label = child
+            ? [child.fName || child.firstName, child.lName || child.lastName].filter(Boolean).join(' ')
+            : `Child ${index + 1}`;
+          return (
+            <div className="review__child-answer" key={childId}>
+              <strong>{label}:</strong>{' '}
+              {formatAnswer(childAnswer, question, isParent2, userRole, children)}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
   if (question?.childAnswers) {
     const answeringParent = isParent2 ? 'parent2' : 'parent1';
-    return annotateParentReferences(answerText(answer, question, answeringParent, true), isParent2);
+    const formattedAnswer = annotateParentReferences(
+      answerText(answer, question, answeringParent, true),
+      isParent2,
+    );
+    return (
+      <span>
+        {formattedAnswer.split('\n').map((line, index) => (
+          <span className="review__answer-line" key={`${line}-${index}`}>
+            {line}
+          </span>
+        ))}
+      </span>
+    );
   }
   if (Array.isArray(answer)) return annotateParentReferences(answerText(answer, question), isParent2);
   return annotateParentReferences(formatValue(answer), isParent2);
@@ -83,6 +136,16 @@ function groupResponsesBySection(answers = [], questionsByKey = {}) {
     });
   });
   return grouped;
+}
+
+function applyQuestionFlags(groupedResponses, flags = {}) {
+  Object.values(groupedResponses).forEach((responses) => {
+    responses.forEach((response) => {
+      response.isFlagged = Boolean(
+        response.isFlagged || isResponseFlagged(response.qKey, flags)
+      );
+    });
+  });
 }
 
 /* Parenting time & Information Sharing question text */
@@ -162,6 +225,8 @@ const STATE_FIELD_OPTIONS = {
   ],
   currentCircumstance: [
     { value: 'married', label: 'I am going through the process of a divorce, dissolution of marriage, or legal separation.' },
+    { value: 'married_seeking_parenting_time', label: 'I am going through the process of a divorce, dissolution of marriage, or legal separation, and I want shared parenting time with my coparent.' },
+    { value: 'married_seeking_custody', label: 'I am going through the process of a divorce, dissolution of marriage, or legal separation, and I have or am seeking legal custody of our child(ren).' },
     { value: 'never_married_seeking_custody', label: 'I was never married to my co-parent, and I have or am seeking legal custody of our child(ren).' },
     { value: 'never_married_seeking_parenting_time', label: 'I was never married to my co-parent, and I want to establish parenting time with our child(ren).' },
   ],
@@ -211,7 +276,13 @@ function addStateSectionResponses(grouped, plan) {
   const savedTaxExemptions = plan.taxExemptions ?? {};
   const legacyUserRole = plan.userRole ?? '';
   const currentCircumstance = plan.currentCircumstance || (
-    ['married', 'never_married_seeking_custody', 'never_married_seeking_parenting_time']
+    [
+      'married',
+      'married_seeking_custody',
+      'married_seeking_parenting_time',
+      'never_married_seeking_custody',
+      'never_married_seeking_parenting_time',
+    ]
       .includes(legacyUserRole)
       ? legacyUserRole
       : ''
@@ -286,7 +357,7 @@ function addStateSectionResponses(grouped, plan) {
 }
 
 
-function SectionBlock({ sectionKey, responses, onEdit, onEditQuestion, isOpen, onToggle, isParent2, userRole }) {
+function SectionBlock({ sectionKey, responses, children, onEdit, onEditQuestion, isOpen, onToggle, isParent2, userRole }) {
   const [isEditingQuestions, setIsEditingQuestions] = useState(false);
   const supportsQuestionEditing = ['parental-rights', 'health-insurance-coverage'].includes(sectionKey);
   const meta = SECTION_META[sectionKey] || {
@@ -294,14 +365,39 @@ function SectionBlock({ sectionKey, responses, onEdit, onEditQuestion, isOpen, o
     route: '/',
   };
   const hasAnswers = responses && responses.length > 0;
+  const handleSectionHeaderKeyDown = (event) => {
+    if (event.target !== event.currentTarget) return;
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      onToggle();
+    } else if (event.key === ' ') {
+      event.preventDefault();
+    }
+  };
+  const handleSectionHeaderKeyUp = (event) => {
+    if (event.target !== event.currentTarget) return;
+    if (event.key === ' ') {
+      event.preventDefault();
+      onToggle();
+    }
+  };
 
   return (
     <Card className="review__section-card">
       <CardHeader className="review__section-card-header">
-        <div className="review__section-header" onClick={onToggle} role="button" aria-expanded={isOpen} tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && onToggle()}>
+        <div
+          className="review__section-header"
+          onClick={onToggle}
+          role="button"
+          aria-expanded={isOpen}
+          tabIndex={0}
+          onKeyDown={handleSectionHeaderKeyDown}
+          onKeyUp={handleSectionHeaderKeyUp}
+        >
           <div className="review__section-header-left">
             <CheckCircle
               size={18}
+              aria-hidden="true"
               className={hasAnswers ? 'review__check--complete' : 'review__check--incomplete'}
             />
             <span className="review__section-title">{meta.label}</span>
@@ -317,13 +413,15 @@ function SectionBlock({ sectionKey, responses, onEdit, onEditQuestion, isOpen, o
                   onEdit(meta.route);
                 }
               }}
+              onKeyDown={(e) => e.stopPropagation()}
+              onKeyUp={(e) => e.stopPropagation()}
               aria-label={`Edit ${meta.label}`}
               aria-pressed={supportsQuestionEditing ? isEditingQuestions : undefined}
             >
-              <Pencil size={14} />
+              <Pencil size={14} aria-hidden="true" />
               {supportsQuestionEditing && isEditingQuestions ? 'Done' : 'Edit'}
             </button>
-            {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+            {isOpen ? <ChevronUp size={18} aria-hidden="true" /> : <ChevronDown size={18} aria-hidden="true" />}
           </div>
         </div>
       </CardHeader>
@@ -339,20 +437,28 @@ function SectionBlock({ sectionKey, responses, onEdit, onEditQuestion, isOpen, o
             <ul className="review__answer-list">
               {responses.map((r, i) => (
                 <li key={r.qKey || i} className="review__answer-item">
-                  {supportsQuestionEditing && isEditingQuestions ? (
-                    <button
-                      className="review__answer-key review__answer-question-btn"
-                      onClick={() => onEditQuestion(r.qKey)}
-                      aria-label={`Edit ${r.label}`}
-                    >
-                      {r.label}
-                    </button>
-                  ) : (
-                    <span className="review__answer-key">{r.label}</span>
-                  )}
-                  <span className="review__answer-value">
-                    {formatAnswer(r.answer, r.question, isParent2, userRole)}
-                  </span>
+                  <div className="review__answer-question">
+                    {supportsQuestionEditing && isEditingQuestions ? (
+                      <button
+                        className="review__answer-key review__answer-question-btn"
+                        onClick={() => onEditQuestion(r.qKey)}
+                        aria-label={`Edit ${r.label}`}
+                      >
+                        {r.label}
+                      </button>
+                    ) : (
+                      <span className="review__answer-key">{r.label}</span>
+                    )}
+                    {r.isFlagged && (
+                      <span className="review__flag-badge" aria-label="Flagged for review">
+                        <Flag size={14} aria-hidden="true" />
+                        Flagged
+                      </span>
+                    )}
+                  </div>
+                  <div className="review__answer-value">
+                    {formatAnswer(r.answer, r.question, isParent2, userRole, children)}
+                  </div>
                 </li>
               ))}
             </ul>
@@ -403,7 +509,7 @@ function PrintablePlan({ groupedResponses, sectionKeys, plan }) {
                     <dt>{response.question?.qText || response.label}</dt>
                     <dd>
                       <span className="review__print-answer-label">Answer</span>
-                      {formatAnswer(response.answer, response.question, plan.isParent2 === true, plan.userRole)}
+                      {formatAnswer(response.answer, response.question, plan.isParent2 === true, plan.userRole, plan.children)}
                     </dd>
                   </div>
                 ))}
@@ -473,6 +579,7 @@ export default function Review() {
   const groupedResponses = groupResponsesBySection(reviewPlan.answers || [], questionsByKey);
   addCustomSectionResponses(groupedResponses, reviewPlan);
   addStateSectionResponses(groupedResponses, reviewPlan);
+  applyQuestionFlags(groupedResponses, state.flags);
   const designerState = {
     plan: reviewPlan,
     parents: {
@@ -505,9 +612,12 @@ export default function Review() {
 
   const [inviteOpen, setInviteOpen] = useState(false);
   const [showSwitchPrompt, setShowSwitchPrompt] = useState(false);
+  const switchModalAccessibility = useModalAccessibility(showSwitchPrompt, () => setShowSwitchPrompt(false));
   const [caseStatus, setCaseStatus] = useState(null);
   const [isPrinting, setIsPrinting] = useState(false);
-  const [standardReviewTemplate, setStandardReviewTemplate] = useState(null);
+  const [showNextSteps, setShowNextSteps] = useState(false);
+  const [standardForm20Template, setStandardForm20Template] = useState(null);
+  const [standardForm21Template, setStandardForm21Template] = useState(null);
   
 
   const caseId = reviewPlan.caseId;
@@ -536,9 +646,14 @@ export default function Review() {
   }, []);
 
   useEffect(() => {
-    fetchStandardTemplate('review')
+    fetchStandardTemplate('form20')
       .then((template) => {
-        if (template?.blocks) setStandardReviewTemplate(template);
+        if (template?.blocks) setStandardForm20Template(template);
+      })
+      .catch((error) => console.error(error.message));
+    fetchStandardTemplate('form21')
+      .then((template) => {
+        if (template?.blocks) setStandardForm21Template(template);
       })
       .catch((error) => console.error(error.message));
   }, []);
@@ -647,7 +762,12 @@ export default function Review() {
     return () => clearTimeout(printTimer);
   }, [isPrinting]);
 
-  const handleDownload = () => setIsPrinting(true);
+  const handleDownload = () => setShowNextSteps(true);
+
+  const handleContinueToPrint = () => {
+    setShowNextSteps(false);
+    setIsPrinting(true);
+  };
 
   return (
     <>
@@ -657,8 +777,17 @@ export default function Review() {
         {/* Switch-to-collaborative confirmation prompt */}
         {showSwitchPrompt && (
           <div className="delete-modal__overlay" onClick={() => setShowSwitchPrompt(false)}>
-            <div className="delete-modal" onClick={e => e.stopPropagation()}>
-              <h3 className="delete-modal__title">Switch to collaborative mode?</h3>
+            <div
+              ref={switchModalAccessibility.dialogRef}
+              className="delete-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="review-switch-mode-title"
+              tabIndex="-1"
+              onClick={e => e.stopPropagation()}
+              onKeyDown={switchModalAccessibility.handleKeyDown}
+            >
+              <h3 id="review-switch-mode-title" className="delete-modal__title">Switch to collaborative mode?</h3>
               <p className="delete-modal__body">
                 You're currently completing this plan individually. Switching to collaborative
                 mode will allow your co-parent to fill out their section separately. Would you
@@ -703,6 +832,7 @@ export default function Review() {
                   key={key}
                   sectionKey={key}
                   responses={groupedResponses[key] ?? []}
+                  children={reviewPlan.children ?? []}
                   isParent2={reviewPlan.isParent2 === true}
                   userRole={reviewPlan.userRole}
                   onEdit={handleEdit}
@@ -728,7 +858,7 @@ export default function Review() {
                     className="review__btn-invite"
                     onClick={handleInviteClick}
                   >
-                    <UserPlus size={16} />
+                    <UserPlus size={16} aria-hidden="true" />
                     {collaborationMode === 'individual' || collaborationMode === ''
                       ? 'Switch & Invite Co-Parent'
                       : 'Invite Co-Parent'}
@@ -736,7 +866,7 @@ export default function Review() {
                 )}
 
                 <button className="review__btn-download" onClick={handleDownload}>
-                  <Download size={16} />
+                  <Download size={16} aria-hidden="true" />
                   Download PDF
                 </button>
               </div>
@@ -765,21 +895,34 @@ export default function Review() {
         />
       </div>
       {isPrinting && (
-        <FormTemplatePrintDocument
-          template={standardReviewTemplate || standardTemplate('review', reviewAnswersByKey, questionsByKey)}
-          answersByKey={reviewAnswersByKey}
-          questions={questionsByKey}
-          answeringParent={
-            reviewPlan.userRole === 'parent2/petitioner2/defendant'
-              ? 'parent2'
-              : reviewPlan.userRole === 'no_case'
-                ? 'no_case'
-              : reviewPlan.userRole === 'parent1/petitioner1/plaintiff'
-                ? 'parent1'
-                : null
-          }
-        />
+        createPortal(
+          <FormTemplatePrintDocument
+            template={
+              printTemplateFormat('review', reviewPlan) === 'form20'
+                ? (standardForm20Template || loadTemplate('form20'))
+                : (standardForm21Template || loadTemplate('form21'))
+            }
+            answersByKey={reviewAnswersByKey}
+            questions={questionsByKey}
+            children={reviewPlan.children ?? []}
+            answeringParent={
+              reviewPlan.userRole === 'parent2/petitioner2/defendant'
+                ? 'parent2'
+                : reviewPlan.userRole === 'no_case'
+                  ? 'no_case'
+                : reviewPlan.userRole === 'parent1/petitioner1/plaintiff'
+                  ? 'parent1'
+                  : null
+            }
+          />,
+          document.body,
+        )
       )}
+      <NextStepsModal
+        isOpen={showNextSteps}
+        onClose={() => setShowNextSteps(false)}
+        onContinue={handleContinueToPrint}
+      />
     </>
   );
 }

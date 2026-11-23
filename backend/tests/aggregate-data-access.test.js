@@ -84,6 +84,9 @@ test('aggregate data requires an administrator and requests revocation-checked t
       lean: async () => {
         planReads += 1;
         return [{
+          _id: {
+            getTimestamp: () => new Date('2026-01-15T12:00:00.000Z')
+          },
           parentAge: 35,
           aggregateData: { gender: 'Woman' }
         }];
@@ -132,6 +135,7 @@ test('aggregate data requires an administrator and requests revocation-checked t
   });
   assert.equal(allowed.status, 200);
   assert.deepEqual(await allowed.json(), [{
+    createdAt: '2026-01-15T12:00:00.000Z',
     parentAge: 35,
     zipCode: null,
     collaborationMode: null,
