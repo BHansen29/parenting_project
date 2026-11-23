@@ -16,24 +16,24 @@ export default function PrivacyPolicy() {
 
         <h1 className="static-page__title">Privacy Policy</h1>
         <p className="static-page__last-updated">
-          Effective Date: TBD &nbsp;|&nbsp; Last Revision Date: TBD
+          Effective Date: TBD &nbsp;|&nbsp; Last Revision Date: November 23, 2026
         </p>
 
         <p>
-          Your privacy is important to us. To better protect your privacy, we have provided this
-          notice explaining our information practices and the choices you can make about the way
-          your information is collected and used.
-        </p>
-        <p>
-          Please read this Privacy Policy (also, "Policy") carefully before using this Tool, which
-          is provided by Action for Children. The Tool is not legal advice, Action for Children does
-          not provide legal advice. If you need legal advice, you should talk to a lawyer. This Tool
-          is only meant to be used by parents and adults.
+          Your privacy is important to us. Please read this Privacy Policy (also, &quot;Policy&quot;)
+          carefully before using this Tool, which is provided by Action for Children. The Tool is
+          not legal advice. Action for Children does not provide legal advice. If you need legal
+          advice, you should talk to a lawyer. This Tool is only meant to be used by parents and
+          adults.
         </p>
         <p>
           Your use of the Tool, including subdomains on which these terms reside (collectively, the
-          "Tool"), and the features of this Tool are subject to this Privacy Policy, which we may
-          update from time to time.
+          &quot;Tool&quot;), and the features of this Tool are subject to this Privacy Policy, which we
+          may update from time to time. This additional privacy notice supplements Action for
+          Children&apos;s general Privacy Policy available on our website. Because the Parenting Plan
+          Tool collects and uses information specific to your use of the Tool, this notice explains
+          what information the Tool collects, how that information is used and shared, and the
+          choices you have regarding your information.
         </p>
 
         <h2>About This Policy</h2>
@@ -45,135 +45,77 @@ export default function PrivacyPolicy() {
         </p>
 
         <h2>Information We Collect</h2>
-        <p>
-          <strong>Contact and account registration information.</strong> To respond to your
-          questions or set up an account, we may collect your name and email address. We may also
-          collect your address, phone number, username, and password. You may close and delete your
-          account at any time. If you delete your account, all form data associated with your
-          account will be deleted and your forms will no longer be accessible to you on the Tool.
-        </p>
+        <p>Users should only provide the information necessary to complete their plan.</p>
         <p>
           <strong>Personal Information.</strong> We may collect personal information to fill in the
-          questions on the Tool. This information may include, but is not limited to, your and your
-          child's:
+          questions on the Tool, including:
         </p>
         <ul>
           <li>Name</li>
+          <li>Address</li>
+          <li>Insurance record</li>
+          <li>Financial arrangements</li>
           <li>Date of birth</li>
-          <li>Partial social security number</li>
-          <li>Monthly income, expenses, and the property you own</li>
-          <li>Insurance coverage</li>
-          <li>Criminal record</li>
-          <li>Arrest history</li>
-          <li>Domestic violence history</li>
-          <li>Other personal and family history</li>
+          <li>Legal circumstance (divorce, dissolution of marriage, or legal separation)</li>
         </ul>
         <p>
-          You can always delete form data. If you delete the data in a form(s), the information
-          will no longer be accessible to you through the Tool.
+          <strong>Demographic Information.</strong> We collect information such as gender, race,
+          ethnicity, languages spoken, household income, educational level, marital status, family
+          size, disability status, and child support.
         </p>
         <p>
-          <strong>Demographic Information.</strong> We may collect information like zip code,
-          gender, income, and age. We may also collect information about race, ethnicity, languages
-          spoken, military status, and citizenship status. We may collect information about marital
-          status, family size, disability status, child support, and other information.
-        </p>
-        <p>
-          <strong>Location Information.</strong> We may collect information about your location.
-          This may include your precise location.
+          <strong>Location Information.</strong> We may collect information about your location,
+          including zip code.
         </p>
         <p>
           <strong>Other Information.</strong> If you use our site, we may collect information about
           the browser you are using. Our web server may store your IP address and domain. We might
           also look at what part of our site you visit. We might also collect information about the
-          links you select on our site that take you to third party sites.
+          links you select on our site that take you to third-party sites.
+        </p>
+        <p>
+          You can always delete form data. If you delete the data in a form(s), the information
+          will no longer be accessible to you through the Tool.
         </p>
 
         <h2>How We Collect Information</h2>
         <p>
           <strong>We collect information directly from you.</strong> For example, we collect
-          information when you answer questions. We also collect information if you ask us
-          questions, provide feedback, or sign up for emails or texts. We may also collect
-          information from third parties.
+          information when you answer questions. Certain questions presented to you are based on
+          the answer choices you have selected.
         </p>
         <p>
           <strong>We collect information from you passively.</strong> We use tracking tools like
-          browser cookies. To learn more about these tools and how you can control them, please read
-          the "Your Choices" section below.
+          browser cookies to track the question you are on. To learn more about these tools and how
+          you can control them, please read the &quot;Your Choices&quot; section below.
         </p>
 
-        <h2>How We Use Information</h2>
-        <p>We may use your information:</p>
-        <ul>
-          <li>To process and respond to your questions and requests.</li>
-          <li>To create and manage your account.</li>
-          <li>
-            To create forms and documents. For example, we may share your personal information with
-            third-party service providers. These providers may only use your personal information to
-            provide us services or follow legal requirements.
-          </li>
-          <li>To improve our sites and update our email and phone lists.</li>
-          <li>
-            To communicate with you about our relationship. For example, we might use your contact
-            information to tell you about changes to this Policy or our website{' '}
-            <button
-              className="static-page__back"
-              style={{ display: 'inline', margin: 0, fontSize: 'inherit' }}
-              onClick={() => navigate('/terms-of-service')}
-            >
-              Terms of Service
-            </button>.
-          </li>
-          <li>
-            For our legitimate business purposes. We may combine information that we receive about
-            you from third parties with information we already have. We may also share personal
-            information for research, academic studies, data analysis, and reports.
-          </li>
-          <li>
-            For marketing purposes. For example, we might send you information about legal
-            developments in which we think you may be interested, about us, our sites, or other
-            products or services we offer, or to request your assistance in supporting our
-            organization.
-          </li>
-          <li>As otherwise permitted by law.</li>
-        </ul>
-
-        <h2>When We Share Information and Public Records</h2>
-        <ul>
-          <li>
-            <strong>To comply with the law.</strong> For example, we will share information to
-            respond to a court order or subpoena. We may also share if a government agency or
-            investigatory body requests information.
-          </li>
-          <li>
-            <strong>With third parties performing services on our behalf.</strong> We may share
-            information with vendors in the future. We may also authorize them to collect
-            information on our behalf. Some suppliers may be outside the United States.
-          </li>
-          <li>
-            <strong>With our business partners.</strong> If we provide joint services, we share
-            information with business partners.
-          </li>
-          <li>In case of change of corporate ownership.</li>
-          <li>For other reasons we may describe to you.</li>
-        </ul>
+        <h2>How We Use Personal Information</h2>
+        <p>
+          Action for Children (AFC) uses the information you provide to operate the Tool, improve
+          our services, and comply with the law. Information may be used for research, evaluation,
+          data analysis, funder reporting, or academic studies, including with partners such as The
+          Ohio State University, but only in aggregate form. Aggregate data combines information
+          from multiple users and will not identify you, your children, or anyone else named in your
+          parenting plan. AFC protects all Personally Identifiable Information (PII) and will not
+          sell it or share it with third parties, except with service providers who help us operate
+          the Tool or when required by law.
+        </p>
+        <p>
+          Any plan you send to a coparent through the Tool is shared at your direction. Please note
+          that you do not have to share your answers with your co-parent. If you select the option
+          to keep your information private, you will complete the questionnaire individually, and
+          your answers will not be shared with your co-parent. If you choose to collaborate, your
+          answers will be shared with your co-parent to help you reach an agreement. If you do not
+          feel safe sharing information with your co-parent, you can choose to keep your answers
+          private. Use caution when providing protected addresses or other sensitive personal
+          information.
+        </p>
 
         <h2>Your Choices</h2>
         <p>
           You can opt out of receiving marketing emails by following the instructions in any
           marketing emails you receive.
-        </p>
-        <p>
-          By opting into SMS from the Tool or other medium, you are agreeing to receive SMS
-          messages from Action for Children. Message frequency varies. Message and data rates may
-          apply. SMS consent is not shared with third parties for marketing purposes. Message HELP
-          for help. Reply STOP to any message to opt out.
-        </p>
-        <p>
-          You may contact Action for Children to request that we modify, update, or correct your
-          personal information. You may also request that we stop contacting you by email. To do
-          so, send a detailed request to{' '}
-          <a href="mailto:info@actionforchildren.org">info@actionforchildren.org</a>.
         </p>
         <p>
           You can choose not to provide us with some of the information that we request. If you do
@@ -188,6 +130,14 @@ export default function PrivacyPolicy() {
           United States. By using our sites and giving us your information, you allow this transfer.
           You also understand that the U.S. may not provide the same level of protections as the
           laws of your country.
+        </p>
+        <p>
+          All login verification and authentication, including emails and passwords, are handled by
+          a Third Party service,{' '}
+          <a href="https://firebase.google.com/support/privacy" target="_blank" rel="noreferrer">
+            Google Firebase
+          </a>
+          .
         </p>
 
         <h2>Security</h2>
@@ -205,7 +155,8 @@ export default function PrivacyPolicy() {
           and{' '}
           <a href="https://www.mongodb.com/legal/privacy/privacy-policy" target="_blank" rel="noreferrer">
             MongoDB
-          </a>.
+          </a>
+          .
         </p>
         <p>
           We retain your data only for as long as you maintain an active account. If you choose to
@@ -217,17 +168,19 @@ export default function PrivacyPolicy() {
           To ensure your privacy, Action for Children does not have administrative access to your
           personal account, individual answers, or generated documents. Access to your data is
           restricted to you through your unique email login. Any access for administrative purposes
-          does not include the right or ability to review, track, or monitor the specific content
-          or legal choices you make within the Tool.
+          does not include the right or ability to review, track, or monitor the specific content or
+          legal choices you make within the Tool. Action for Children only has access to the
+          aggregate demographic data provided.
         </p>
 
         <h2>Our Sites and Children</h2>
         <p>
-          The Children's Online Privacy Protection Act of 1998 and its rules (collectively,
-          "COPPA") require us to inform parents and legal guardians about our practices for
-          collecting, using, and disclosing personal information about children under the age of 13
-          ("children"). It also requires us to obtain verifiable consent from a child's parent for
-          certain collection, use, and disclosure of the child's personal information.
+          Although the Tool is intended for adult use only, the Children&apos;s Online Privacy
+          Protection Act of 1998 and its rules (collectively, &quot;COPPA&quot;) require us to inform
+          parents and legal guardians about our practices for collecting, using, and disclosing
+          personal information about children under the age of 13 (&quot;children&quot;). It also
+          requires us to obtain verifiable consent from a child&apos;s parent for certain collection,
+          use, and disclosure of the child&apos;s personal information.
         </p>
         <p>This section notifies parents of:</p>
         <ul>
@@ -235,7 +188,7 @@ export default function PrivacyPolicy() {
           <li>How we use the information we collect.</li>
           <li>Our practices for disclosing that information, including information about third parties.</li>
           <li>
-            Our practices for notifying and obtaining parents' consent when we collect personal
+            Our practices for notifying and obtaining parents&apos; consent when we collect personal
             information about children, including how a parent may revoke consent.
           </li>
           <li>All operators that collect or maintain information from children through this Tool.</li>
@@ -254,9 +207,9 @@ export default function PrivacyPolicy() {
           access and use the Tool.
         </p>
         <p>
-          <strong>Our Practices for Disclosing Children's Information.</strong> We do not share,
-          sell, rent, or transfer children's personal information other than as described in this
-          section. We may disclose children's personal information:
+          <strong>Our Practices for Disclosing Children&apos;s Information.</strong> We do not share,
+          sell, rent, or transfer children&apos;s personal information other than as described in this
+          section. We may disclose children&apos;s personal information:
         </p>
         <ul>
           <li>
@@ -281,36 +234,41 @@ export default function PrivacyPolicy() {
           </li>
         </ul>
         <p>
-          <strong>Accessing and Correcting Your Child's Personal Information.</strong> At any time,
-          you may review the personal information we have about your child, require us to correct
-          or delete it, and/or refuse to permit us from further collecting or using the child's
-          information. To protect your privacy and security, we may require you to take certain
-          steps or provide additional information to verify your identity before we provide any
-          information or make changes.
+          <strong>Accessing and Correcting Your Child&apos;s Personal Information.</strong> At any
+          time, you may review the personal information we have about your child, require us to
+          correct or delete it, and/or refuse to permit us from further collecting or using the
+          child&apos;s information. To protect your privacy and security, we may require you to take
+          certain steps or provide additional information to verify your identity before we provide
+          any information or make changes.
         </p>
         <p>
-          Our tool is not intended for use by children under 18. If we learn we have
-          unintentionally collected personal data from a child under 18 without verification of
-          parental consent, we will delete that information. If you are a parent or guardian and
-          think we have information about your child, please contact{' '}
+          Our Tool is not intended for use by children under 18. If we learn we have unintentionally
+          collected personal data from a child under 18 without verification of parental consent,
+          we will delete that information. If you are a parent or guardian and think we have
+          information about your child, please contact{' '}
           <a href="mailto:info@actionforchildren.org">info@actionforchildren.org</a>.
         </p>
         <p>
           For more on protecting your child online, visit the{' '}
-          <a href="https://consumer.ftc.gov/identity-theft-and-online-security/protecting-kids-online" target="_blank" rel="noreferrer">
-            FTC's website
-          </a>.
+          <a
+            href="https://consumer.ftc.gov/identity-theft-and-online-security/protecting-kids-online"
+            target="_blank"
+            rel="noreferrer"
+          >
+            FTC&apos;s website
+          </a>
+          .
         </p>
 
         <h2>Links</h2>
         <p>
-          Our sites contain links to third party sites. If you click on one of those links, you
+          Our sites contain links to third-party sites. If you click on one of those links, you
           will be taken to sites we do not control. This Policy does not apply to those sites.
         </p>
 
         <h2>Policy Updates</h2>
         <p>
-          From time to time we may change our Privacy Policy practices. The latest version of this
+          From time to time, we may change our Privacy Policy practices. The latest version of this
           Policy will be posted here. Sometimes there may be a material change to this Policy that
           we wish to apply retroactively. If so, we will notify you and obtain your consent as
           required by law.
@@ -318,7 +276,7 @@ export default function PrivacyPolicy() {
 
         <h2>More Questions?</h2>
         <p>
-          If you have additional questions you can reach us by email at{' '}
+          If you have additional questions, you can reach us by email at{' '}
           <a href="mailto:info@actionforchildren.org">info@actionforchildren.org</a>. You can write
           to us at:
         </p>
@@ -329,7 +287,7 @@ export default function PrivacyPolicy() {
         </address>
         <p>
           Please include your email address, name, address, and telephone number when you contact
-          us. This helps us answer you.
+          us. This helps us respond to you.
         </p>
       </div>
     </div>
