@@ -9,7 +9,7 @@ export default function Sidebar({ isCollapsed, onToggle }) {
     { path: '/getting-started', label: 'Getting Started', icon: UserIcon },
     { path: '/parental-rights', label: 'Parental Rights', icon: UserIcon },
     { path: '/parenting-time-communication', label: 'Parenting Time & Communication', icon: CalendarIcon },
-    { path: '/informationsharing',label: 'Information Sharing', icon: ShareIcon },    
+    { path: '/informationsharing',label: 'Additional Information', icon: ShareIcon },    
   { path: '/tax-exemptions',    label: 'Tax Exemptions',      icon: ReceiptIcon }, 
     { path: '/review', label: 'Review', icon: CheckCircleIcon },
   ];
