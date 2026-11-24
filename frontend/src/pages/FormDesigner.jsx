@@ -7,7 +7,6 @@ import { useForm } from '../hooks/useForm';
 import { buildApiUrl } from '../lib/apiClient';
 import { auth } from '../lib/firebase';
 import { CUSTOM_COMPARISON_QUESTIONS } from '../lib/comparisonQuestionDefinitions';
-import HelpMenu from '../components/common/HelpMenu';
 import './Page.css';
 import './FormDesigner.css';
 
@@ -980,7 +979,6 @@ export function FormTemplatePrintDocument({
       {template.blocks.map((block, blockIndex) => {
         const response = answersByKey[block.qKey] || (showUnanswered ? { answer: null } : null);
         const question = questions[block.qKey] || response?.question;
-        const infoText = block.infoText || question?.qIntro || response?.question?.qIntro || '';
         if (block.type === 'heading') {
           if (!headingHasVisibleAnswer(blockIndex)) return null;
           return (
@@ -1036,9 +1034,6 @@ export function FormTemplatePrintDocument({
                     children,
                   )}
               </div>
-            )}
-            {infoText && (
-              <div className="form-designer__print-info">{infoText}</div>
             )}
           </div>
         );
@@ -1520,8 +1515,6 @@ export default function FormDesigner() {
                         questions[block.qKey] || currentAnswersByKey[block.qKey]?.question,
                       )}
                     </div>
-                    <HelpMenu text={block.infoText} />
-                    <div className="form-designer__print-info">{block.infoText}</div>
                   </>
                 ) : (
                   <textarea value={block.text} onChange={(event) => updateBlock(block.id, { text: event.target.value })} />

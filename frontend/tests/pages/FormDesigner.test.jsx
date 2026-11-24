@@ -83,6 +83,46 @@ describe('FormDesigner', () => {
     expect(screen.getAllByText('Sample parental-rights question').length).toBeGreaterThanOrEqual(3)
   })
 
+  it('does not render help bubbles for question blocks', async () => {
+    renderWithRouter(<FormDesigner />)
+
+    await userEvent.click(await screen.findByRole('tab', { name: 'Parental Rights' }))
+    await userEvent.click(await screen.findByRole('button', {
+      name: /sample parental-rights question/i,
+    }))
+
+    expect(document.querySelector('.help-menu')).not.toBeInTheDocument()
+  })
+
+  it('does not print additional information help text', () => {
+    render(
+      <FormTemplatePrintDocument
+        template={{
+          title: 'Review',
+          blocks: [{
+            id: 'answer-1',
+            type: 'answer',
+            qKey: 'parentalRights.test',
+            questionText: 'Sample question',
+            infoText: 'This help text should not print',
+          }],
+        }}
+        answersByKey={{
+          'parentalRights.test': { answer: 'Yes' },
+        }}
+        questions={{
+          'parentalRights.test': {
+            qText: 'Sample question',
+            qIntro: 'This fallback help text should not print',
+          },
+        }}
+      />,
+    )
+
+    expect(screen.queryByText('This help text should not print')).not.toBeInTheDocument()
+    expect(screen.queryByText('This fallback help text should not print')).not.toBeInTheDocument()
+  })
+
   it('restores duplicate answer blocks from local storage', () => {
     localStorage.setItem(templateStorageKey('form20'), JSON.stringify({
       title: 'Repeated responses',

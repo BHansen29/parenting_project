@@ -39,7 +39,6 @@ display: block; color: #425057; }
 .form-designer__print-title, .form-designer__print-text { display: none; }
 .form-designer__block { position: relative; background: #fff; border: 1px solid #d1d5db; border-radius: 6px; padding: 1rem 3rem 1rem 1rem; margin-bottom: 0.75rem; }
 .form-designer__block textarea { width: 100%; min-height: 55px; box-sizing: border-box; resize: vertical; border: 1px solid #d1d5db; border-radius: 4px; padding: 0.5rem; font: inherit; }
-.form-designer__block textarea + .help-menu { margin-top: 0.5rem; }
 .form-designer__print-info { display: none; }
 .form-designer__block--heading {
   border-left: 5px solid #1bb0dd;
