@@ -145,6 +145,32 @@ describe('ParentalRights', () => {
         screen.getByText(/Will your answers apply to all of your children/i)
       ).toBeInTheDocument()
     })
+
+    it('displays help text for every child on text questions', () => {
+      seedState({
+        plan: {
+          _id: PLAN_ID,
+          children: [
+            { id: 'child-1', fName: 'Alice', lName: 'Smith' },
+            { id: 'child-2', fName: 'Bob', lName: 'Jones' },
+          ],
+        },
+        question: {
+          ...mockQuestion,
+          qKey: 'childAddress',
+          qTitle: 'Child Address',
+          qText: 'What address should be used for [x]?',
+          qIntro: 'Enter the address used for this child.',
+          type: 'text input',
+        },
+      })
+
+      renderPage()
+
+      expect(screen.getAllByText('Enter the address used for this child.')).toHaveLength(2)
+      expect(screen.getByText(/Alice Smith: What address should be used for Alice Smith/i)).toBeInTheDocument()
+      expect(screen.getByText(/Bob Jones: What address should be used for Bob Jones/i)).toBeInTheDocument()
+    })
   })
 
   // ─── Radio Options ───────────────────────────────────────────────────────────

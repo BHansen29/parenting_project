@@ -200,6 +200,7 @@ export default function ParentalRights() {
                 ? (
                     <TextQuestion
                         question={questionText}
+                        help={question.qIntro}
                         id={name}
                         value={answer}
                         onChange={onChange}
