@@ -191,7 +191,7 @@ export function answerText(
     return lines.length ? lines.join('\n') : 'No child arrangements entered';
   }
   if (question?.scheduleType) {
-    return formatSchedule(answer, question.scheduleType, relativeLabels, answeringParent);
+    return formatSchedule(answer, question.scheduleType, relativeLabels);
   }
   const value = (item) => {
     const label = question?.options?.find((option) => option.value === item)?.label || String(item);
@@ -279,7 +279,14 @@ function formatCalendarDetails(details) {
   return parts.join(' · ') || 'No preference entered';
 }
 
-function formatSchedule(answer, scheduleType, relativeLabels = false, answeringParent = null) {
+function scheduleSlotLabel(parent, relativeLabels) {
+  const parentNumber = parent === 'parent2' ? 2 : 1;
+  return relativeLabels
+    ? parentNumber === 1 ? 'Me' : 'My co-parent'
+    : `Parent ${parentNumber}`;
+}
+
+function formatSchedule(answer, scheduleType, relativeLabels = false) {
   if (!answer || typeof answer !== 'object') return 'Not scheduled';
   if (answer.scheduleScope === 'later') return 'Schedule will be determined later';
 
@@ -287,7 +294,7 @@ function formatSchedule(answer, scheduleType, relativeLabels = false, answeringP
     const childEntries = Object.entries(answer.schedulesByChild);
     if (!childEntries.length) return 'Not scheduled';
     return childEntries.map(([, childSchedule], index) => (
-      `${childSchedule?.childName || `Child ${index + 1}`}\n${formatSchedule(childSchedule?.schedule || childSchedule, scheduleType)}`
+      `${childSchedule?.childName || `Child ${index + 1}`}\n${formatSchedule(childSchedule?.schedule || childSchedule, scheduleType, relativeLabels)}`
     )).join('\n\n');
   }
 
@@ -301,14 +308,7 @@ function formatSchedule(answer, scheduleType, relativeLabels = false, answeringP
       const week = Math.floor(index / 7) + 1;
       const day = WEEK_DAYS[index % 7] || `Day ${dayIndex}`;
       return slots.map((slot) => {
-        let parentLabel = slot?.parent === 'parent1' ? 'Parent 1' : 'Parent 2';
-        if (relativeLabels) {
-          const isParent2 = answeringParent === 'parent2';
-          const isParent1 = answeringParent === 'parent1';
-          parentLabel = slot?.parent === 'parent1'
-            ? (isParent2 ? 'My co-parent' : 'I')
-            : (isParent1 ? 'My co-parent' : 'I');
-        }
+        const parentLabel = scheduleSlotLabel(slot?.parent, relativeLabels);
         const parent = slot?.parent ? ` (${parentLabel})` : '';
         return `Week ${week}, ${day}: ${formatScheduleSlot(slot) || 'No time set'}${parent}`;
       });
@@ -324,7 +324,7 @@ function formatSchedule(answer, scheduleType, relativeLabels = false, answeringP
   return lines.join('\n');
 }
 
-function ScheduleCalendar({ schedule = {}, relativeLabels = false, answeringParent = null }) {
+function ScheduleCalendar({ schedule = {}, relativeLabels = false }) {
   const safeSchedule = schedule && typeof schedule === 'object' ? schedule : {};
   const hasSlots = Object.values(safeSchedule).some((slots) => Array.isArray(slots) && slots.length);
   if (!hasSlots) return <span>Not scheduled</span>;
@@ -352,11 +352,7 @@ function ScheduleCalendar({ schedule = {}, relativeLabels = false, answeringPare
                     key={`${dayIndex}-${index}`}
                   >
                     <span className="form-designer__schedule-slot-parent">
-                      {relativeLabels
-                        ? (slot.parent === 'parent2'
-                          ? (answeringParent === 'parent2' ? 'I' : 'My co-parent')
-                          : (answeringParent === 'parent1' ? 'I' : 'My co-parent'))
-                        : (slot.parent === 'parent2' ? 'Parent 2' : 'Parent 1')}
+                      {scheduleSlotLabel(slot.parent, relativeLabels)}
                     </span>
                     <span>{formatScheduleSlot(slot) || 'No time set'}</span>
                   </div>
@@ -411,7 +407,7 @@ function scheduleTypeForKey(qKey) {
       : null;
 }
 
-function renderScheduleAnswer(qKey, answer, question, relativeLabels = false, answeringParent = null) {
+function renderScheduleAnswer(qKey, answer, question, relativeLabels = false) {
   const scheduleType = scheduleTypeForKey(qKey) || question?.scheduleType;
   if (!scheduleType) return null;
   if (answer?.scheduleScope === 'later') {
@@ -423,7 +419,7 @@ function renderScheduleAnswer(qKey, answer, question, relativeLabels = false, an
         {Object.entries(answer.schedulesByChild).map(([childId, childSchedule], index) => (
           <section className="form-designer__child-schedule" key={childId}>
             <h4>{childSchedule?.childName || `Child ${index + 1}`}</h4>
-            {renderScheduleAnswer(qKey, childSchedule?.schedule || childSchedule, question, relativeLabels, answeringParent)}
+            {renderScheduleAnswer(qKey, childSchedule?.schedule || childSchedule, question, relativeLabels)}
           </section>
         ))}
       </div>
@@ -437,7 +433,6 @@ function renderScheduleAnswer(qKey, answer, question, relativeLabels = false, an
       <ScheduleCalendar
         schedule={answer}
         relativeLabels={relativeLabels}
-        answeringParent={answeringParent}
       />
     );
   }
@@ -1010,7 +1005,7 @@ export function FormTemplatePrintDocument({
                   <div className="form-designer__discussion-answer" key={parent}>
                     <strong>{parentNames[parent]}'s answer</strong>
                     <div className="form-designer__answer-value">
-                      {renderScheduleAnswer(block.qKey, response.parentAnswers[parent], question, false, parent)
+                      {renderScheduleAnswer(block.qKey, response.parentAnswers[parent], question)
                         || answerText(response.parentAnswers[parent], question, parent, !comparisonMode, true)}
                     </div>
                   </div>
@@ -1023,7 +1018,6 @@ export function FormTemplatePrintDocument({
                   response.answer,
                   question,
                   !comparisonMode,
-                  response.answerOwner || answeringParent,
                 )
                   || answerText(
                     response.answer,

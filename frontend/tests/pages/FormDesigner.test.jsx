@@ -229,8 +229,8 @@ describe('FormDesigner', () => {
     expect(answerText('both', question, 'parent1', true)).toBe('Both me and my co-parent')
   })
 
-  it('prints I and My co-parent in the review schedule instead of Parent labels', () => {
-    render(
+  it('prints distinct local-plan schedule parents regardless of case filing role', () => {
+    const { container, rerender } = render(
       <FormTemplatePrintDocument
         template={{
           title: 'Review',
@@ -243,17 +243,53 @@ describe('FormDesigner', () => {
         }}
         answersByKey={{
           'parentingTimeAndCommunication.parentingSchedule': {
-            answer: { 0: [{ parent: 'parent1', startTime: '09:00', endTime: '17:00' }] },
+            answer: {
+              0: [
+                { parent: 'parent1', startTime: '09:00', endTime: '12:00' },
+                { parent: 'parent2', startTime: '13:00', endTime: '17:00' },
+              ],
+            },
           },
         }}
         questions={{
           'parentingTimeAndCommunication.parentingSchedule': { scheduleType: 'regular' },
         }}
-        answeringParent="parent1"
+        answeringParent="no_case"
       />,
     )
 
-    expect(screen.getAllByText(/I/).length).toBeGreaterThan(0)
+    const scheduleParentLabels = () => [...container.querySelectorAll('.form-designer__schedule-slot-parent')]
+      .map((label) => label.textContent)
+    expect(scheduleParentLabels()).toEqual(['Me', 'My co-parent'])
+
+    rerender(
+      <FormTemplatePrintDocument
+        template={{
+          title: 'Review',
+          blocks: [{
+            id: 'schedule-1',
+            type: 'answer',
+            qKey: 'parentingTimeAndCommunication.parentingSchedule',
+            questionText: 'Parenting schedule',
+          }],
+        }}
+        answersByKey={{
+          'parentingTimeAndCommunication.parentingSchedule': {
+            answer: {
+              0: [
+                { parent: 'parent1', startTime: '09:00', endTime: '12:00' },
+                { parent: 'parent2', startTime: '13:00', endTime: '17:00' },
+              ],
+            },
+          },
+        }}
+        questions={{
+          'parentingTimeAndCommunication.parentingSchedule': { scheduleType: 'regular' },
+        }}
+        answeringParent="parent2"
+      />,
+    )
+    expect(scheduleParentLabels()).toEqual(['Me', 'My co-parent'])
     expect(screen.queryByText(/Parent 1|Parent 2/)).not.toBeInTheDocument()
   })
 
